@@ -53,11 +53,6 @@ class _DocumentManager extends State<DocumentManager> {
       _userName = name;
     });
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Document Manager"),
-        centerTitle: true,
-        elevation: 0.0,
-      ),
       floatingActionButton: new FloatingActionButton(
         onPressed: () {
           _openFileExplorer();

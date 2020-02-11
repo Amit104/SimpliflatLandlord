@@ -565,6 +565,10 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
                       Firestore.instance.collection(globals.landlord).document(userId);
                   batch.updateData(userRef, {'flat_id': flatId});
 
+                  //update flat landlord
+                  var flatRef = Firestore.instance.collection(globals.flat).document(flatId);
+                  batch.updateData(flatRef, {'landlord_id': userId});
+
                   batch.commit().then((res) {
                     debugPrint("ADDED TO FLAT");
                     Utility.addToSharedPref(

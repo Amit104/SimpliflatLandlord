@@ -31,7 +31,7 @@ class _LandlordPortal extends State<LandlordPortal> {
   String userPhone = "";
   var userId;
   String _appBarTitle = "Simpliflat";
-  var titleList = ["Simpliflat", "Message Board", "Docuemnts Manager"];
+  var titleList = ["Simpliflat", "Message Board", "Documents Manager"];
 
   FirebaseMessaging firebaseMessaging = new FirebaseMessaging();
 

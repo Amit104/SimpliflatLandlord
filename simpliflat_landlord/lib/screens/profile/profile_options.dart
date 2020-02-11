@@ -273,9 +273,8 @@ class _ProfileOptions extends State<ProfileOptions> {
   }
 
   void _exitFlat() async {
-    //remove sharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(globals.flatId);
+
+    var batch = Firestore.instance.batch();
 
     //update joinflat
     var data = {"status": -1};
@@ -289,18 +288,45 @@ class _ProfileOptions extends State<ProfileOptions> {
       debugPrint("CHECKING REQUEST EXISTS OR NOT");
       if (checker.documents != null && checker.documents.length != 0) {
         debugPrint("UPDATING REQUEST");
-        Firestore.instance
+
+        var reqRef = Firestore.instance
             .collection(globals.requests)
-            .document(checker.documents[0].documentID)
-            .updateData(data);
+            .document(checker.documents[0].documentID);
+        batch.updateData(reqRef, data);
+
+        var userRef = Firestore.instance.collection(globals.landlord).document(uID);
+        batch.updateData(userRef, {"flat_id": null});
+
+        var flatRef = Firestore.instance.collection(globals.flat).document(flatId);
+        batch.updateData(flatRef, {'landlord_id': null});
+
+        batch.commit().then((res) async {
+          debugPrint("Exit flat");
+
+          //remove sharedPreferences
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove(globals.flatId);
+
+          _backHome();
+        }, onError: (e) {
+          _setErrorState(_scaffoldContext, "CALL ERROR");
+        }).catchError((e) {
+          _setErrorState(_scaffoldContext, "SERVER ERROR");
+        });
       }
     });
 
-    //update user table
-    var data2 = {"flat_id": null};
-    Firestore.instance.collection(globals.landlord).document(uID).updateData(data2);
 
-    _backHome();
+  }
+
+  void _setErrorState(scaffoldContext, error, {textToSend}) {
+    setState(() {
+      debugPrint(error);
+      if (textToSend != null && textToSend != "")
+        Utility.createErrorSnackBar(scaffoldContext, error: textToSend);
+      else
+        Utility.createErrorSnackBar(scaffoldContext);
+    });
   }
 
   void _backHome() async {
