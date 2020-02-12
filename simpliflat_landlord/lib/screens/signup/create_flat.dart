@@ -345,6 +345,11 @@ class _CreateUserFlat extends State<CreateFlat> {
         var flatId = flat.documents[0].documentID;
         var displayId = flat.documents[0].data['display_id'];
         debugPrint("display_Id = " + displayId);
+        if(flat.documents[0].data['landlord_id']==null || flat.documents[0].data['landlord_id']==""){
+          _setErrorState(scaffoldContext, "Flat already has a landlord",
+              textToSend: "Flat already has a landlord");
+          return;
+        }
         //check if we have a request from this flat
         Firestore.instance
             .collection(globals.requests)
