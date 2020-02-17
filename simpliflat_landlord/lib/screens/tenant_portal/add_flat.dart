@@ -5,57 +5,34 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/screens/signup/create_flat.dart';
 import 'package:simpliflat_landlord/screens/tenant_portal/tenant_portal.dart';
 import '../../main.dart';
 import '../utility.dart';
-import 'create_flat.dart';
 
-class CreateOrJoin extends StatefulWidget {
-  var requestDenied;
-  var lastRequestStatus;
-  List incomingRequests;
-  Color ccard, ctext;
-  var userId;
+class AddFlat extends StatefulWidget {
+  final flatId;
 
-  CreateOrJoin(requestDenied, incomingRequests) {
-    this.requestDenied = requestDenied;
-    this.incomingRequests = incomingRequests;
-    if (requestDenied == -1) {
-      lastRequestStatus = "Your last join request was denied!";
-      ccard = Colors.red[100];
-      ctext = Colors.red[600];
-    } else if (requestDenied == 0) {
-      lastRequestStatus =
-      "Your last request is pending. Wait or join new flat.";
-      ccard = Colors.purple[100];
-      ctext = Colors.purple[600];
-    } else {
-      lastRequestStatus =
-      "Lets get started! You can only be in one flat at a time";
-      ccard = Colors.white;
-      ctext = Colors.indigo[900];
-    }
-  }
+  AddFlat(this.flatId);
 
   @override
   State<StatefulWidget> createState() {
-    return _CreateOrJoinBody(lastRequestStatus, ccard, ctext, incomingRequests);
+    return _AddFlat(this.flatId);
   }
 }
 
-class _CreateOrJoinBody extends State<CreateOrJoin> {
-  String lastRequestStatus;
+class _AddFlat extends State<AddFlat> {
   var _progressCircleState = 0;
   Color ccard, ctext;
   List incomingRequests;
   BuildContext scaffoldContext;
   var _isButtonDisabled = false;
-  var flatId;
+  final flatId;
+  String lastRequestStatus = "checking";
 
   var _buttonColor;
 
-  _CreateOrJoinBody(this.lastRequestStatus, this.ccard, this.ctext,
-      this.incomingRequests);
+  _AddFlat(this.flatId);
 
   @override
   void initState() {
@@ -67,11 +44,10 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
     ]);
   }
 
-  Future<dynamic> _handleRefresh() async {
+  void _checkJoinStatus() async {
     var userId = await Utility.getUserId();
     var flatId;
-    _checkFlatAccept();
-    return Firestore.instance
+    Firestore.instance
         .collection(globals.requests)
         .where("user_id", isEqualTo: userId)
         .getDocuments()
@@ -175,165 +151,171 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
 
   @override
   Widget build(BuildContext context) {
-    if (flatId == null) _checkFlatAccept();
-    var deviceSize = MediaQuery
-        .of(context)
-        .size;
-    return Scaffold(
+    if (lastRequestStatus == "checking") _checkJoinStatus();
+    return  Scaffold(
         appBar: AppBar(
-          title: Text("Find a Flat"),
+          title: Text("Add Flat"),
           elevation: 0.0,
+          centerTitle: true,
         ),
-        body: Builder(builder: (BuildContext scaffoldC) {
-          scaffoldContext = scaffoldC;
-          return RefreshIndicator(
-            onRefresh: _handleRefresh,
-            child: ListView(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SizedBox(
-                    height: 90.0,
-                    width: deviceSize.width * 0.95,
-                    child: Card(
-                        color: ccard,
-                        child: Padding(
-                          padding: const EdgeInsets.all(15.0),
-                          child: (ccard == Colors.white)
-                              ? Text(lastRequestStatus,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontFamily: 'Montserrat', color: ctext))
-                              : ListTile(
-                            leading: Icon(
-                              Icons.warning,
-                              color: ctext,
-                            ),
-                            title: Text(
-                              lastRequestStatus,
-                              style: TextStyle(
-                                fontFamily: 'Montserrat',
-                                color: ctext,
-                              ),
-                            ),
-                          ),
-                        )),
-                  ),
-                ),
-                Container(margin: EdgeInsets.all(10.0)),
-                SizedBox(
-                    height: 185,
-                    width: deviceSize.width * 0.88,
-                    child: GestureDetector(
-                      onTap: () {
-                        navigateToCreate(context, 1).then((flag) {
-                          setState(() {
-                            if (flag == 0) {
-                              lastRequestStatus =
-                              "Your last request is pending. wait or join new flat.";
-                              ccard = Colors.purple[100];
-                              ctext = Colors.purple[700];
-                            }
-                          });
-                        });
-                      },
-                      child: new Card(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5.0)),
-                          color: Colors.black87,
-                          elevation: 2.0,
-                          child: Container(
-                            width: deviceSize.width * 0.88,
-                            decoration: BoxDecoration(
-                              // Box decoration takes a gradient
-                              gradient: LinearGradient(
-                                // Where the linear gradient begins and ends
-                                begin: Alignment.topRight,
-                                end: Alignment.bottomLeft,
-                                // Add one stop for each color. Stops should increase from 0 to 1
-                                stops: [0.1, 0.5, 0.7, 0.9],
-                                colors: [
-                                  // Colors are easy thanks to Flutter's Colors class.
-                                  Colors.indigo[800],
-                                  Colors.indigo[700],
-                                  Colors.indigo[600],
-                                  Colors.indigo[400],
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(5.0),
-                            ),
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  textInCard("Join a Flat", FontWeight.w700,
-                                      24.0, 28.0, 40.0),
-                                  textInCard("Search for your flat", null, 14.0,
-                                      28.0, 20.0),
-                                  textInCard("and send a request.", null, 14.0,
-                                      28.0, 7.0),
-                                ]),
-                          )),
-                    )),
-                Container(
-                  margin: EdgeInsets.all(10.0),
-                ),
-                Container(
-                  child: ListTile(
-                      title: Text(
-                        "Invite Tenants to join",
+        body: Builder(builder: (BuildContext scaffoldContext) {
+          return checkLandlord(scaffoldContext);
+        }));
+  }
+
+  Widget checkLandlord(_navigatorContext) {
+    TextStyle textStyle = Theme.of(context).textTheme.title;
+    var deviceSize = MediaQuery.of(context).size;
+    if (lastRequestStatus != "checking") {
+      return ListView(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(
+              height: 90.0,
+              width: deviceSize.width * 0.95,
+              child: Card(
+                  color: ccard,
+                  child: Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: (ccard == Colors.white)
+                        ? Text(lastRequestStatus,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontFamily: 'Montserrat', color: ctext))
+                        : ListTile(
+                      leading: Icon(
+                        Icons.warning,
+                        color: ctext,
                       ),
-                      leading: GestureDetector(
-                        child: Icon(
-                          Icons.share,
-                          color: Colors.indigo[900],
+                      title: Text(
+                        lastRequestStatus,
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          color: ctext,
                         ),
                       ),
-                      onTap: () {
-                        Share.share('Hey please install Simplitflat',
-                            subject: 'Check out Simpliflat!');
-                      }),
+                    ),
+                  )),
+            ),
+          ),
+          Container(margin: EdgeInsets.all(10.0)),
+          SizedBox(
+              height: 185,
+              width: deviceSize.width * 0.88,
+              child: GestureDetector(
+                onTap: () {
+                  navigateToCreate(context, 1).then((flag) {
+                    setState(() {
+                      if (flag == 0) {
+                        lastRequestStatus =
+                        "Your last request is pending. wait or join new flat.";
+                        ccard = Colors.purple[100];
+                        ctext = Colors.purple[700];
+                      }
+                    });
+                  });
+                },
+                child: new Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5.0)),
+                    color: Colors.black87,
+                    elevation: 2.0,
+                    child: Container(
+                      width: deviceSize.width * 0.88,
+                      decoration: BoxDecoration(
+                        // Box decoration takes a gradient
+                        gradient: LinearGradient(
+                          // Where the linear gradient begins and ends
+                          begin: Alignment.topRight,
+                          end: Alignment.bottomLeft,
+                          // Add one stop for each color. Stops should increase from 0 to 1
+                          stops: [0.1, 0.5, 0.7, 0.9],
+                          colors: [
+                            // Colors are easy thanks to Flutter's Colors class.
+                            Colors.indigo[800],
+                            Colors.indigo[700],
+                            Colors.indigo[600],
+                            Colors.indigo[400],
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(5.0),
+                      ),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            textInCard("Join a Flat", FontWeight.w700,
+                                24.0, 28.0, 40.0),
+                            textInCard("Search for your flat", null, 14.0,
+                                28.0, 20.0),
+                            textInCard("and send a request.", null, 14.0,
+                                28.0, 7.0),
+                          ]),
+                    )),
+              )),
+          Container(
+            margin: EdgeInsets.all(10.0),
+          ),
+          Container(
+            child: ListTile(
+                title: Text(
+                  "Invite Tenants to join",
                 ),
-                Container(
-                  margin: EdgeInsets.all(10.0),
-                ),
-                Row(
-                  children:
-                  (incomingRequests == null || incomingRequests.length == 0)
-                      ? <Widget>[Container(margin: EdgeInsets.all(5.0))]
-                      : <Widget>[
-                    Expanded(child: Container()),
-                    Text("Incoming Requests",
-                        textAlign: TextAlign.left,
-                        style: TextStyle(
-                            fontSize: 16.0,
-                            fontFamily: 'Montserrat',
-                            color: Colors.black)),
-                    Expanded(flex: 15, child: Container()),
-                  ],
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 15.0),
-                  child: Container(
-                    height: (incomingRequests == null ||
-                        incomingRequests.length == 0)
-                        ? 5.0
-                        : MediaQuery
-                        .of(context)
-                        .size
-                        .height / 2,
-                    child: (incomingRequests == null ||
-                        incomingRequests.length == 0)
-                        ? null
-                        : new ListView.builder(
-                        itemCount: incomingRequests.length,
-                        itemBuilder: (BuildContext context, int index) =>
-                            buildIncomingRequests(context, index)),
+                leading: GestureDetector(
+                  child: Icon(
+                    Icons.share,
+                    color: Colors.indigo[900],
                   ),
                 ),
-              ],
+                onTap: () {
+                  Share.share('Hey please install Simplitflat',
+                      subject: 'Check out Simpliflat!');
+                }),
+          ),
+          Container(
+            margin: EdgeInsets.all(10.0),
+          ),
+          Row(
+            children:
+            (incomingRequests == null || incomingRequests.length == 0)
+                ? <Widget>[Container(margin: EdgeInsets.all(5.0))]
+                : <Widget>[
+              Expanded(child: Container()),
+              Text("Incoming Requests",
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                      fontSize: 16.0,
+                      fontFamily: 'Montserrat',
+                      color: Colors.black)),
+              Expanded(flex: 15, child: Container()),
+            ],
+          ),
+          Padding(
+            padding: EdgeInsets.only(top: 15.0),
+            child: Container(
+              height: (incomingRequests == null ||
+                  incomingRequests.length == 0)
+                  ? 5.0
+                  : MediaQuery
+                  .of(context)
+                  .size
+                  .height / 2,
+              child: (incomingRequests == null ||
+                  incomingRequests.length == 0)
+                  ? null
+                  : new ListView.builder(
+                  itemCount: incomingRequests.length,
+                  itemBuilder: (BuildContext context, int index) =>
+                      buildIncomingRequests(context, index)),
             ),
-          );
-        }));
+          ),
+        ],
+      );
+    } else {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
   }
 
   Widget swipeBackground() {
@@ -504,6 +486,7 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
       _isButtonDisabled = true;
     });
     var userId = await _getFromSharedPref();
+    List landlordFlatList = await Utility.getFlatIdList();
     var timeNow = DateTime.now();
     Firestore.instance
         .collection(globals.flat)
@@ -557,7 +540,6 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
                     toAccept, {'status': 1, 'updated_at': timeNow});
 
                 //update user
-                List landlordFlatList = new List();
                 landlordFlatList.add(flatId.toString().trim() + "Name=" + flatName);
                 var userRef = Firestore.instance
                     .collection(globals.landlord)
@@ -626,22 +608,6 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
         }
       }
     });
-  }
-
-  _checkFlatAccept() async {
-    var userId = await Utility.getUserId();
-    Firestore.instance.collection(globals.landlord).document(userId).get().then(
-            (landlordUser) {
-          if (landlordUser != null && landlordUser['flat_id'] != null &&
-              landlordUser['flat_id'] != "") {
-            Utility.addToSharedPref(
-                flatIdDefault: landlordUser['flat_id'],
-                flatId: landlordUser['flat_id'][0]);
-            _navigateToHome(landlordUser['flat_id'][0]);
-          } else {
-            flatId = "";
-          }
-        }, onError: (e) {}).catchError((e) {});
   }
 
   void _setErrorState(scaffoldContext, error, {textToSend}) {

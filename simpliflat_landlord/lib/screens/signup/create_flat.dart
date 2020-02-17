@@ -162,7 +162,7 @@ class _CreateUserFlat extends State<CreateFlat> {
                                               if (value.isEmpty)
                                                 return "Please enter Flat " +
                                                     displayText;
-                                                return null;
+                                              return null;
                                             },
                                             onFieldSubmitted: (v) {
                                               _submit(scaffoldContext);
@@ -251,83 +251,12 @@ class _CreateUserFlat extends State<CreateFlat> {
         debugPrint("STARTING API CALL");
       });
       if (flag == 0) {
-        //create flat
-        _createFlatAPI(scaffoldContext);
+        //pass
       } else {
         //join flat
         _joinFlatAPI(scaffoldContext);
       }
     }
-  }
-
-  void _createFlatAPI(scaffoldContext) async {
-    var uuid = new Uuid();
-
-    var flatName = flatname.text;
-    var uID = await _getFromSharedPref();
-    var displayId = flatName + "-" + uuid.v1().toString().substring(0, 6);
-    debugPrint("UserId is " + uID.toString());
-    debugPrint("DisplayId is " + displayId.toString());
-    var timeNow = DateTime.now();
-    var newFlat = {
-      'name': flatName,
-      'display_id': displayId.toString().toLowerCase(),
-      "updated_at": timeNow,
-      "created_at": timeNow,
-    };
-
-    //not providing document id here will generate a new id
-    var createReq = Firestore.instance.collection(globals.flat).document();
-    var updateUser = Firestore.instance.collection(globals.landlord).document(uID);
-
-    //we have to get all document IDs to be updated. We cannot do bulk update in a transaction
-    Firestore.instance
-        .collection(globals.requests)
-        .where("user_id", isEqualTo: uID)
-        .getDocuments()
-        .then((req) {
-      List<DocumentReference> removeReq = new List();
-      if (req.documents != null && req.documents.length != 0) {
-        for (int i = 0; i < req.documents.length; i++) {
-          DocumentReference doc = Firestore.instance
-              .collection(globals.requests)
-              .document(req.documents[i].documentID);
-          removeReq.add(doc);
-          debugPrint("doc + " + req.documents[i].documentID);
-        }
-      }
-      Firestore.instance.runTransaction((transaction) async {
-        //create a new flat
-        await transaction.set(createReq, newFlat);
-
-        //update user to include in the flat
-        await transaction.update(updateUser,
-            {'flat_id': createReq.documentID, 'updated_at': timeNow});
-
-        // set status of any existing requests to or from user to -1
-        for (int i = 0; i < removeReq.length; i++) {
-          await transaction
-              .update(removeReq[i], {'status': -1, 'updated_at': timeNow});
-        }
-      }).then((value) {
-        debugPrint("Completed flat creation");
-        Utility.addToSharedPref(
-            flatId: createReq.documentID.toString(),
-            displayId: displayId.toLowerCase().toString());
-        setState(() {
-          _isButtonDisabled = false;
-          _progressCircleState = 2;
-          debugPrint("CALL SUCCCESS");
-        });
-        _navigateToHome(createReq.documentID.toString().trim());
-      }).catchError((e) {
-        _setErrorState(scaffoldContext, "SERVER ERROR");
-      });
-    }, onError: (e) {
-      _setErrorState(scaffoldContext, "CALL ERROR");
-    }).catchError((e) {
-      _setErrorState(scaffoldContext, "SERVER ERROR");
-    });
   }
 
   void _joinFlatAPI(scaffoldContext) async {
@@ -344,8 +273,10 @@ class _CreateUserFlat extends State<CreateFlat> {
       if (flat.documents != null && flat.documents.length != 0) {
         var flatId = flat.documents[0].documentID;
         var displayId = flat.documents[0].data['display_id'];
+        var flatIdName = flat.documents[0].data['name'];
         debugPrint("display_Id = " + displayId);
-        if(flat.documents[0].data['landlord_id']==null || flat.documents[0].data['landlord_id']==""){
+        if (flat.documents[0].data['landlord_id'] != null &&
+            flat.documents[0].data['landlord_id'] != "") {
           _setErrorState(scaffoldContext, "Flat already has a landlord",
               textToSend: "Flat already has a landlord");
           return;
@@ -366,65 +297,51 @@ class _CreateUserFlat extends State<CreateFlat> {
             List<DocumentReference> toRejectList = new List();
             DocumentReference toAccept;
             debugPrint("FLAT REQUEST TO USER EXISTS!");
-            //reject other requests
+
+            // accept current request
             Firestore.instance
                 .collection(globals.requests)
-                .where('user_id', isEqualTo: uID)
+                .where("user_id", isEqualTo: uID)
+                .where("flat_id", isEqualTo: flatId)
+                .where("request_from_flat", isEqualTo: 1)
                 .getDocuments()
-                .then((toBeRejected) {
-              if (toBeRejected.documents != null &&
-                  toBeRejected.documents.length != 0) {
-                for (int i = 0; i < toBeRejected.documents.length; i++) {
-                  var doc = Firestore.instance
-                      .collection(globals.requests)
-                      .document(toBeRejected.documents[i].documentID);
-                  debugPrint("doc+" + toBeRejected.documents[i].documentID);
-                  toRejectList.add(doc);
-                }
+                .then((toAcceptData) {
+              if (toAcceptData.documents != null &&
+                  toAcceptData.documents.length != 0) {
+                toAccept = Firestore.instance
+                    .collection(globals.requests)
+                    .document(toAcceptData.documents[0].documentID);
               }
+              //perform actual batch operations
+              var batch = Firestore.instance.batch();
+              var timeNow = DateTime.now();
+              for (int i = 0; i < toRejectList.length; i++) {
+                batch.updateData(
+                    toRejectList[i], {'status': -1, 'updated_at': timeNow});
+              }
+              batch.updateData(toAccept, {'status': 1, 'updated_at': timeNow});
 
-              // accept current request
-              Firestore.instance
-                  .collection(globals.requests)
-                  .where("user_id", isEqualTo: uID)
-                  .where("flat_id", isEqualTo: flatId)
-                  .where("request_from_flat", isEqualTo: 1)
-                  .getDocuments()
-                  .then((toAcceptData) {
-                if (toAcceptData.documents != null &&
-                    toAcceptData.documents.length != 0) {
-                  toAccept = Firestore.instance
-                      .collection(globals.requests)
-                      .document(toAcceptData.documents[0].documentID);
-                }
-                //perform actual batch operations
-                var batch = Firestore.instance.batch();
-                var timeNow = DateTime.now();
-                for (int i = 0; i < toRejectList.length; i++) {
-                  batch.updateData(
-                      toRejectList[i], {'status': -1, 'updated_at': timeNow});
-                }
-                batch
-                    .updateData(toAccept, {'status': 1, 'updated_at': timeNow});
+              //update user
+              List landlordFlatList = new List();
+              landlordFlatList.add(flatId.toString().trim() + "Name=" + flatIdName);
+              var userRef =
+                  Firestore.instance.collection(globals.landlord).document(uID);
+              batch.updateData(userRef, {'flat_id': landlordFlatList});
 
-                //update user
-                var userRef =
-                    Firestore.instance.collection(globals.landlord).document(uID);
-                batch.updateData(userRef, {'flat_id': flatId});
+              //update flat landlord
+              var flatRef = Firestore.instance
+                  .collection(globals.flat)
+                  .document(flatId);
+              batch.updateData(flatRef, {'landlord_id': uID});
 
-                batch.commit().then((res) {
-                  debugPrint("ADDED TO FLAT");
-                  Utility.addToSharedPref(flatId: flatId, displayId: displayId);
-                  setState(() {
-                    _navigateToHome(flatId);
-                    _isButtonDisabled = false;
-                    _progressCircleState = 2;
-                    debugPrint("CALL SUCCCESS");
-                  });
-                }, onError: (e) {
-                  _setErrorState(scaffoldContext, "CALL ERROR");
-                }).catchError((e) {
-                  _setErrorState(scaffoldContext, "SERVER ERROR");
+              batch.commit().then((res) {
+                debugPrint("ADDED TO FLAT");
+                Utility.addToSharedPref(flatIdDefault: flatId, flatId: landlordFlatList, flatName: flatIdName);
+                setState(() {
+                  _navigateToHome(flatId);
+                  _isButtonDisabled = false;
+                  _progressCircleState = 2;
+                  debugPrint("CALL SUCCCESS");
                 });
               }, onError: (e) {
                 _setErrorState(scaffoldContext, "CALL ERROR");
@@ -463,8 +380,10 @@ class _CreateUserFlat extends State<CreateFlat> {
               debugPrint("CHECKING REQUEST EXISTS OR NOT");
               if (checker.documents == null || checker.documents.length == 0) {
                 debugPrint("CREATING REQUEST");
-                Firestore.instance.collection(globals.requests).add(newReq).then(
-                    (addedReq) {
+                Firestore.instance
+                    .collection(globals.requests)
+                    .add(newReq)
+                    .then((addedReq) {
                   setState(() {
                     _isButtonDisabled = false;
                     _progressCircleState = 2;

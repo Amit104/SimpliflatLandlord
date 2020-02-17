@@ -14,10 +14,9 @@ class ProfileOptions extends StatefulWidget {
   var userName;
   var userPhone;
   var flatName;
-  var displayId;
   var flatId;
 
-  ProfileOptions(this.userName, this.userPhone, this.flatName, this.displayId, this.flatId);
+  ProfileOptions(this.userName, this.userPhone, this.flatName, this.flatId);
 
   @override
   State<StatefulWidget> createState() => new _ProfileOptions(flatId);
@@ -100,27 +99,6 @@ class _ProfileOptions extends State<ProfileOptions> {
                           leading: Icon(
                             Icons.home,
                             color: Colors.redAccent,
-                          ),
-                          onTap: () {}),
-                    ),
-                    Card(
-                      color: Colors.white,
-                      elevation: 2.0,
-                      child: ListTile(
-                          title: Text(
-                            widget.displayId,
-                          ),
-                          leading: GestureDetector(
-                            child: Icon(
-                              Icons.share,
-                              color: Colors.indigo[900],
-                            ),
-                            onTap: () {
-                              Share.share(
-                                  'Check out Simpliflat. You can join my flat with using ID - ' +
-                                      widget.displayId,
-                                  subject: 'Check out Simpliflat!');
-                            },
                           ),
                           onTap: () {}),
                     ),
@@ -275,7 +253,7 @@ class _ProfileOptions extends State<ProfileOptions> {
   void _exitFlat() async {
 
     var batch = Firestore.instance.batch();
-
+    List flatList = await Utility.getFlatIdList();
     //update joinflat
     var data = {"status": -1};
     Firestore.instance
@@ -295,7 +273,8 @@ class _ProfileOptions extends State<ProfileOptions> {
         batch.updateData(reqRef, data);
 
         var userRef = Firestore.instance.collection(globals.landlord).document(uID);
-        batch.updateData(userRef, {"flat_id": null});
+        flatList.remove(flatId);
+        batch.updateData(userRef, {"flat_id": flatList});
 
         var flatRef = Firestore.instance.collection(globals.flat).document(flatId);
         batch.updateData(flatRef, {'landlord_id': null});
@@ -304,9 +283,7 @@ class _ProfileOptions extends State<ProfileOptions> {
           debugPrint("Exit flat");
 
           //remove sharedPreferences
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.remove(globals.flatId);
-
+          Utility.addToSharedPref(flatIdDefault: flatList[0], flatId: flatList);
           _backHome();
         }, onError: (e) {
           _setErrorState(_scaffoldContext, "CALL ERROR");

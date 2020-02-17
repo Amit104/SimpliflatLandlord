@@ -213,7 +213,7 @@ class _SignUpNameUser extends State<SignUpName> {
 
   void _onSuccess({userId, flatId, displayId}) {
     Utility.addToSharedPref(
-        userId: userId, flatId: flatId, displayId: displayId);
+        userId: userId, flatIdDefault: flatId[0].split("Name=")[0], flatId: flatId);
     setState(() {
       _isButtonDisabled = false;
       _progressCircleState = 2;
@@ -256,11 +256,10 @@ class _SignUpNameUser extends State<SignUpName> {
           navigateToCreateOrJoin();
         } else {
           debugPrint("userId = " + snapshot.documents[0].documentID);
-          debugPrint("flatid = " + existingUser['flat_id']);
           _onSuccess(
               userId: snapshot.documents[0].documentID,
               flatId: existingUser['flat_id']);
-          navigateToHome(existingUser['flat_id']);
+          navigateToHome(existingUser['flat_id'][0].split("Name=")[0]);
         }
       }
     }, onError: (e) {

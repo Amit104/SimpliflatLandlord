@@ -8,6 +8,7 @@ String userPhone = 'userPhone';
 String userId = 'userId';
 String displayId = 'displayId';
 String flatId = 'flatId';
+String flatIdDefault = 'flatIdDefault';
 String isSyncedNote = 'isSyncedNote';
 String notificationToken = "notificationToken";
 String flatName = "flatName";

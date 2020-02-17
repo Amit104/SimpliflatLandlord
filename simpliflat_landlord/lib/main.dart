@@ -119,7 +119,7 @@ class MyApp extends StatelessWidget {
     SharedPreferences.getInstance().then((SharedPreferences sp) {
       Timer(Duration(milliseconds: 2000), () {
         userId = sp.get(globals.userId);
-        flatId = sp.get(globals.flatId);
+        flatId = sp.get(globals.flatIdDefault);
         if (userId != null) userId = userId.toString();
         if (flatId != null) flatId = flatId.toString();
 
@@ -161,7 +161,7 @@ class MyApp extends StatelessWidget {
                 if (reqFromFlat.toString() == "0") {
                   userRequested = true;
                   statusForUserReq = reqStatus.toString();
-                  flatId = reqFlatId.toString();
+                  flatId = reqFlatId;
                 } else {
                   // case where flat made a request to add user
                   // show all these flats to user on next screen - Create or join
@@ -192,9 +192,8 @@ class MyApp extends StatelessWidget {
                 debugPrint(incomingRequests.length.toString());
                 if (userRequested) {
                   userId = userId.toString();
-                  flatId = flatId.toString();
                   if (statusForUserReq == "1") {
-                    Utility.addToSharedPref(flatId: flatId);
+                    Utility.addToSharedPref(flatId: flatId, flatIdDefault: flatId[0].split("Name=")[0]);
                     _navigate(_navigatorContext, 3, flatId: flatId);
                   } else if (statusForUserReq == "-1") {
                     _navigate(_navigatorContext, 2,

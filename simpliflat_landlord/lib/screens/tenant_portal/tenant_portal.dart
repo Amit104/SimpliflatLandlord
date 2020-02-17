@@ -5,14 +5,17 @@ import 'package:simpliflat_landlord/icons/icons_custom_icons.dart';
 import 'package:simpliflat_landlord/screens/profile/profile_options.dart';
 import '../dashboard.dart';
 import '../utility.dart';
+import 'add_flat.dart';
 import 'document_manager.dart';
 import 'message_board.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 
 class LandlordPortal extends StatefulWidget {
-  final flatId;
+  var flatId;
 
-  LandlordPortal(this.flatId);
+  LandlordPortal(flatId) {
+    this.flatId = flatId;
+  }
 
   @override
   State<StatefulWidget> createState() {
@@ -24,9 +27,8 @@ class _LandlordPortal extends State<LandlordPortal> {
   int _selectedIndex = 0;
 
   //profile details
-  final flatId;
+  var flatId;
   String flatName = "Hey!";
-  String displayId = "";
   String userName = "";
   String userPhone = "";
   var userId;
@@ -35,7 +37,9 @@ class _LandlordPortal extends State<LandlordPortal> {
 
   FirebaseMessaging firebaseMessaging = new FirebaseMessaging();
 
-  _LandlordPortal(this.flatId);
+  _LandlordPortal(flatId) {
+    this.flatId = flatId;
+  }
 
   // Initialise Firestore notifications
   @override
@@ -76,17 +80,19 @@ class _LandlordPortal extends State<LandlordPortal> {
                 .document(userId)
                 .updateData({'notification_token': notificationToken}).then(
                     (updated) {
-                  Utility.addToSharedPref(notificationToken: notificationToken);
-                });
+              Utility.addToSharedPref(notificationToken: notificationToken);
+            });
           }
         });
       }
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
+    Utility.getFlatId().then((flat) {
+      if (flat != null) flatId = flat;
+    });
     _updateUserDetails();
     fetchFlatName(context);
     return WillPopScope(
@@ -102,9 +108,21 @@ class _LandlordPortal extends State<LandlordPortal> {
             ),
             elevation: 0.0,
             centerTitle: true,
+            leading: IconButton(
+              icon: Icon(
+                Icons.group,
+                color: Colors.redAccent,
+              ),
+              onPressed: () {
+                changeDefaultFlat();
+              },
+            ),
             actions: <Widget>[
               IconButton(
-                icon: Icon(Icons.person, color: Colors.red,),
+                icon: Icon(
+                  Icons.person,
+                  color: Colors.redAccent,
+                ),
                 onPressed: () {
                   navigateToProfileOptions();
                 },
@@ -125,7 +143,8 @@ class _LandlordPortal extends State<LandlordPortal> {
               BottomNavigationBarItem(
                   icon: Icon(Icons.message), title: Text('Messages')),
               BottomNavigationBarItem(
-                  icon: Icon(Icons.insert_drive_file), title: Text('Documents')),
+                  icon: Icon(Icons.insert_drive_file),
+                  title: Text('Documents')),
             ],
             currentIndex: _selectedIndex,
             unselectedItemColor: Colors.indigo[900],
@@ -144,7 +163,6 @@ class _LandlordPortal extends State<LandlordPortal> {
     });
   }
 
-
   //update user info if missing in shared preferences
   void _updateUserDetails() async {
     var _userId = await Utility.getUserId();
@@ -154,18 +172,21 @@ class _LandlordPortal extends State<LandlordPortal> {
         _userName == "" ||
         _userPhone == null ||
         _userPhone == "") {
-      Firestore.instance.collection(globals.landlord).document(_userId).get().then(
-              (snapshot) {
-            if (snapshot.exists) {
-              if(mounted)
-                setState(() {
-                  userName = snapshot.data['name'];
-                  userPhone = snapshot.data['phone'];
-                });
-              Utility.addToSharedPref(userName: userName);
-              Utility.addToSharedPref(userPhone: userPhone);
-            }
-          }, onError: (e) {});
+      Firestore.instance
+          .collection(globals.landlord)
+          .document(_userId)
+          .get()
+          .then((snapshot) {
+        if (snapshot.exists) {
+          if (mounted)
+            setState(() {
+              userName = snapshot.data['name'];
+              userPhone = snapshot.data['phone'];
+            });
+          Utility.addToSharedPref(userName: userName);
+          Utility.addToSharedPref(userPhone: userPhone);
+        }
+      }, onError: (e) {});
     } else {
       userName = await Utility.getUserName();
       userPhone = await Utility.getUserPhone();
@@ -173,12 +194,11 @@ class _LandlordPortal extends State<LandlordPortal> {
   }
 
   // update flat info if missing in shared preferences
+  // TODO update name of flats stored in landlord table
   void fetchFlatName(context) async {
     Utility.getFlatName().then((name) {
       if (flatName == null ||
-          flatName == "" ||
-          displayId == "" ||
-          displayId == null) {
+          flatName == "") {
         Firestore.instance
             .collection(globals.flat)
             .document(flatId)
@@ -186,10 +206,8 @@ class _LandlordPortal extends State<LandlordPortal> {
             .then((flat) {
           if (flat != null) {
             Utility.addToSharedPref(flatName: flat['name'].toString());
-            Utility.addToSharedPref(displayId: flat['display_id'].toString());
-            if(mounted)
+            if (mounted)
               setState(() {
-                displayId = flat['display_id'].toString();
                 flatName = flat['name'].toString().trim();
                 if (flatName == null || flatName == "") flatName = "Hey!";
               });
@@ -197,12 +215,12 @@ class _LandlordPortal extends State<LandlordPortal> {
         });
       }
       if (name != null) {
-        if(mounted)
+        if (mounted)
           setState(() {
             flatName = name;
           });
       } else {
-        if(mounted)
+        if (mounted)
           setState(() {
             flatName = "Hey there!";
           });
@@ -211,15 +229,124 @@ class _LandlordPortal extends State<LandlordPortal> {
   }
 
   void navigateToProfileOptions() async {
-    Map result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
           builder: (context) =>
-              ProfileOptions(userName, userPhone, flatName, displayId, flatId)),
+              ProfileOptions(userName, userPhone, flatName, flatId)),
     );
   }
 
   moveToLastScreen(_navigatorContext) {
     Navigator.pop(_navigatorContext, true);
+  }
+
+  void changeDefaultFlat() async {
+    List flatList = await Utility.getFlatIdList();
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return FilterSheet(this.filterChange, flatList, flatId);
+      },
+    );
+  }
+
+  void filterChange(String flat, String name) {
+    if(flat!=null && flat!="") {
+      setState(() {
+        Utility.addToSharedPref(
+            flatIdDefault: flat, flatName: name.toString().trim());
+        flatId = flat;
+        flatName = name;
+      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) {
+          return LandlordPortal(flatId);
+        }),
+      );
+    }
+  }
+}
+
+class FilterSheet extends StatefulWidget {
+  Function callback;
+  final flatList;
+  final defaultFlat;
+
+  FilterSheet(this.callback, this.flatList, this.defaultFlat);
+
+  @override
+  State<StatefulWidget> createState() {
+    return new _FilterSheet(this.flatList, this.defaultFlat);
+  }
+}
+
+class _FilterSheet extends State<FilterSheet> {
+  final flatList, defaultFlat;
+
+  _FilterSheet(this.flatList, this.defaultFlat);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(left: 30.0),
+                child: Text(
+                  "Select Flat",
+                  style: TextStyle(
+                    fontSize: 16.0,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(right: 10.0),
+              child: IconButton(
+                icon: Icon(Icons.add,),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) {
+                      return AddFlat(defaultFlat);
+                    }),
+                  );
+                },
+              ),
+            )
+          ],
+        ),
+        ListView.builder(
+          itemCount: flatList.length,
+          shrinkWrap: true,
+          itemBuilder: (context, index) {
+            return ListTile(
+              title: Text(
+                '${flatList[index].split("Name=")[1]}',
+                style: defaultFlat == flatList[index].split("Name=")[0]
+                    ? TextStyle(color: Colors.redAccent)
+                    : TextStyle(color: Colors.black),
+              ),
+              leading: Icon(
+                Icons.arrow_right,
+                color: defaultFlat == flatList[index].split("Name=")[0]
+                    ? Colors.redAccent
+                    : Colors.black,
+              ),
+              onTap: () {
+                Navigator.of(context).pop();
+                this.widget.callback(flatList[index].split("Name=")[0], flatList[index].split("Name=")[1]);
+
+              },
+            );
+          },
+        ),
+      ],
+    );
   }
 }
