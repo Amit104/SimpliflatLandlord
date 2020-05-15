@@ -213,7 +213,7 @@ class _SignUpNameUser extends State<SignUpName> {
 
   void _onSuccess({userId, flatId, displayId}) {
     Utility.addToSharedPref(
-        userId: userId, flatIdDefault: flatId[0].split("Name=")[0], flatId: flatId);
+        userId: userId, flatIdDefault: flatId[0], flatIdList: flatId);
     setState(() {
       _isButtonDisabled = false;
       _progressCircleState = 2;
@@ -259,7 +259,7 @@ class _SignUpNameUser extends State<SignUpName> {
           _onSuccess(
               userId: snapshot.documents[0].documentID,
               flatId: existingUser['flat_id']);
-          navigateToHome(existingUser['flat_id'][0].split("Name=")[0]);
+          navigateToHome(existingUser['flat_id'][0]);
         }
       }
     }, onError: (e) {

@@ -323,10 +323,14 @@ class _CreateUserFlat extends State<CreateFlat> {
 
               //update user
               List landlordFlatList = new List();
-              landlordFlatList.add(flatId.toString().trim() + "Name=" + flatIdName);
+              landlordFlatList.add(flatId.toString().trim());
               var userRef =
                   Firestore.instance.collection(globals.landlord).document(uID);
               batch.updateData(userRef, {'flat_id': landlordFlatList});
+
+              // to store flat id with name in shared preferences
+              List landlordFlatListWithName = new List();
+              landlordFlatListWithName.add(flatId.toString().trim() + "Name=" + flatIdName.toString().trim());
 
               //update flat landlord
               var flatRef = Firestore.instance
@@ -336,7 +340,7 @@ class _CreateUserFlat extends State<CreateFlat> {
 
               batch.commit().then((res) {
                 debugPrint("ADDED TO FLAT");
-                Utility.addToSharedPref(flatIdDefault: flatId, flatId: landlordFlatList, flatName: flatIdName);
+                Utility.addToSharedPref(flatIdDefault: flatId, flatIdList: landlordFlatListWithName, flatName: flatIdName);
                 setState(() {
                   _navigateToHome(flatId);
                   _isButtonDisabled = false;

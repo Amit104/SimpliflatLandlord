@@ -117,11 +117,96 @@ class MyApp extends StatelessWidget {
     var userId;
     var flatId;
     SharedPreferences.getInstance().then((SharedPreferences sp) {
-      Timer(Duration(milliseconds: 2000), () {
+      Timer(Duration(milliseconds: 2000), () async {
+        //check shared prefs for user and flat existence
         userId = sp.get(globals.userId);
         flatId = sp.get(globals.flatIdDefault);
         if (userId != null) userId = userId.toString();
-        if (flatId != null) flatId = flatId.toString();
+        if (flatId != null) flatId = flatId;
+
+        // check for new flats and any removed flats
+        var flatList = await Utility.getFlatIdList();
+        var newList = new List();
+        if(flatList==null) {
+          flatList = new List();
+        }
+
+        Firestore.instance
+            .collection(globals.landlord)
+            .document(userId)
+            .get()
+            .then((snapshot) {
+          if (snapshot.exists) {
+            var newFlatIdList = snapshot.data['flat'];
+            if (newFlatIdList != null) {
+              for (var newId in newFlatIdList) {
+                var name = '';
+                for (var id in flatList) {
+                  if (id.contains(newId) && id.contains("Name=")) {
+                    name = id.split("Name=")[1];
+                  }
+                }
+                if (name != '') {
+                  newList.add(newId + "Name=" + name);
+                } else {
+                  newList.add(newId);
+                }
+              }
+              Utility.addToSharedPref(flatIdList: newList);
+              flatList = newList;
+            }
+          }
+        }, onError: (e) {});
+
+        // START: check if all the flats have names present. if not update them.
+
+        var defaultFlatName = await Utility.getFlatName();
+        List toUpdateFlatRefs = new List();
+        if (flatList != null) {
+          for (String id in flatList) {
+            debugPrint(id);
+            if (id.contains("Name=")) continue;
+            toUpdateFlatRefs.add(FlatIncomingReq(
+                Firestore.instance.collection(globals.flat).document(id),
+                id));
+          }
+        }
+
+        Map<String, String> flatIdName = new Map();
+
+        Firestore.instance.runTransaction((transaction) async {
+          for (int i = 0; i < toUpdateFlatRefs.length; i++) {
+            DocumentSnapshot flatData =
+            await transaction.get(toUpdateFlatRefs[i].ref);
+            if (flatData.exists)
+              flatIdName[toUpdateFlatRefs[i].displayId] =
+              flatData.data['name'];
+          }
+        }).whenComplete(() {
+          debugPrint("IN WHEN COMPLETE TRANSACTION");
+          List updatedFlatList = new List();
+          for (String id in flatList) {
+            if (id == flatId) {
+              if (defaultFlatName == null || defaultFlatName == "") {
+                if (id.contains("Name=")) {
+                  Utility.addToSharedPref(flatName: id.split("Name=")[1]);
+                } else if (flatIdName.containsKey(id)) {
+                  Utility.addToSharedPref(flatName: flatIdName[id]);
+                }
+              }
+            }
+            if (id.contains("Name="))
+              updatedFlatList.add(id);
+            else {
+              if (flatIdName.containsKey(id))
+                updatedFlatList.add(id + "Name=" + flatIdName[id]);
+              else
+                updatedFlatList.add(id);
+            }
+          }
+          Utility.addToSharedPref(flatIdList: updatedFlatList);
+        });
+        // END: check if all the flats have names present. if not update them.
 
         userId == null
             ? debugPrint("User Id is null")
@@ -193,7 +278,10 @@ class MyApp extends StatelessWidget {
                 if (userRequested) {
                   userId = userId.toString();
                   if (statusForUserReq == "1") {
-                    Utility.addToSharedPref(flatId: flatId, flatIdDefault: flatId[0].split("Name=")[0]);
+                    //this should never run as flat field in landlord collection will be updated if request is accepted by tenant
+                    List flatList = new List();
+                    flatList.add(flatId);
+                    Utility.addToSharedPref(flatIdList: flatList, flatIdDefault: flatId[0]);
                     _navigate(_navigatorContext, 3, flatId: flatId);
                   } else if (statusForUserReq == "-1") {
                     _navigate(_navigatorContext, 2,

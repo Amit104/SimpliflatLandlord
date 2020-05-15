@@ -17,7 +17,7 @@ class Utility {
   }
 
   static void addToSharedPref(
-      {userName: 'null', userPhone: '',userId: 'null', flatId: 'null', flatIdDefault: 'null', notificationToken: 'null', flatName: 'null'}) async {
+      {userName: 'null', userPhone: '',userId: 'null', flatIdList: 'null', flatIdDefault: 'null', notificationToken: 'null', flatName: 'null'}) async {
     final prefs = await SharedPreferences.getInstance();
     if (userName != 'null')
       await prefs.setString(globals.userName, userName.toString());
@@ -25,12 +25,12 @@ class Utility {
       await prefs.setString(globals.userPhone, userPhone.toString());
     if (userId != 'null')
       await prefs.setString(globals.userId, userId.toString());
-    if (flatId != 'null') {
+    if (flatIdList != 'null') {
       List<String> temp = new List();
-      for(var id in flatId) {
+      for(var id in flatIdList) {
         temp.add(id.toString());
       }
-      await prefs.setStringList(globals.flatId, temp);
+      await prefs.setStringList(globals.flatIdList, temp);
     }
     if (flatIdDefault != 'null')
       await prefs.setString(globals.flatIdDefault, flatIdDefault);
@@ -56,7 +56,7 @@ class Utility {
     return await prefs.get(globals.userId);
   }
 
-  static Future<String> getFlatId() async {
+  static Future<String> getFlatIdDefault() async {
     final prefs = await SharedPreferences.getInstance();
     // Try reading data from the counter key. If it does not exist, return 0.
     return await prefs.get(globals.flatIdDefault);
@@ -65,7 +65,7 @@ class Utility {
   static Future<List<String>> getFlatIdList() async {
     final prefs = await SharedPreferences.getInstance();
     // Try reading data from the counter key. If it does not exist, return 0.
-    return await prefs.getStringList(globals.flatId);
+    return await prefs.getStringList(globals.flatIdList);
   }
 
   static Future<String> getFlatDisplayId() async {

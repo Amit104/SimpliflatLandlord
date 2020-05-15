@@ -134,7 +134,7 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
             if (statusForUserReq == "1") {
               List flatList = new List();
               flatList.add(flatId.toString().trim());
-              Utility.addToSharedPref(flatIdDefault: flatId, flatId: flatList);
+              Utility.addToSharedPref(flatIdDefault: flatId, flatIdList: flatList);
               _navigateToHome(flatId);
             } else if (statusForUserReq == "-1") {
               setState(() {
@@ -558,11 +558,15 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
 
                 //update user
                 List landlordFlatList = new List();
-                landlordFlatList.add(flatId.toString().trim() + "Name=" + flatName);
+                landlordFlatList.add(flatId.toString().trim());
                 var userRef = Firestore.instance
                     .collection(globals.landlord)
                     .document(userId);
                 batch.updateData(userRef, {'flat_id': landlordFlatList});
+
+                // to store flat id with name in shared preferences
+                List landlordFlatListWithName = new List();
+                landlordFlatListWithName.add(flatId.toString().trim() + "Name=" + flatName.toString().trim());
 
                 //update flat landlord
                 var flatRef = Firestore.instance
@@ -575,7 +579,7 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
                   Utility.addToSharedPref(
                       flatIdDefault: flatId,
                       flatName: flatName,
-                      flatId: landlordFlatList);
+                      flatIdList: landlordFlatListWithName);
                   setState(() {
                     _navigateToHome(flatId);
                     _isButtonDisabled = false;
@@ -635,8 +639,8 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
           if (landlordUser != null && landlordUser['flat_id'] != null &&
               landlordUser['flat_id'] != "") {
             Utility.addToSharedPref(
-                flatIdDefault: landlordUser['flat_id'],
-                flatId: landlordUser['flat_id'][0]);
+                flatIdDefault: landlordUser['flat_id'][0],
+                flatIdList: landlordUser['flat_id']);
             _navigateToHome(landlordUser['flat_id'][0]);
           } else {
             flatId = "";

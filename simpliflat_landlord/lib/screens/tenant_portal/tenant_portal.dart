@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:simpliflat_landlord/icons/icons_custom_icons.dart';
 import 'package:simpliflat_landlord/screens/profile/profile_options.dart';
+import '../../main.dart';
 import '../dashboard.dart';
 import '../utility.dart';
 import 'add_flat.dart';
@@ -90,7 +91,7 @@ class _LandlordPortal extends State<LandlordPortal> {
 
   @override
   Widget build(BuildContext context) {
-    Utility.getFlatId().then((flat) {
+    Utility.getFlatIdDefault().then((flat) {
       if (flat != null) flatId = flat;
     });
     _updateUserDetails();
@@ -166,6 +167,8 @@ class _LandlordPortal extends State<LandlordPortal> {
   //update user info if missing in shared preferences
   void _updateUserDetails() async {
     var _userId = await Utility.getUserId();
+    var flatList = await Utility.getFlatIdList();
+
     var _userName = await Utility.getUserName();
     var _userPhone = await Utility.getUserPhone();
     if (_userName == null ||
@@ -243,12 +246,21 @@ class _LandlordPortal extends State<LandlordPortal> {
 
   void changeDefaultFlat() async {
     List flatList = await Utility.getFlatIdList();
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return FilterSheet(this.filterChange, flatList, flatId);
-      },
-    );
+    bool sanityCheck = await checkSanityOfNames(flatList);
+    for (String id in flatList) {
+      debugPrint(id);
+      if (!id.contains("Name="))
+        sanityCheck = false;
+    }
+    if(sanityCheck)
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return FilterSheet(this.filterChange, flatList, flatId);
+        },
+      );
+    else
+      Utility.createErrorSnackBar(context, error: "Something went wrong! Please turn on internet or restart the app.");
   }
 
   void filterChange(String flat, String name) {
@@ -266,6 +278,63 @@ class _LandlordPortal extends State<LandlordPortal> {
         }),
       );
     }
+  }
+
+  Future<bool> checkSanityOfNames(List flatList) async {
+    var updated = true;
+
+    if(flatList==null) {
+      flatList = new List();
+    }
+
+    var defaultFlatName = await Utility.getFlatName();
+    List toUpdateFlatRefs = new List();
+    if (flatList != null) {
+      for (String id in flatList) {
+        debugPrint(id);
+        if (id.contains("Name=")) continue;
+        toUpdateFlatRefs.add(FlatIncomingReq(
+            Firestore.instance.collection(globals.flat).document(id),
+            id));
+      }
+    }
+
+    Map<String, String> flatIdName = new Map();
+
+    Firestore.instance.runTransaction((transaction) async {
+      for (int i = 0; i < toUpdateFlatRefs.length; i++) {
+        DocumentSnapshot flatData =
+        await transaction.get(toUpdateFlatRefs[i].ref);
+        if (flatData.exists)
+          flatIdName[toUpdateFlatRefs[i].displayId] =
+          flatData.data['name'];
+      }
+    }).whenComplete(() {
+      debugPrint("IN WHEN COMPLETE TRANSACTION");
+      List updatedFlatList = new List();
+      for (String id in flatList) {
+        if (id == flatId) {
+          if (defaultFlatName == null || defaultFlatName == "") {
+            if (id.contains("Name=")) {
+              Utility.addToSharedPref(flatName: id.split("Name=")[1]);
+            } else if (flatIdName.containsKey(id)) {
+              Utility.addToSharedPref(flatName: flatIdName[id]);
+            }
+          }
+        }
+        if (id.contains("Name="))
+          updatedFlatList.add(id);
+        else {
+          if (flatIdName.containsKey(id))
+            updatedFlatList.add(id + "Name=" + flatIdName[id]);
+          else
+            updated = false;
+        }
+      }
+      if(updated)
+        Utility.addToSharedPref(flatIdList: updatedFlatList);
+    });
+    return updated;
   }
 }
 
@@ -327,7 +396,7 @@ class _FilterSheet extends State<FilterSheet> {
           itemBuilder: (context, index) {
             return ListTile(
               title: Text(
-                '${flatList[index].split("Name=")[1]}',
+                flatList[index].split("Name=")[1] != null ? flatList[index].split("Name=")[1]: "PlaceholderFlatName",
                 style: defaultFlat == flatList[index].split("Name=")[0]
                     ? TextStyle(color: Colors.redAccent)
                     : TextStyle(color: Colors.black),
@@ -340,8 +409,7 @@ class _FilterSheet extends State<FilterSheet> {
               ),
               onTap: () {
                 Navigator.of(context).pop();
-                this.widget.callback(flatList[index].split("Name=")[0], flatList[index].split("Name=")[1]);
-
+                this.widget.callback(flatList[index].split("Name=")[0], flatList[index].split("Name=")[1] != null ? flatList[index].split("Name=")[1] : "PlaceholderFlatName");
               },
             );
           },

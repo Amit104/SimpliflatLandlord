@@ -93,7 +93,7 @@ class _AddFlat extends State<AddFlat> {
             if (flatData.exists)
               flatIdGetDisplay[i].displayId = flatData.data['display_id'];
           }
-        }).whenComplete(() {
+        }).whenComplete(() async {
           debugPrint("IN WHEN COMPLETE TRANSACTION");
           for (int i = 0; i < flatIdGetDisplay.length; i++) {
             incomingRequestsTemp.add(flatIdGetDisplay[i].displayId);
@@ -108,9 +108,9 @@ class _AddFlat extends State<AddFlat> {
             userId = userId.toString();
             flatId = flatId.toString();
             if (statusForUserReq == "1") {
-              List flatList = new List();
+              var flatList = await Utility.getFlatIdList();
               flatList.add(flatId.toString().trim());
-              Utility.addToSharedPref(flatIdDefault: flatId, flatId: flatList);
+              Utility.addToSharedPref(flatIdDefault: flatId, flatIdList: flatList);
               _navigateToHome(flatId);
             } else if (statusForUserReq == "-1") {
               setState(() {
@@ -487,6 +487,14 @@ class _AddFlat extends State<AddFlat> {
     });
     var userId = await _getFromSharedPref();
     List landlordFlatList = await Utility.getFlatIdList();
+    List flatListOnly = new List();
+    for(String id in landlordFlatList)
+    {
+      if(id.contains("Name="))
+        flatListOnly.add(id.split("Name=")[0]);
+      else
+        flatListOnly.add(id);
+    }
     var timeNow = DateTime.now();
     Firestore.instance
         .collection(globals.flat)
@@ -523,7 +531,7 @@ class _AddFlat extends State<AddFlat> {
                   .where("flat_id", isEqualTo: flatId)
                   .where("request_from_flat", isEqualTo: 1)
                   .getDocuments()
-                  .then((toAcceptData) {
+                  .then((toAcceptData) async {
                 if (toAcceptData.documents != null &&
                     toAcceptData.documents.length != 0) {
                   toAccept = Firestore.instance
@@ -540,11 +548,15 @@ class _AddFlat extends State<AddFlat> {
                     toAccept, {'status': 1, 'updated_at': timeNow});
 
                 //update user
-                landlordFlatList.add(flatId.toString().trim() + "Name=" + flatName);
+                flatListOnly.add(flatId.toString().trim());
                 var userRef = Firestore.instance
                     .collection(globals.landlord)
                     .document(userId);
-                batch.updateData(userRef, {'flat_id': landlordFlatList});
+                batch.updateData(userRef, {'flat_id': flatListOnly});
+
+                // to store flat id with name in shared preferences
+                List landlordFlatListWithName = landlordFlatList;
+                landlordFlatListWithName.add(flatId.toString().trim() + "Name=" + flatName.toString().trim());
 
                 //update flat landlord
                 var flatRef = Firestore.instance
@@ -557,7 +569,7 @@ class _AddFlat extends State<AddFlat> {
                   Utility.addToSharedPref(
                       flatIdDefault: flatId,
                       flatName: flatName,
-                      flatId: landlordFlatList);
+                      flatIdList: landlordFlatListWithName);
                   setState(() {
                     _navigateToHome(flatId);
                     _isButtonDisabled = false;
@@ -625,7 +637,7 @@ class _AddFlat extends State<AddFlat> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) {
-        return LandlordPortal(flatId);
+        return MyApp();
       }),
     );
   }

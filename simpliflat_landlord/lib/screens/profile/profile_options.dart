@@ -254,6 +254,15 @@ class _ProfileOptions extends State<ProfileOptions> {
 
     var batch = Firestore.instance.batch();
     List flatList = await Utility.getFlatIdList();
+    List flatListOnly = new List();
+    for(String id in flatList)
+    {
+      if(id.contains("Name="))
+        flatListOnly.add(id.split("Name=")[0]);
+      else
+        flatListOnly.add(id);
+    }
+
     //update joinflat
     var data = {"status": -1};
     Firestore.instance
@@ -273,17 +282,23 @@ class _ProfileOptions extends State<ProfileOptions> {
         batch.updateData(reqRef, data);
 
         var userRef = Firestore.instance.collection(globals.landlord).document(uID);
-        flatList.remove(flatId);
-        batch.updateData(userRef, {"flat_id": flatList});
+        flatListOnly.remove(flatId);
+        batch.updateData(userRef, {"flat_id": flatListOnly});
 
         var flatRef = Firestore.instance.collection(globals.flat).document(flatId);
         batch.updateData(flatRef, {'landlord_id': null});
 
         batch.commit().then((res) async {
           debugPrint("Exit flat");
-
           //remove sharedPreferences
-          Utility.addToSharedPref(flatIdDefault: flatList[0], flatId: flatList);
+          List flatListWithName = new List();
+          for(String id in flatList)
+          {
+            if(!id.contains(flatId))
+              flatListWithName.add(id);
+          }
+          Utility.addToSharedPref(
+              flatIdDefault: flatList[0].split("Name=")[0], flatIdList: flatListWithName);
           _backHome();
         }, onError: (e) {
           _setErrorState(_scaffoldContext, "CALL ERROR");
