@@ -8,6 +8,7 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:simpliflat_landlord/screens/widgets/common.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
 import '../utility.dart';
@@ -44,6 +45,19 @@ class _DocumentManager extends State<DocumentManager> {
     super.initState();
   }
 
+  _requestStoragePermission() {
+    Permission.storage.status.then((status) async {
+      if (status.isPermanentlyDenied) {
+        Utility.createErrorSnackBar(_navigatorContext,
+            error: "Please allow storage permission in app settings!");
+      } else if (status.isUndetermined || status.isDenied) {
+        Map<Permission, PermissionStatus> statuses = await [
+          Permission.storage,
+        ].request();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     Utility.getUserId().then((id) {
@@ -55,9 +69,10 @@ class _DocumentManager extends State<DocumentManager> {
     return Scaffold(
       floatingActionButton: new FloatingActionButton(
         onPressed: () {
+          _requestStoragePermission();
           _openFileExplorer();
         },
-        tooltip: 'New Document',
+        tooltip: 'Upload Document',
         backgroundColor: Colors.red[900],
         child: new Icon(Icons.add),
       ),
@@ -204,8 +219,7 @@ class _DocumentManager extends State<DocumentManager> {
 
                   if (dismiss) {
                     _deleteList(_navigatorContext, list.reference);
-                    if(state != null)
-                      state.dismiss();
+                    if (state != null) state.dismiss();
                   }
                 },
               ),
@@ -225,7 +239,12 @@ class _DocumentManager extends State<DocumentManager> {
                         )),
                     padding: EdgeInsets.only(bottom: 5.0),
                   ),
-                  Text(list['file_name'].toString().replaceAll("_" + list['file_name'].split("_").last, "").trim(),
+                  Text(
+                      list['file_name']
+                          .toString()
+                          .replaceAll(
+                              "_" + list['file_name'].split("_").last, "")
+                          .trim(),
                       style: TextStyle(
                         fontSize: 12.0,
                         fontFamily: 'Montserrat',
@@ -246,6 +265,7 @@ class _DocumentManager extends State<DocumentManager> {
               trailing: InkWell(
                 child: Icon(Icons.file_download),
                 onTap: () {
+                  _requestStoragePermission();
                   downloadFile(list['file_url'], list['file_name']);
                 },
               ),
@@ -272,7 +292,7 @@ class _DocumentManager extends State<DocumentManager> {
         StorageReference storageReference = FirebaseStorage.instance
             .ref()
             .child("TenantDocuments/" + _fileName);
-        storageReference.delete().then((deleted){
+        storageReference.delete().then((deleted) {
           Firestore.instance
               .collection(globals.flat)
               .document(_flatId)
@@ -285,7 +305,7 @@ class _DocumentManager extends State<DocumentManager> {
           }, onError: (e) {
             if (mounted) Utility.createErrorSnackBar(_navigatorContext);
           });
-        }, onError: (e){
+        }, onError: (e) {
           if (mounted) Utility.createErrorSnackBar(_navigatorContext);
         });
       }
@@ -349,6 +369,15 @@ class _DocumentManager extends State<DocumentManager> {
 
   uploadFile(file, _fileName, fileLength) async {
     String fileUrl;
+    debugPrint("uploading file of length = " + fileLength.toString());
+
+    if (fileLength > 10000000) {
+      if (mounted)
+        Utility.createErrorSnackBar(_navigatorContext,
+            error: "File Limit exceeded! limit is 10 MB");
+      return;
+    }
+
     StorageReference storageReference =
         FirebaseStorage.instance.ref().child("TenantDocuments/" + _fileName);
     StorageUploadTask uploadTask = storageReference.putFile(file);
@@ -372,19 +401,25 @@ class _DocumentManager extends State<DocumentManager> {
     String _localPath =
         (await _findLocalPath()) + Platform.pathSeparator + 'Download';
     debugPrint(_localPath + " - Saved");
+
     final savedDir = Directory(_localPath);
     bool hasExisted = await savedDir.exists();
     if (!hasExisted) {
       savedDir.create();
     }
 
-    final taskId = await FlutterDownloader.enqueue(
+    final _download = await FlutterDownloader.enqueue(
       url: fileUrl,
       savedDir: _localPath,
-      fileName: name.toString().replaceAll("_" + name.split("_").last, "").trim(),
+      fileName:
+          name.toString().replaceAll("_" + name.split("_").last, "").trim(),
       showNotification: true,
       openFileFromNotification: true,
-    );
+    ).then((taskId) async {
+      String query = "SELECT * FROM task WHERE status=3";
+      final tasks = await FlutterDownloader.loadTasksWithRawQuery(query: query);
+      FlutterDownloader.open(taskId: tasks[1].taskId);
+    });
   }
 
   Future<String> _findLocalPath() async {
