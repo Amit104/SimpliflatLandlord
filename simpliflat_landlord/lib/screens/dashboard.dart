@@ -202,37 +202,26 @@ class DashboardState extends State<Dashboard> {
         return null;
       },
       child: Scaffold(
+        backgroundColor: Colors.white,
         body: Builder(builder: (BuildContext scaffoldC) {
           _navigatorContext = scaffoldC;
           return new SingleChildScrollView(
             child: Column(
               children: <Widget>[
-                SizedBox(
-                  height: 30.0,
-                ),
                 flatNameWidget(),
-                SizedBox(
-                  height: 30.0,
-                ),
 
                 // Today's Items
 
                 getStatistics(),
-                SizedBox(
-                  height: 20.0,
-                ),
+                
 
                 getNewRequestsWidget(),
 
-                SizedBox(
-                  height: 20.0,
-                ),
+                
                 // Today's Items
 
                 getTasks(),
-                SizedBox(
-                  height: 20.0,
-                ),
+                
 
                 getNotices(),
               ],
@@ -296,17 +285,31 @@ class DashboardState extends State<Dashboard> {
           return LoadingContainerVertical(2);
         }
 
-        return ListView.builder(
-          shrinkWrap: true,
-          scrollDirection: Axis.vertical,
-          itemCount: documents.data.length,
-          itemBuilder: (context, position) {
-            return getRequestTile(
-                context, position, documents.data[position], documents);
-            // return ListTile(
-            //   title: Text(pendingRequestsFlatNameIdList[documents.data[position]['flat_id']]),
-            // );
-          },
+        if(documents.data.length == 0)
+          return Container();
+
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: 5.0),
+          child: Card(
+            elevation: 5.0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+              Container(padding: EdgeInsets.only(top: 20.0,bottom:20.0,left:10.0),  decoration: getBlueGradientBackground(), child: Text('Requests For You', style: TextStyle(color: Colors.white),)),
+              ListView.builder(
+                shrinkWrap: true,
+                scrollDirection: Axis.vertical,
+                itemCount: documents.data.length,
+                itemBuilder: (context, position) {
+                  return getRequestTile(
+                      context, position, documents.data[position], documents);
+                  // return ListTile(
+                  //   title: Text(pendingRequestsFlatNameIdList[documents.data[position]['flat_id']]),
+                  // );
+                },
+              ),
+            ]),
+          ),
         );
       },
     );
@@ -316,69 +319,57 @@ class DashboardState extends State<Dashboard> {
       DocumentSnapshot document, AsyncSnapshot<dynamic> documents) {
     debugPrint("flat name = " + document['flat_id']);
     return Container(
-      padding: const EdgeInsets.only(left: 8.0, right: 8.0),
       child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.95,
-        child: Card(
-            color: Colors.white,
-            elevation: 1.0,
-            child: Dismissible(
-              key: ObjectKey(document['flat_id']),
-              background: swipeBackground(),
-              onDismissed: (direction) {
-                String request = document['flat_id'];
-                setState(() {
-                  (documents.data as List).removeAt(index);
-                });
-                _respondToJoinRequest(context, request, -1);
-              },
-              child: ListTile(
-                title: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    pendingRequestsFlatNameIdList[document['flat_id']],
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 15.0,
-                      fontFamily: 'Montserrat',
-                    ),
-                  ),
+        child: Dismissible(
+          key: ObjectKey(document['flat_id']),
+          background: swipeBackground(),
+          onDismissed: (direction) {
+            String request = document['flat_id'];
+            setState(() {
+              (documents.data as List).removeAt(index);
+            });
+            _respondToJoinRequest(context, request, -1);
+          },
+          child: ListTile(
+            title: Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Text(
+                pendingRequestsFlatNameIdList[document['flat_id']],
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 15.0,
+                  fontFamily: 'Montserrat',
                 ),
-                subtitle: getFlatIdentifierTextWidget(document['flat_id']),
-                trailing: ButtonTheme(
-                    height: 25.0,
-                    minWidth: 30.0,
-                    child: RaisedButton(
-                        elevation: 0.0,
-                        shape: new RoundedRectangleBorder(
-                          borderRadius: new BorderRadius.circular(10.0),
-                          side: BorderSide(
-                            width: 1.0,
-                            color: Colors.black,
-                          ),
-                        ),
-                        color: Colors.white,
-                        textColor: Theme.of(context).primaryColorDark,
-                        child: (_progressCircleState == 0)
-                            ? setUpButtonChild("Accept")
-                            : setUpButtonChild("Waiting"),
-                        onPressed: () {
-                          if (_isButtonDisabled == false) {
-                            setState(() {
-                              _progressCircleState = 1;
-                            });
-                            _respondToJoinRequest(
-                                context, document['flat_id'], 1);
-                          } else {
-                            setState(() {
-                              _progressCircleState = 1;
-                            });
-                            Utility.createErrorSnackBar(context,
-                                error: "Waiting for Request Call to Complete!");
-                          }
-                        })),
               ),
-            )),
+            ),
+            subtitle: getFlatIdentifierTextWidget(document['flat_id']),
+            trailing: ButtonTheme(
+                height: 25.0,
+                minWidth: 30.0,
+                child: RaisedButton(
+                    elevation: 0.0,
+                    
+                    color: Colors.white,
+                    textColor: Theme.of(context).primaryColorDark,
+                    child: (_progressCircleState == 0)
+                        ? setUpButtonChild("Accept")
+                        : setUpButtonChild("Waiting"),
+                    onPressed: () {
+                      if (_isButtonDisabled == false) {
+                        setState(() {
+                          _progressCircleState = 1;
+                        });
+                        _respondToJoinRequest(context, document['flat_id'], 1);
+                      } else {
+                        setState(() {
+                          _progressCircleState = 1;
+                        });
+                        Utility.createErrorSnackBar(context,
+                            error: "Waiting for Request Call to Complete!");
+                      }
+                    })),
+          ),
+        ),
       ),
     );
   }
@@ -601,6 +592,7 @@ class DashboardState extends State<Dashboard> {
 
   Widget setUpButtonChild(buttonText) {
     if (_progressCircleState == 0) {
+      if(buttonText != 'Accept') {
       return new Text(
         buttonText,
         style: const TextStyle(
@@ -610,6 +602,13 @@ class DashboardState extends State<Dashboard> {
           fontWeight: FontWeight.w700,
         ),
       );
+      }
+      else {
+        return new CircleAvatar(
+        child: Icon(Icons.check),
+        backgroundColor: Colors.blue[50],
+      );
+      }
     } else if (_progressCircleState == 1) {
       return CircularProgressIndicator(
         valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
@@ -619,20 +618,42 @@ class DashboardState extends State<Dashboard> {
     }
   }
 
+  BoxDecoration getBlueGradientBackground() {
+    return new BoxDecoration(
+            gradient: new LinearGradient(
+                colors: [
+                  const Color(0xFF3366a0),
+                  const Color(0xFF00CCFF),
+                ],
+                begin: const FractionalOffset(0.0, 0.0),
+                end: const FractionalOffset(1.0, 0.0),
+                stops: [0.0, 1.0],
+                tileMode: TileMode.clamp),
+          );
+  }
+
   Widget flatNameWidget() {
     if (flatName == null) {
       return CircularProgressIndicator();
     }
-    // return FutureBuilder (
-    //   future: Utility.getFlatName(),
-    //   builder: (context, snapshot) {
-    //     if(!snapshot.hasData) return LoadingContainerVertical(1);
-    return Text(
-      flatName,
-      style: TextStyle(
-        color: Colors.indigo[400],
-        fontSize: 30.0,
-        fontFamily: 'Montserrat',
+
+    return Card(
+      elevation: 5.0,
+      margin: EdgeInsets.only(left: 5.0, top: 10.0, right: 5.0),
+      child: Container(
+        decoration: getBlueGradientBackground(),
+        
+        alignment: Alignment.center,
+        width: MediaQuery.of(context).size.width,
+        padding: EdgeInsets.all(15.0),
+        child: Text(
+          flatName,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 25.0,
+            fontFamily: 'Montserrat',
+          ),
+        ),
       ),
     );
     //  });
@@ -694,8 +715,87 @@ class DashboardState extends State<Dashboard> {
           noticesCount = 0;
 
         readNoticesCount[landlordFlatList[position]] = noticesCount;
-        return Text(noticesCount.toString());
+        return getNoticesIconCountWidget(
+            noticesCount); //Text(noticesCount.toString());
       },
+    );
+  }
+
+  Widget getNoticesIconCountWidget(int count) {
+    String countStr = count.toString();
+    if (count > 999) {
+      countStr = "99+";
+    }
+    return new Container(
+      width: 70.0,
+      height: 70.0,
+      padding: EdgeInsets.all(5.0),
+      child: new Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          Icon(
+            Icons.message,
+            size: 25.0,
+            color: Color(0xFF00CCe0),
+          ),
+          new Align(
+            alignment: Alignment.topRight,
+            child: new Container(
+              width: 30.0,
+              height: 30.0,
+              decoration:
+                  BoxDecoration(color: Color(0xFF3366a0), shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: new Text(
+                countStr,
+                style: new TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.0),
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget getTasksIconCountWidget(int count) {
+    String countStr = count.toString();
+    if (count > 999) {
+      countStr = "99+";
+    }
+    return new Container(
+      width: 70.0,
+      height: 70.0,
+      padding: EdgeInsets.all(5.0),
+      child: new Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          Icon(
+            Icons.list,
+            size: 25.0,
+            color: Color(0xFF00CCe0),
+          ),
+          new Align(
+            alignment: Alignment.topRight,
+            child: new Container(
+              width: 30.0,
+              height: 30.0,
+              decoration:
+                  BoxDecoration(color: Color(0xFF3366a0), shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: new Text(
+                countStr,
+                style: new TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.0),
+              ),
+            ),
+          )
+        ],
+      ),
     );
   }
 
@@ -741,7 +841,7 @@ class DashboardState extends State<Dashboard> {
           tasksCount = 0;
 
         readTasksCount[landlordFlatList[position]] = tasksCount;
-        return Text(tasksCount.toString());
+        return getTasksIconCountWidget(tasksCount);
       },
     );
   }
@@ -773,31 +873,40 @@ class DashboardState extends State<Dashboard> {
         (flatNameList == null || flatNameList.isEmpty)) {
       return Container();
     }
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 5.0),
-      child: Card(
-        child: ListView.separated(
-          separatorBuilder: (context, index) {
-            return Divider(height: 1.0);
-          },
-          itemCount: landlordFlatList.length,
-          scrollDirection: Axis.vertical,
-          shrinkWrap: true,
-          itemBuilder: (context, position) {
-            return ListTile(
-              title: Text(flatNameList[position]),
-              subtitle: Row(
+    return ExpansionTile(
+      initiallyExpanded: true,
+          title: Text('Unseen tasks and notices'),
+          children: [Container(
+        margin: EdgeInsets.symmetric(horizontal: 5.0),
+        child: Card(
+          elevation: 5.0,
+          child: ListView.separated(
+            separatorBuilder: (context, index) {
+              return Divider(height: 1.0);
+            },
+            itemCount: landlordFlatList.length,
+            scrollDirection: Axis.vertical,
+            shrinkWrap: true,
+            itemBuilder: (context, position) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Text('Unread Notices: '),
+                  Expanded(
+                      child: Container(
+                          padding: EdgeInsets.only(left: 15.0),
+                          child: Text(flatNameList[position],
+                              style: TextStyle(
+                                  fontSize: 17.0,
+                                  fontFamily: 'Montserrat',
+                                  color: Colors.black)))),
                   getUnreadNoticesWidget(position),
-                  Text('     Unread Tasks: '),
                   getUnreadTasksWidget(position)
                 ],
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
+      )],
     );
   }
 
@@ -855,17 +964,17 @@ class DashboardState extends State<Dashboard> {
                 for (int i = 0; i < taskSnapshot.data.documents.length; i++) {
                   tooltipKey.add(GlobalKey());
                 }
+                if(taskSnapshot.data.documents.isEmpty)
+                  return Container();
 
-                return Column(children: [
-                  taskSnapshot.data.documents.length > 0
-                      ? Text(
-                          'Tasks for you today',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 18.0,
-                          ),
-                        )
-                      : Container(),
+                return Container(
+          margin: EdgeInsets.symmetric(horizontal: 5.0),
+          child: Card(
+            elevation: 5.0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+              Container(padding: EdgeInsets.only(top: 20.0,bottom:20.0,left:10.0),   decoration: getBlueGradientBackground(), child: Text('Tasks For You', style: TextStyle(color: Colors.white),)),
                   new ListView.builder(
                     itemCount: taskSnapshot.data.documents.length,
                     scrollDirection: Axis.vertical,
@@ -895,44 +1004,40 @@ class DashboardState extends State<Dashboard> {
                           padding: const EdgeInsets.only(right: 8.0, left: 8.0),
                           child: SizedBox(
                             width: MediaQuery.of(context).size.width * 0.85,
-                            child: Card(
-                              color: Colors.white,
-                              elevation: 2.0,
-                              child: ListTile(
-                                title: CommonWidgets.textBox(
-                                    taskSnapshot.data.documents[position]
-                                        ["title"],
-                                    15.0,
-                                    color: Colors.black),
-                                subtitle: Row(
-                                  children: <Widget>[
-                                    Icon(
-                                      Icons.access_time,
-                                      color: Colors.indigo[700],
-                                      size: 16,
-                                    ),
-                                    Container(
-                                      width: 4.0,
-                                    ),
-                                    CommonWidgets.textBox(datetimeString, 11.0,
-                                        color: Colors.black45),
-                                  ],
-                                ),
-                                trailing: getUsersAssignedView(
-                                    taskSnapshot.data.documents[position]
-                                        ["assignee"],
-                                    snapshot1),
-                                onTap: () {
-                                  navigateToViewTask(
-                                      taskId: taskSnapshot
-                                          .data.documents[position].documentID);
-                                },
+                            child: ListTile(
+                              title: CommonWidgets.textBox(
+                                  taskSnapshot.data.documents[position]
+                                      ["title"],
+                                  15.0,
+                                  color: Colors.black),
+                              subtitle: Row(
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.access_time,
+                                    color: Colors.indigo[700],
+                                    size: 16,
+                                  ),
+                                  Container(
+                                    width: 4.0,
+                                  ),
+                                  CommonWidgets.textBox(datetimeString, 11.0,
+                                      color: Colors.black45),
+                                ],
                               ),
+                              trailing: getUsersAssignedView(
+                                  taskSnapshot.data.documents[position]
+                                      ["assignee"],
+                                  snapshot1),
+                              onTap: () {
+                                navigateToViewTask(
+                                    taskId: taskSnapshot
+                                        .data.documents[position].documentID);
+                              },
                             ),
                           ));
                     },
                   ),
-                ]);
+                ])));
               });
         });
     // });
@@ -1099,17 +1204,20 @@ class DashboardState extends State<Dashboard> {
         } else {
           noticesExist = false;
         }
-        return Column(children: [
-          notesSnapshot.data.documents.length > 0
-              ? Text(
-                  'Notices today',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 18.0,
-                  ),
-                )
-              : Container(),
-          ListView.builder(
+
+        if(notesSnapshot.data.documents.isEmpty)
+          return Container();
+
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: 5.0),
+          child: Card(
+            elevation: 5.0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+              Container(padding: EdgeInsets.only(top: 20.0,bottom:20.0,left:10.0),    decoration: getBlueGradientBackground(), child: Text('Notices For You', style: TextStyle(color: Colors.white),)),
+          ListView.separated(
+            separatorBuilder: (context, builder) {return Divider(height: 1.0);},
               itemCount: notesSnapshot.data.documents.length,
               key: UniqueKey(),
               physics: NeverScrollableScrollPhysics(),
@@ -1118,7 +1226,7 @@ class DashboardState extends State<Dashboard> {
                 return _buildNoticeListItem(
                     notesSnapshot.data.documents[position], position);
               }),
-        ]);
+        ])));
       },
     );
   }
@@ -1142,43 +1250,38 @@ class DashboardState extends State<Dashboard> {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0, left: 8.0),
       child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.85,
-        child: Card(
-          color: Colors.white,
-          elevation: 1.0,
-          child: ListTile(
-            title: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Padding(
-                  child: Text(userName,
-                      style: TextStyle(
-                        fontSize: 12.0,
-                        fontFamily: 'Montserrat',
-                        color:
-                            Colors.primaries[color % Colors.primaries.length],
-                      )),
-                  padding: EdgeInsets.only(bottom: 5.0),
-                ),
-                Text(noticeTitle,
+        child: ListTile(
+          title: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                child: Text(userName,
                     style: TextStyle(
-                      fontSize: 14.0,
+                      fontSize: 12.0,
                       fontFamily: 'Montserrat',
-                      color: Colors.black,
+                      color:
+                          Colors.primaries[color % Colors.primaries.length],
                     )),
-              ],
-            ),
-            subtitle: Padding(
-              child: Text(datetimeString,
-                  textAlign: TextAlign.right,
+                padding: EdgeInsets.only(bottom: 5.0),
+              ),
+              Text(noticeTitle,
                   style: TextStyle(
-                    fontSize: 12.0,
+                    fontSize: 14.0,
                     fontFamily: 'Montserrat',
-                    color: Colors.black45,
+                    color: Colors.black,
                   )),
-              padding: EdgeInsets.only(top: 6.0),
-            ),
+            ],
+          ),
+          subtitle: Padding(
+            child: Text(datetimeString,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: 12.0,
+                  fontFamily: 'Montserrat',
+                  color: Colors.black45,
+                )),
+            padding: EdgeInsets.only(top: 6.0),
           ),
         ),
       ),

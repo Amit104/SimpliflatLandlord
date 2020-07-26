@@ -118,6 +118,7 @@ class _LandlordPortal extends State<LandlordPortal> {
         },
         child: Scaffold(
           appBar: AppBar(
+            backgroundColor: Colors.white,
             title: Text(
               _appBarTitle,
               style: TextStyle(color: Colors.indigo[900]),
@@ -127,7 +128,7 @@ class _LandlordPortal extends State<LandlordPortal> {
             leading: IconButton(
               icon: Icon(
                 Icons.group,
-                color: Colors.redAccent,
+                color: Colors.indigo,
               ),
               onPressed: () {
                 changeDefaultFlat();
@@ -144,7 +145,7 @@ class _LandlordPortal extends State<LandlordPortal> {
               IconButton(
                 icon: Icon(
                   Icons.person,
-                  color: Colors.redAccent,
+                  color: Colors.indigo,
                 ),
                 onPressed: () {
                   navigateToProfileOptions();
