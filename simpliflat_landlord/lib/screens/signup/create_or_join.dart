@@ -16,22 +16,24 @@ class CreateOrJoin extends StatefulWidget {
   List incomingRequests;
   Color ccard, ctext;
   var userId;
+  Map<String, Map> flatIdentifierData;
 
-  CreateOrJoin(requestDenied, incomingRequests) {
+  CreateOrJoin(requestDenied, incomingRequests, flatIdentifierData) {
     this.requestDenied = requestDenied;
     this.incomingRequests = incomingRequests;
+    this.flatIdentifierData = flatIdentifierData;
     if (requestDenied == -1) {
       lastRequestStatus = "Your last join request was denied!";
       ccard = Colors.red[100];
       ctext = Colors.red[600];
     } else if (requestDenied == 0) {
       lastRequestStatus =
-      "Your last request is pending. Wait or join new flat.";
+          "Your last request is pending. Wait or join new flat.";
       ccard = Colors.purple[100];
       ctext = Colors.purple[600];
     } else {
       lastRequestStatus =
-      "Lets get started! You can only be in one flat at a time";
+          "Lets get started! You can only be in one flat at a time";
       ccard = Colors.white;
       ctext = Colors.indigo[900];
     }
@@ -39,7 +41,8 @@ class CreateOrJoin extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    return _CreateOrJoinBody(lastRequestStatus, ccard, ctext, incomingRequests);
+    return _CreateOrJoinBody(
+        lastRequestStatus, ccard, ctext, incomingRequests, flatIdentifierData);
   }
 }
 
@@ -51,11 +54,12 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
   BuildContext scaffoldContext;
   var _isButtonDisabled = false;
   var flatId;
+  Map<String, Map> flatIdentifierData;
 
   var _buttonColor;
 
   _CreateOrJoinBody(this.lastRequestStatus, this.ccard, this.ctext,
-      this.incomingRequests);
+      this.incomingRequests, this.flatIdentifierData);
 
   @override
   void initState() {
@@ -84,7 +88,7 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
 
         List<FlatIncomingReq> flatIdGetDisplay = new List();
         requests.documents.sort((a, b) =>
-        a.data['updated_at'].compareTo(b.data['updated_at']) > 0 ? 1 : -1);
+            a.data['updated_at'].compareTo(b.data['updated_at']) > 0 ? 1 : -1);
         for (int i = 0; i < requests.documents.length; i++) {
           debugPrint("doc + " + requests.documents[i].documentID);
           var data = requests.documents[i].data;
@@ -113,18 +117,31 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
         Firestore.instance.runTransaction((transaction) async {
           for (int i = 0; i < flatIdGetDisplay.length; i++) {
             DocumentSnapshot flatData =
-            await transaction.get(flatIdGetDisplay[i].ref);
-            if (flatData.exists)
+                await transaction.get(flatIdGetDisplay[i].ref);
+            if (flatData.exists) {
               flatIdGetDisplay[i].displayId = flatData.data['display_id'];
+              debugPrint("display id - " +
+                  flatData.data['display_id'] +
+                  ' zipcode - ' +
+                  flatData.data['zipcode']);
+              flatIdentifierData[flatData.data['display_id']] = {
+                'apartment_name': flatData.data['apartment_name'],
+                'apartment_number': flatData.data['apartment_number'],
+                'zipcode': flatData.data['zipcode']
+              };
+            }
           }
         }).whenComplete(() {
           debugPrint("IN WHEN COMPLETE TRANSACTION");
           for (int i = 0; i < flatIdGetDisplay.length; i++) {
             incomingRequestsTemp.add(flatIdGetDisplay[i].displayId);
           }
-
+          debugPrint(' if incoming requests empty - ' +
+              (incomingRequestsTemp == null || incomingRequestsTemp.isEmpty)
+                  .toString());
           setState(() {
             incomingRequests = incomingRequestsTemp;
+            flatIdentifierData = flatIdentifierData;
           });
           debugPrint("IN NAVIGATE");
           debugPrint(incomingRequestsTemp.length.toString());
@@ -134,7 +151,8 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
             if (statusForUserReq == "1") {
               List flatList = new List();
               flatList.add(flatId.toString().trim());
-              Utility.addToSharedPref(flatIdDefault: flatId, flatIdList: flatList);
+              Utility.addToSharedPref(
+                  flatIdDefault: flatId, flatIdList: flatList);
               _navigateToHome(flatId);
             } else if (statusForUserReq == "-1") {
               setState(() {
@@ -143,13 +161,12 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
             } else {
               setState(() {
                 lastRequestStatus =
-                "Your last request is pending. Wait or join new flat.";
+                    "Your last request is pending. Wait or join new flat.";
               });
             }
           } else {
             setState(() {
-              lastRequestStatus =
-              "Lets get started! You can add flat's here";
+              lastRequestStatus = "Lets get started! You can add flat's here";
             });
           }
         }).catchError((e) {
@@ -159,8 +176,7 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
       } else {
         debugPrint("IN ELSE FLAT NULL");
         setState(() {
-          lastRequestStatus =
-          "Lets get started! You can add flat's here";
+          lastRequestStatus = "Lets get started! You can add flat's here";
         });
       }
     }, onError: (e) {
@@ -176,9 +192,7 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
   @override
   Widget build(BuildContext context) {
     if (flatId == null) _checkFlatAccept();
-    var deviceSize = MediaQuery
-        .of(context)
-        .size;
+    var deviceSize = MediaQuery.of(context).size;
     return Scaffold(
         appBar: AppBar(
           title: Text("Find a Flat"),
@@ -201,22 +215,22 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
                           padding: const EdgeInsets.all(15.0),
                           child: (ccard == Colors.white)
                               ? Text(lastRequestStatus,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontFamily: 'Montserrat', color: ctext))
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontFamily: 'Montserrat', color: ctext))
                               : ListTile(
-                            leading: Icon(
-                              Icons.warning,
-                              color: ctext,
-                            ),
-                            title: Text(
-                              lastRequestStatus,
-                              style: TextStyle(
-                                fontFamily: 'Montserrat',
-                                color: ctext,
-                              ),
-                            ),
-                          ),
+                                  leading: Icon(
+                                    Icons.warning,
+                                    color: ctext,
+                                  ),
+                                  title: Text(
+                                    lastRequestStatus,
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      color: ctext,
+                                    ),
+                                  ),
+                                ),
                         )),
                   ),
                 ),
@@ -230,7 +244,7 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
                           setState(() {
                             if (flag == 0) {
                               lastRequestStatus =
-                              "Your last request is pending. wait or join new flat.";
+                                  "Your last request is pending. wait or join new flat.";
                               ccard = Colors.purple[100];
                               ctext = Colors.purple[700];
                             }
@@ -298,36 +312,33 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
                 ),
                 Row(
                   children:
-                  (incomingRequests == null || incomingRequests.length == 0)
-                      ? <Widget>[Container(margin: EdgeInsets.all(5.0))]
-                      : <Widget>[
-                    Expanded(child: Container()),
-                    Text("Incoming Requests",
-                        textAlign: TextAlign.left,
-                        style: TextStyle(
-                            fontSize: 16.0,
-                            fontFamily: 'Montserrat',
-                            color: Colors.black)),
-                    Expanded(flex: 15, child: Container()),
-                  ],
+                      (incomingRequests == null || incomingRequests.length == 0)
+                          ? <Widget>[Container(margin: EdgeInsets.all(5.0))]
+                          : <Widget>[
+                              Expanded(child: Container()),
+                              Text("Incoming Requests",
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(
+                                      fontSize: 16.0,
+                                      fontFamily: 'Montserrat',
+                                      color: Colors.black)),
+                              Expanded(flex: 15, child: Container()),
+                            ],
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 15.0),
                   child: Container(
                     height: (incomingRequests == null ||
-                        incomingRequests.length == 0)
+                            incomingRequests.length == 0)
                         ? 5.0
-                        : MediaQuery
-                        .of(context)
-                        .size
-                        .height / 2,
+                        : MediaQuery.of(context).size.height / 2,
                     child: (incomingRequests == null ||
-                        incomingRequests.length == 0)
+                            incomingRequests.length == 0)
                         ? null
                         : new ListView.builder(
-                        itemCount: incomingRequests.length,
-                        itemBuilder: (BuildContext context, int index) =>
-                            buildIncomingRequests(context, index)),
+                            itemCount: incomingRequests.length,
+                            itemBuilder: (BuildContext context, int index) =>
+                                buildIncomingRequests(context, index)),
                   ),
                 ),
               ],
@@ -389,10 +400,7 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
     return Padding(
       padding: const EdgeInsets.only(left: 8.0, right: 8.0),
       child: SizedBox(
-        width: MediaQuery
-            .of(context)
-            .size
-            .width * 0.95,
+        width: MediaQuery.of(context).size.width * 0.95,
         child: Card(
             color: Colors.white,
             elevation: 1.0,
@@ -418,6 +426,7 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
                     ),
                   ),
                 ),
+                subtitle: getFlatIdentifierTextWidget(incomingRequests[index]),
                 trailing: ButtonTheme(
                     height: 25.0,
                     minWidth: 30.0,
@@ -431,9 +440,7 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
                           ),
                         ),
                         color: Colors.white,
-                        textColor: Theme
-                            .of(context)
-                            .primaryColorDark,
+                        textColor: Theme.of(context).primaryColorDark,
                         child: (_progressCircleState == 0)
                             ? setUpButtonChild("Accept")
                             : setUpButtonChild("Waiting"),
@@ -453,6 +460,32 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
             )),
       ),
     );
+  }
+
+  Widget getFlatIdentifierTextWidget(String displayId) {
+    if (flatIdentifierData == null ||
+        !flatIdentifierData.containsKey(displayId)) {
+      return Text('');
+    }
+    String text = '';
+    if (flatIdentifierData[displayId]['apartment_name'] != null &&
+        flatIdentifierData[displayId]['apartment_name'] != '')
+      text = text + flatIdentifierData[displayId]['apartment_name'] + ', ';
+
+    if (flatIdentifierData[displayId]['apartment_number'] != null &&
+        flatIdentifierData[displayId]['apartment_number'] != '')
+      text = text + flatIdentifierData[displayId]['apartment_number'] + ', ';
+
+    if (flatIdentifierData[displayId]['zipcode'] != null &&
+        flatIdentifierData[displayId]['zipcode'] != '')
+      text = text + flatIdentifierData[displayId]['zipcode'];
+
+    text = text.trim();
+    if (text.endsWith(", ")) {
+      text = text.substring(0, text.length - 1);
+    }
+
+    return Text(text);
   }
 
   _getFromSharedPref() async {
@@ -553,8 +586,8 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
                   batch.updateData(
                       toRejectList[i], {'status': -1, 'updated_at': timeNow});
                 }
-                batch.updateData(
-                    toAccept, {'status': 1, 'updated_at': timeNow});
+                batch
+                    .updateData(toAccept, {'status': 1, 'updated_at': timeNow});
 
                 //update user
                 List landlordFlatList = new List();
@@ -566,7 +599,9 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
 
                 // to store flat id with name in shared preferences
                 List landlordFlatListWithName = new List();
-                landlordFlatListWithName.add(flatId.toString().trim() + "Name=" + flatName.toString().trim());
+                landlordFlatListWithName.add(flatId.toString().trim() +
+                    "Name=" +
+                    flatName.toString().trim());
 
                 //update flat landlord
                 var flatRef = Firestore.instance
@@ -635,17 +670,18 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
   _checkFlatAccept() async {
     var userId = await Utility.getUserId();
     Firestore.instance.collection(globals.landlord).document(userId).get().then(
-            (landlordUser) {
-          if (landlordUser != null && landlordUser['flat_id'] != null &&
-              landlordUser['flat_id'] != "") {
-            Utility.addToSharedPref(
-                flatIdDefault: landlordUser['flat_id'][0],
-                flatIdList: landlordUser['flat_id']);
-            _navigateToHome(landlordUser['flat_id'][0]);
-          } else {
-            flatId = "";
-          }
-        }, onError: (e) {}).catchError((e) {});
+        (landlordUser) {
+      if (landlordUser != null &&
+          landlordUser['flat_id'] != null &&
+          landlordUser['flat_id'] != "") {
+        Utility.addToSharedPref(
+            flatIdDefault: landlordUser['flat_id'][0],
+            flatIdList: landlordUser['flat_id']);
+        _navigateToHome(landlordUser['flat_id'][0]);
+      } else {
+        flatId = "";
+      }
+    }, onError: (e) {}).catchError((e) {});
   }
 
   void _setErrorState(scaffoldContext, error, {textToSend}) {
