@@ -6,6 +6,7 @@ import 'package:simpliflat_landlord/screens/signup/signupBackground.dart';
 import 'package:simpliflat_landlord/screens/tenant_portal/tenant_portal.dart';
 import '../utility.dart';
 import 'create_or_join.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignUpName extends StatefulWidget {
   final phone;
@@ -60,7 +61,7 @@ class _SignUpNameUser extends State<SignUpName> {
                               child: new Card(
                                   shape: RoundedRectangleBorder(
                                       borderRadius:
-                                      BorderRadius.circular(10.0)),
+                                          BorderRadius.circular(10.0)),
                                   color: Colors.white,
                                   elevation: 2.0,
                                   child: Column(children: <Widget>[
@@ -122,7 +123,7 @@ class _SignUpNameUser extends State<SignUpName> {
                                               _submitForm();
                                             },
                                             decoration: InputDecoration(
-                                              //labelText: "Name",
+                                                //labelText: "Name",
                                                 hintText: "Rahul",
                                                 //labelStyle: TextStyle(
                                                 //    color: Colors.white),
@@ -133,7 +134,7 @@ class _SignUpNameUser extends State<SignUpName> {
                                                     fontSize: 12.0,
                                                     fontFamily: 'Montserrat',
                                                     fontWeight:
-                                                    FontWeight.w700),
+                                                        FontWeight.w700),
                                                 border: InputBorder.none),
                                           ),
                                         ),
@@ -158,10 +159,10 @@ class _SignUpNameUser extends State<SignUpName> {
                                               height: 40.0,
                                               child: RaisedButton(
                                                   shape:
-                                                  new RoundedRectangleBorder(
+                                                      new RoundedRectangleBorder(
                                                     borderRadius:
-                                                    new BorderRadius
-                                                        .circular(10.0),
+                                                        new BorderRadius
+                                                            .circular(10.0),
                                                     side: BorderSide(
                                                       width: 1.0,
                                                       color: Colors.indigo[900],
@@ -211,9 +212,19 @@ class _SignUpNameUser extends State<SignUpName> {
     });
   }
 
-  void _onSuccess({userId, flatId, displayId}) {
+  void _onSuccess({userId, flatId, displayId, userName, flatName}) {
+    String flatTemp;
+    if (flatId != null && flatId.length > 0) {
+      flatTemp = flatId[0];
+    } else {
+      flatTemp = null;
+    }
     Utility.addToSharedPref(
-        userId: userId, flatIdDefault: flatId[0], flatIdList: flatId);
+        userId: userId,
+        flatIdDefault: flatTemp,
+        flatIdList: flatId,
+        userName: userName,
+        flatName: flatName);
     setState(() {
       _isButtonDisabled = false;
       _progressCircleState = 2;
@@ -221,8 +232,13 @@ class _SignUpNameUser extends State<SignUpName> {
     });
   }
 
-  void _addUserHandler(scaffoldContext) {
+  void _addUserHandler(scaffoldContext) async {
     var timeNow = DateTime.now();
+
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    final Firestore _firestore = Firestore.instance;
+
+    FirebaseUser user = await _auth.currentUser();
     var userData = {
       'phone': phone,
       'name': name.text,
@@ -239,11 +255,12 @@ class _SignUpNameUser extends State<SignUpName> {
         .getDocuments()
         .then((snapshot) {
       if (snapshot == null || snapshot.documents.length == 0) {
-        debugPrint("IN NEW USER");
-        Firestore.instance.collection(globals.landlord).add(userData).then((addedUser) {
-          debugPrint(addedUser.toString());
-          var userId = addedUser.documentID;
-          _onSuccess(userId: userId);
+        debugPrint("IN NEW USER === " + user.uid.toString());
+        DocumentReference ref =
+            _firestore.collection(globals.landlord).document(user.uid);
+        ref.setData(userData).then((addedUser) {
+          var userId = user.uid;
+          _onSuccess(userId: userId, userName: name);
           navigateToCreateOrJoin();
         }, onError: (e) {
           _serverError(scaffoldContext);
@@ -252,14 +269,25 @@ class _SignUpNameUser extends State<SignUpName> {
         Map<String, dynamic> existingUser = snapshot.documents[0].data;
         if (existingUser['flat_id'] == null || existingUser['flat_id'] == "") {
           debugPrint("userId = " + snapshot.documents[0].documentID);
-          _onSuccess(userId: snapshot.documents[0].documentID);
-          navigateToCreateOrJoin();
-        } else {
-          debugPrint("userId = " + snapshot.documents[0].documentID);
           _onSuccess(
               userId: snapshot.documents[0].documentID,
-              flatId: existingUser['flat_id']);
-          navigateToHome(existingUser['flat_id'][0]);
+              userName: snapshot.documents[0].data['name']);
+          navigateToCreateOrJoin();
+        } else {
+          Firestore.instance
+              .collection(globals.flat)
+              .document(existingUser['flat_id'][0])
+              .get()
+              .then((flatsnapshot) {
+            debugPrint("userId = " + snapshot.documents[0].documentID);
+            _onSuccess(
+                userId: snapshot.documents[0].documentID,
+                flatId: existingUser['flat_id'],
+                userName: snapshot.documents[0].data['name'],
+                flatName: flatsnapshot.data['name']);
+            new Future.delayed(const Duration(seconds: 1),
+                () => {navigateToHome(existingUser['flat_id'][0])});
+          });
         }
       }
     }, onError: (e) {
@@ -292,7 +320,7 @@ class _SignUpNameUser extends State<SignUpName> {
 
   void navigateToCreateOrJoin() {
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
-      return CreateOrJoin(2, null);
+      return CreateOrJoin(2, null, null);
     }), ModalRoute.withName('/'))
         .whenComplete(() {
       _progressCircleState = 0;

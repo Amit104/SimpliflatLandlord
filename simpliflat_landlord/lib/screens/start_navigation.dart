@@ -9,8 +9,10 @@ class StartNavigation extends StatelessWidget {
   final requestDenied;
   final List incomingRequests;
   final flatId;
+  final Map<String, Map> flatIdentifierData;
 
-  StartNavigation(this.flag, this.requestDenied, this.incomingRequests, this.flatId);
+  StartNavigation(this.flag, this.requestDenied, this.incomingRequests,
+      this.flatId, this.flatIdentifierData);
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +25,8 @@ class StartNavigation extends StatelessWidget {
       child: flag == 1
           ? SignUpPhone()
           : (flag == 2
-              ? CreateOrJoin(requestDenied, incomingRequests)
+              ? CreateOrJoin(
+                  requestDenied, incomingRequests, flatIdentifierData)
               : LandlordPortal(flatId)),
     );
   }

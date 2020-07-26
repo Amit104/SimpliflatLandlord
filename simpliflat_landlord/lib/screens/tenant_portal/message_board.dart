@@ -30,6 +30,8 @@ class _MessageBoard extends State<MessageBoard> {
   var _formKey2 = GlobalKey<FormState>();
   TextEditingController note = TextEditingController();
   TextEditingController addNote = TextEditingController();
+  bool showAssignToAllFlatsoption = false;
+  bool sendToAllFlats = false;
 
   _MessageBoard(this._flatId);
 
@@ -63,6 +65,7 @@ class _MessageBoard extends State<MessageBoard> {
                     });
                     if (!notesSnapshot.hasData || currentUserId == null)
                       return LoadingContainerVertical(3);
+                    addReadNotices();
                     notesSnapshot.data.documents.sort(
                         (a, b) => b['created_at'].compareTo(a['created_at']));
                     return GroupedListView<dynamic, String>(
@@ -105,71 +108,106 @@ class _MessageBoard extends State<MessageBoard> {
                     bottom: 10.0,
                     top: 5.0,
                   ),
-                  child: Row(
-                    children: <Widget>[
-                      Container(
-                        margin: EdgeInsets.all(10.0),
-                      ),
-                      Expanded(
-                        child: Form(
-                          key: _formKey1,
-                          child: TextFormField(
-                            keyboardType: TextInputType.text,
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14.0,
-                              fontFamily: 'Montserrat',
-                            ),
-                            controller: addNote,
-                            validator: (String value) {
-                              if (value.isEmpty)
-                                return "Cannot add empty note!";
-                              return null;
-                            },
-                            decoration: InputDecoration(
-                              hintText: "Add Message...",
-                              hintStyle: TextStyle(color: Colors.black87),
-                              border: new OutlineInputBorder(
-                                borderRadius: new BorderRadius.circular(25.0),
-                                borderSide: new BorderSide(),
+                  child: Column(
+                    children: [
+                      showAssignToAllFlatsoption
+                          ? Opacity(
+                              opacity: 0.5,
+                              child: Container(
+                                color: Colors.black,
+                                child: ListTile(
+                                  leading: Theme(
+                                    data: ThemeData(
+                                        unselectedWidgetColor: Colors.white),
+                                    child: Checkbox(
+                                      tristate: false,
+                                      activeColor: Colors.green,
+                                      onChanged: (value) {
+                                        sendToAllFlats = !sendToAllFlats;
+                                      },
+                                      value: sendToAllFlats,
+                                    ),
+                                  ),
+                                  title: Text('Send to all flats',
+                                      style: TextStyle(color: Colors.white)),
+                                ),
                               ),
-                              errorStyle: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 10.0,
+                            )
+                          : Container(),
+                      Row(
+                        children: <Widget>[
+                          Container(
+                            margin: EdgeInsets.all(10.0),
+                          ),
+                          Expanded(
+                            child: Form(
+                              key: _formKey1,
+                              child: TextFormField(
+                                onTap: () {
+                                  showAssignToAllFlatsoption = true;
+                                },
+                                onEditingComplete: () {
+                                  showAssignToAllFlatsoption = false;
+                                },
+                                keyboardType: TextInputType.text,
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14.0,
                                   fontFamily: 'Montserrat',
-                                  fontWeight: FontWeight.w700),
-                              //border: InputBorder.none
+                                ),
+                                controller: addNote,
+                                validator: (String value) {
+                                  if (value.isEmpty)
+                                    return "Cannot add empty note!";
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  hintText: "Add Message...",
+                                  hintStyle: TextStyle(color: Colors.black87),
+                                  border: new OutlineInputBorder(
+                                    borderRadius:
+                                        new BorderRadius.circular(25.0),
+                                    borderSide: new BorderSide(),
+                                  ),
+                                  errorStyle: TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 10.0,
+                                      fontFamily: 'Montserrat',
+                                      fontWeight: FontWeight.w700),
+                                  //border: InputBorder.none
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      Container(
-                        margin: EdgeInsets.all(5.0),
-                      ),
-                      ClipOval(
-                        child: Material(
-                          color: Colors.red[900], // button color
-                          child: InkWell(
-                            splashColor: Colors.indigo, // inkwell color
-                            child: SizedBox(
-                                width: 56,
-                                height: 56,
-                                child: Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                )),
-                            onTap: () async {
-                              if (_formKey1.currentState.validate()) {
-                                _addOrUpdateNote(
-                                    _navigatorContext, 1); //1 is add
-                              }
-                            },
+                          Container(
+                            margin: EdgeInsets.all(5.0),
                           ),
-                        ),
-                      ),
-                      Container(
-                        margin: EdgeInsets.all(5.0),
-                      ),
+                          ClipOval(
+                            child: Material(
+                              color: Colors.red[900], // button color
+                              child: InkWell(
+                                splashColor: Colors.indigo, // inkwell color
+                                child: SizedBox(
+                                    width: 56,
+                                    height: 56,
+                                    child: Icon(
+                                      Icons.add,
+                                      color: Colors.white,
+                                    )),
+                                onTap: () async {
+                                  if (_formKey1.currentState.validate()) {
+                                    _addOrUpdateNote(
+                                        _navigatorContext, 1); //1 is add
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                          Container(
+                            margin: EdgeInsets.all(5.0),
+                          ),
+                        ],
+                      )
                     ],
                   ),
                 ),
@@ -179,6 +217,11 @@ class _MessageBoard extends State<MessageBoard> {
         },
       ),
     );
+  }
+
+  void addReadNotices() async {
+    Utility.updateReadNoticesLastSeen(
+        _flatId, Timestamp.now().millisecondsSinceEpoch);
   }
 
   String getDateValue(value) {
@@ -512,18 +555,49 @@ class _MessageBoard extends State<MessageBoard> {
       setState(() {
         addNote.text = '';
       });
-      DocumentReference addNoteRef = Firestore.instance
-          .collection(globals.flat)
-          .document(_flatId)
-          .collection(globals.messageBoard)
-          .document();
-      addNoteRef.setData(data).then((v) {
-        if (mounted)
-          Utility.createErrorSnackBar(scaffoldContext, error: 'Message Saved');
-      }, onError: (e) {
-        debugPrint("ERROR IN UPDATE CONTACT VIEW");
-        if (mounted) Utility.createErrorSnackBar(_navigatorContext);
-      });
+      if (sendToAllFlats) {
+        List<String> allflatsList = new List();
+        List<String> flatList = await Utility.getFlatIdList();
+        for (String id in flatList) {
+          if (id.contains("Name=")) {
+            allflatsList.add(id.split("Name=")[0]);
+          } else {
+            allflatsList.add(id);
+          }
+        }
+        WriteBatch batch = Firestore.instance.batch();
+        allflatsList.forEach((doc) {
+          debugPrint("add to flat - " + doc.toString());
+          var docRef = Firestore.instance
+              .collection(globals.flat)
+              .document(doc)
+              .collection(globals.messageBoard)
+              .document(); //automatically generate unique id
+          batch.setData(docRef, data);
+        });
+        await batch.commit().then((v) {
+          if (mounted)
+            Utility.createErrorSnackBar(scaffoldContext,
+                error: 'Message Saved');
+        }, onError: (e) {
+          debugPrint("ERROR IN UPDATE CONTACT VIEW");
+          if (mounted) Utility.createErrorSnackBar(_navigatorContext);
+        });
+      } else {
+        DocumentReference addNoteRef = Firestore.instance
+            .collection(globals.flat)
+            .document(_flatId)
+            .collection(globals.messageBoard)
+            .document();
+        addNoteRef.setData(data).then((v) {
+          if (mounted)
+            Utility.createErrorSnackBar(scaffoldContext,
+                error: 'Message Saved');
+        }, onError: (e) {
+          debugPrint("ERROR IN UPDATE CONTACT VIEW");
+          if (mounted) Utility.createErrorSnackBar(_navigatorContext);
+        });
+      }
     } else {
       /// Update Message
       debugPrint("updated = " + note.text);

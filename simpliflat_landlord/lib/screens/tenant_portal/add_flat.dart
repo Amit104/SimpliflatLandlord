@@ -29,6 +29,7 @@ class _AddFlat extends State<AddFlat> {
   var _isButtonDisabled = false;
   final flatId;
   String lastRequestStatus = "checking";
+  Map<String, Map> flatIdentifierData = new Map();
 
   var _buttonColor;
 
@@ -60,7 +61,7 @@ class _AddFlat extends State<AddFlat> {
 
         List<FlatIncomingReq> flatIdGetDisplay = new List();
         requests.documents.sort((a, b) =>
-        a.data['updated_at'].compareTo(b.data['updated_at']) > 0 ? 1 : -1);
+            a.data['updated_at'].compareTo(b.data['updated_at']) > 0 ? 1 : -1);
         for (int i = 0; i < requests.documents.length; i++) {
           debugPrint("doc + " + requests.documents[i].documentID);
           var data = requests.documents[i].data;
@@ -89,9 +90,15 @@ class _AddFlat extends State<AddFlat> {
         Firestore.instance.runTransaction((transaction) async {
           for (int i = 0; i < flatIdGetDisplay.length; i++) {
             DocumentSnapshot flatData =
-            await transaction.get(flatIdGetDisplay[i].ref);
-            if (flatData.exists)
+                await transaction.get(flatIdGetDisplay[i].ref);
+            if (flatData.exists) {
               flatIdGetDisplay[i].displayId = flatData.data['display_id'];
+              flatIdentifierData[flatData.data['display_id']] = {
+                'apartment_name': flatData.data['apartment_name'],
+                'apartment_number': flatData.data['apartment_number'],
+                'zipcode': flatData.data['zipcode']
+              };
+            }
           }
         }).whenComplete(() async {
           debugPrint("IN WHEN COMPLETE TRANSACTION");
@@ -101,31 +108,31 @@ class _AddFlat extends State<AddFlat> {
 
           setState(() {
             incomingRequests = incomingRequestsTemp;
+            flatIdentifierData = flatIdentifierData;
           });
           debugPrint("IN NAVIGATE");
           debugPrint(incomingRequestsTemp.length.toString());
           if (userRequested) {
             userId = userId.toString();
             flatId = flatId.toString();
-            if (statusForUserReq == "1") {
-              var flatList = await Utility.getFlatIdList();
-              flatList.add(flatId.toString().trim());
-              Utility.addToSharedPref(flatIdDefault: flatId, flatIdList: flatList);
-              _navigateToHome(flatId);
-            } else if (statusForUserReq == "-1") {
+            // if (statusForUserReq == "1") {
+            //   var flatList = await Utility.getFlatIdList();
+            //   flatList.add(flatId.toString().trim());
+            //   Utility.addToSharedPref(flatIdDefault: flatId, flatIdList: flatList);
+            //   _navigateToHome(flatId);
+            if (statusForUserReq == "-1") {
               setState(() {
                 lastRequestStatus = "Your last join request was denied!";
               });
             } else {
               setState(() {
                 lastRequestStatus =
-                "Your last request is pending. Wait or join new flat.";
+                    "Your last request is pending. Wait or join new flat.";
               });
             }
           } else {
             setState(() {
-              lastRequestStatus =
-              "Lets get started! You can add flat's here";
+              lastRequestStatus = "Lets get started! You can add flat's here";
             });
           }
         }).catchError((e) {
@@ -135,8 +142,7 @@ class _AddFlat extends State<AddFlat> {
       } else {
         debugPrint("IN ELSE FLAT NULL");
         setState(() {
-          lastRequestStatus =
-          "Lets get started! You can add flat's here";
+          lastRequestStatus = "Lets get started! You can add flat's here";
         });
       }
     }, onError: (e) {
@@ -152,7 +158,7 @@ class _AddFlat extends State<AddFlat> {
   @override
   Widget build(BuildContext context) {
     if (lastRequestStatus == "checking") _checkJoinStatus();
-    return  Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Text("Add Flat"),
           elevation: 0.0,
@@ -180,22 +186,22 @@ class _AddFlat extends State<AddFlat> {
                     padding: const EdgeInsets.all(15.0),
                     child: (ccard == Colors.white)
                         ? Text(lastRequestStatus,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontFamily: 'Montserrat', color: ctext))
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontFamily: 'Montserrat', color: ctext))
                         : ListTile(
-                      leading: Icon(
-                        Icons.warning,
-                        color: ctext,
-                      ),
-                      title: Text(
-                        lastRequestStatus,
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: ctext,
-                        ),
-                      ),
-                    ),
+                            leading: Icon(
+                              Icons.warning,
+                              color: ctext,
+                            ),
+                            title: Text(
+                              lastRequestStatus,
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                color: ctext,
+                              ),
+                            ),
+                          ),
                   )),
             ),
           ),
@@ -209,7 +215,7 @@ class _AddFlat extends State<AddFlat> {
                     setState(() {
                       if (flag == 0) {
                         lastRequestStatus =
-                        "Your last request is pending. wait or join new flat.";
+                            "Your last request is pending. wait or join new flat.";
                         ccard = Colors.purple[100];
                         ctext = Colors.purple[700];
                       }
@@ -244,12 +250,12 @@ class _AddFlat extends State<AddFlat> {
                       child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            textInCard("Join a Flat", FontWeight.w700,
-                                24.0, 28.0, 40.0),
-                            textInCard("Search for your flat", null, 14.0,
-                                28.0, 20.0),
-                            textInCard("and send a request.", null, 14.0,
-                                28.0, 7.0),
+                            textInCard("Join a Flat", FontWeight.w700, 24.0,
+                                28.0, 40.0),
+                            textInCard(
+                                "Search for your flat", null, 14.0, 28.0, 20.0),
+                            textInCard(
+                                "and send a request.", null, 14.0, 28.0, 7.0),
                           ]),
                     )),
               )),
@@ -276,37 +282,31 @@ class _AddFlat extends State<AddFlat> {
             margin: EdgeInsets.all(10.0),
           ),
           Row(
-            children:
-            (incomingRequests == null || incomingRequests.length == 0)
+            children: (incomingRequests == null || incomingRequests.length == 0)
                 ? <Widget>[Container(margin: EdgeInsets.all(5.0))]
                 : <Widget>[
-              Expanded(child: Container()),
-              Text("Incoming Requests",
-                  textAlign: TextAlign.left,
-                  style: TextStyle(
-                      fontSize: 16.0,
-                      fontFamily: 'Montserrat',
-                      color: Colors.black)),
-              Expanded(flex: 15, child: Container()),
-            ],
+                    Expanded(child: Container()),
+                    Text("Incoming Requests",
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                            fontSize: 16.0,
+                            fontFamily: 'Montserrat',
+                            color: Colors.black)),
+                    Expanded(flex: 15, child: Container()),
+                  ],
           ),
           Padding(
             padding: EdgeInsets.only(top: 15.0),
             child: Container(
-              height: (incomingRequests == null ||
-                  incomingRequests.length == 0)
+              height: (incomingRequests == null || incomingRequests.length == 0)
                   ? 5.0
-                  : MediaQuery
-                  .of(context)
-                  .size
-                  .height / 2,
-              child: (incomingRequests == null ||
-                  incomingRequests.length == 0)
+                  : MediaQuery.of(context).size.height / 2,
+              child: (incomingRequests == null || incomingRequests.length == 0)
                   ? null
                   : new ListView.builder(
-                  itemCount: incomingRequests.length,
-                  itemBuilder: (BuildContext context, int index) =>
-                      buildIncomingRequests(context, index)),
+                      itemCount: incomingRequests.length,
+                      itemBuilder: (BuildContext context, int index) =>
+                          buildIncomingRequests(context, index)),
             ),
           ),
         ],
@@ -371,10 +371,7 @@ class _AddFlat extends State<AddFlat> {
     return Padding(
       padding: const EdgeInsets.only(left: 8.0, right: 8.0),
       child: SizedBox(
-        width: MediaQuery
-            .of(context)
-            .size
-            .width * 0.95,
+        width: MediaQuery.of(context).size.width * 0.95,
         child: Card(
             color: Colors.white,
             elevation: 1.0,
@@ -400,6 +397,7 @@ class _AddFlat extends State<AddFlat> {
                     ),
                   ),
                 ),
+                subtitle: getFlatIdentifierTextWidget(incomingRequests[index]),
                 trailing: ButtonTheme(
                     height: 25.0,
                     minWidth: 30.0,
@@ -413,9 +411,7 @@ class _AddFlat extends State<AddFlat> {
                           ),
                         ),
                         color: Colors.white,
-                        textColor: Theme
-                            .of(context)
-                            .primaryColorDark,
+                        textColor: Theme.of(context).primaryColorDark,
                         child: (_progressCircleState == 0)
                             ? setUpButtonChild("Accept")
                             : setUpButtonChild("Waiting"),
@@ -435,6 +431,32 @@ class _AddFlat extends State<AddFlat> {
             )),
       ),
     );
+  }
+
+  Widget getFlatIdentifierTextWidget(String displayId) {
+    if (flatIdentifierData == null ||
+        !flatIdentifierData.containsKey(displayId)) {
+      return Text('');
+    }
+    String text = '';
+    if (flatIdentifierData[displayId]['apartment_name'] != null &&
+        flatIdentifierData[displayId]['apartment_name'] != '')
+      text = text + flatIdentifierData[displayId]['apartment_name'] + ', ';
+
+    if (flatIdentifierData[displayId]['apartment_number'] != null &&
+        flatIdentifierData[displayId]['apartment_number'] != '')
+      text = text + flatIdentifierData[displayId]['apartment_number'] + ', ';
+
+    if (flatIdentifierData[displayId]['zipcode'] != null &&
+        flatIdentifierData[displayId]['zipcode'] != '')
+      text = text + flatIdentifierData[displayId]['zipcode'];
+
+    text = text.trim();
+    if (text.endsWith(", ")) {
+      text = text.substring(0, text.length - 1);
+    }
+
+    return Text(text);
   }
 
   _getFromSharedPref() async {
@@ -488,9 +510,8 @@ class _AddFlat extends State<AddFlat> {
     var userId = await _getFromSharedPref();
     List landlordFlatList = await Utility.getFlatIdList();
     List flatListOnly = new List();
-    for(String id in landlordFlatList)
-    {
-      if(id.contains("Name="))
+    for (String id in landlordFlatList) {
+      if (id.contains("Name="))
         flatListOnly.add(id.split("Name=")[0]);
       else
         flatListOnly.add(id);
@@ -544,8 +565,8 @@ class _AddFlat extends State<AddFlat> {
                   batch.updateData(
                       toRejectList[i], {'status': -1, 'updated_at': timeNow});
                 }
-                batch.updateData(
-                    toAccept, {'status': 1, 'updated_at': timeNow});
+                batch
+                    .updateData(toAccept, {'status': 1, 'updated_at': timeNow});
 
                 //update user
                 flatListOnly.add(flatId.toString().trim());
@@ -556,7 +577,9 @@ class _AddFlat extends State<AddFlat> {
 
                 // to store flat id with name in shared preferences
                 List landlordFlatListWithName = landlordFlatList;
-                landlordFlatListWithName.add(flatId.toString().trim() + "Name=" + flatName.toString().trim());
+                landlordFlatListWithName.add(flatId.toString().trim() +
+                    "Name=" +
+                    flatName.toString().trim());
 
                 //update flat landlord
                 var flatRef = Firestore.instance

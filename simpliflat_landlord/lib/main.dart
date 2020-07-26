@@ -42,6 +42,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   var _navigatorContext;
+  Map<String, Map> flatIdentifierData = new Map();
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +102,7 @@ class MyApp extends StatelessWidget {
                   children: <Widget>[
                     CircularProgressIndicator(
                       valueColor:
-                      new AlwaysStoppedAnimation<Color>(Colors.indigo[900]),
+                          new AlwaysStoppedAnimation<Color>(Colors.indigo[900]),
                     ),
                   ],
                 ),
@@ -127,7 +128,7 @@ class MyApp extends StatelessWidget {
         // check for new flats and any removed flats
         var flatList = await Utility.getFlatIdList();
         var newList = new List();
-        if(flatList==null) {
+        if (flatList == null) {
           flatList = new List();
         }
 
@@ -167,8 +168,7 @@ class MyApp extends StatelessWidget {
             debugPrint(id);
             if (id.contains("Name=")) continue;
             toUpdateFlatRefs.add(FlatIncomingReq(
-                Firestore.instance.collection(globals.flat).document(id),
-                id));
+                Firestore.instance.collection(globals.flat).document(id), id));
           }
         }
 
@@ -177,10 +177,9 @@ class MyApp extends StatelessWidget {
         Firestore.instance.runTransaction((transaction) async {
           for (int i = 0; i < toUpdateFlatRefs.length; i++) {
             DocumentSnapshot flatData =
-            await transaction.get(toUpdateFlatRefs[i].ref);
+                await transaction.get(toUpdateFlatRefs[i].ref);
             if (flatData.exists)
-              flatIdName[toUpdateFlatRefs[i].displayId] =
-              flatData.data['name'];
+              flatIdName[toUpdateFlatRefs[i].displayId] = flatData.data['name'];
           }
         }).whenComplete(() {
           debugPrint("IN WHEN COMPLETE TRANSACTION");
@@ -233,9 +232,9 @@ class MyApp extends StatelessWidget {
 
               List<FlatIncomingReq> flatIdGetDisplay = new List();
               requests.documents.sort((a, b) =>
-              a.data['updated_at'].compareTo(b.data['updated_at']) > 0
-                  ? 1
-                  : -1);
+                  a.data['updated_at'].compareTo(b.data['updated_at']) > 0
+                      ? 1
+                      : -1);
               for (int i = 0; i < requests.documents.length; i++) {
                 debugPrint("doc + " + requests.documents[i].documentID);
                 var data = requests.documents[i].data;
@@ -264,9 +263,15 @@ class MyApp extends StatelessWidget {
               Firestore.instance.runTransaction((transaction) async {
                 for (int i = 0; i < flatIdGetDisplay.length; i++) {
                   DocumentSnapshot flatData =
-                  await transaction.get(flatIdGetDisplay[i].ref);
-                  if (flatData.exists)
+                      await transaction.get(flatIdGetDisplay[i].ref);
+                  if (flatData.exists) {
                     flatIdGetDisplay[i].displayId = flatData.data['display_id'];
+                    flatIdentifierData[flatData.data['display_id']] = {
+                      'apartment_name': flatData.data['apartment_name'],
+                      'apartment_number': flatData.data['apartment_number'],
+                      'zipcode': flatData.data['zipcode']
+                    };
+                  }
                 }
               }).whenComplete(() {
                 debugPrint("IN WHEN COMPLETE TRANSACTION");
@@ -281,7 +286,8 @@ class MyApp extends StatelessWidget {
                     //this should never run as flat field in landlord collection will be updated if request is accepted by tenant
                     List flatList = new List();
                     flatList.add(flatId);
-                    Utility.addToSharedPref(flatIdList: flatList, flatIdDefault: flatId[0]);
+                    Utility.addToSharedPref(
+                        flatIdList: flatList, flatIdDefault: flatId[0]);
                     _navigate(_navigatorContext, 3, flatId: flatId);
                   } else if (statusForUserReq == "-1") {
                     _navigate(_navigatorContext, 2,
@@ -322,13 +328,14 @@ class MyApp extends StatelessWidget {
   // 1 : User is new - SignUp()
   // 2 : CreateOrJoin() page with request status
   // 3 : LandlordPortal()
-  void _navigate(context, flag, {flatId,
-    requestDenied = 2, List<String> incomingRequests}) {
+  void _navigate(context, flag,
+      {flatId, requestDenied = 2, List<String> incomingRequests}) {
     debugPrint("Flag for navigation is " + flag.toString());
     Navigator.pushReplacement(
       _navigatorContext,
       new MaterialPageRoute(builder: (context) {
-        return StartNavigation(flag, requestDenied, incomingRequests, flatId);
+        return StartNavigation(
+            flag, requestDenied, incomingRequests, flatId, flatIdentifierData);
       }),
     );
   }

@@ -13,6 +13,7 @@ String isSyncedNote = 'isSyncedNote';
 String notificationToken = "notificationToken";
 String flatName = "flatName";
 
+
 //collection names
 
 String taskHistory = "taskHistory";
@@ -25,6 +26,9 @@ String requests = "joinflat_landlord";
 
 String messageBoard = "messageboard";
 String documentManager = "documentmanager";
+
+String readNoticeIds = "readNoticeIds";
+String readTaskIds = 'readTaskIds';
 
 String lists="lists";
 String listItems="items";
