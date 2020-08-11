@@ -117,6 +117,7 @@ class _LandlordPortal extends State<LandlordPortal> {
           return null;
         },
         child: Scaffold(
+          drawer: getDrawer(),
           appBar: AppBar(
             backgroundColor: Colors.white,
             title: Text(
@@ -125,7 +126,7 @@ class _LandlordPortal extends State<LandlordPortal> {
             ),
             elevation: 0.0,
             centerTitle: true,
-            leading: IconButton(
+            /*leading: IconButton(
               icon: Icon(
                 Icons.group,
                 color: Colors.indigo,
@@ -151,7 +152,7 @@ class _LandlordPortal extends State<LandlordPortal> {
                   navigateToProfileOptions();
                 },
               ),
-            ],
+            ],*/
           ),
           body: Center(
             child: _selectedIndex == 0
@@ -234,6 +235,44 @@ class _LandlordPortal extends State<LandlordPortal> {
       ),
     );
     showCupertinoModalPopup(context: context, builder: (context) => action);
+  }
+
+
+  Widget getDrawer() {
+    return Drawer(
+        // Add a ListView to the drawer. This ensures the user can scroll
+        // through the options in the drawer if there isn't enough vertical
+        // space to fit everything.
+        child: ListView(
+          // Important: Remove any padding from the ListView.
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              child: Container(),
+              decoration: BoxDecoration(
+                color: Colors.blue[100],
+              ),
+            ),
+            ListTile(
+              title: Text('My buildings'),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: Text('Profile'),
+              onTap: () {
+                // Update the state of the app
+                // ...
+                // Then close the drawer
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ));
   }
 
   void navigateToAddTask(String typeOfTask, {taskId}) {

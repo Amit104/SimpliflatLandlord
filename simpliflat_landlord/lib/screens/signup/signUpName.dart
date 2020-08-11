@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/signup/signupBackground.dart';
 import 'package:simpliflat_landlord/screens/tenant_portal/tenant_portal.dart';
+import 'package:simpliflat_landlord/screens/flatSetup/createOrJoinHome.dart';
 import '../utility.dart';
 import 'create_or_join.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -261,7 +262,7 @@ class _SignUpNameUser extends State<SignUpName> {
         ref.setData(userData).then((addedUser) {
           var userId = user.uid;
           _onSuccess(userId: userId, userName: name);
-          navigateToCreateOrJoin();
+          navigateToCreateOrJoinHome();
         }, onError: (e) {
           _serverError(scaffoldContext);
         });
@@ -272,7 +273,7 @@ class _SignUpNameUser extends State<SignUpName> {
           _onSuccess(
               userId: snapshot.documents[0].documentID,
               userName: snapshot.documents[0].data['name']);
-          navigateToCreateOrJoin();
+          navigateToCreateOrJoinHome();
         } else {
           Firestore.instance
               .collection(globals.flat)
@@ -321,6 +322,16 @@ class _SignUpNameUser extends State<SignUpName> {
   void navigateToCreateOrJoin() {
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
       return CreateOrJoin(2, null, null);
+    }), ModalRoute.withName('/'))
+        .whenComplete(() {
+      _progressCircleState = 0;
+      _isButtonDisabled = false;
+    });
+  }
+
+  void navigateToCreateOrJoinHome() {
+    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
+      return CreateOrJoinHome();
     }), ModalRoute.withName('/'))
         .whenComplete(() {
       _progressCircleState = 0;
