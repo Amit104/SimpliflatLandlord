@@ -1,9 +1,10 @@
 import './BaseModel.dart';
+import './OwnerFlat.dart';
 
 class Block extends BaseModel {
   String blockName;
-  String buildingId;
-  String blockDisplayId;
+
+  List<OwnerFlat> ownerFlats;
 
 	String getBlockName() {
 		return this.blockName;
@@ -13,20 +14,29 @@ class Block extends BaseModel {
 		this.blockName = blockName;
 	}
 
-	String getBuildingId() {
-		return this.buildingId;
+  List<OwnerFlat> getOwnerFlats() {
+		return this.ownerFlats;
 	}
 
-	void setBuildingId(String buildingId) {
-		this.buildingId = buildingId;
+	void setOwnerFlats(List<OwnerFlat> ownerFlats) {
+		this.ownerFlats = ownerFlats;
 	}
 
-  String getBlockDisplayId() {
-		return this.blockDisplayId;
-	}
+	
+  Map<String, dynamic> toJson() {
+    return {
+      'blockName': this.blockName,
+    };
+  }
 
-	void setBlockDisplayId(String blockDisplayId) {
-		this.blockDisplayId = blockDisplayId;
-	}
+  static Block fromJson(Map<String, dynamic> json, String documentId, List<OwnerFlat> ownerFlats) {
+    Block block = new Block();
+    block.setBlockName((json['blockName'] as String));
+    block.setOwnerFlats(ownerFlats);
+
+    return block;
+  }
+
+
 
 }

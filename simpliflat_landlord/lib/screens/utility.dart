@@ -3,9 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/models/DatabaseHelper.dart';
 import 'package:intl/intl.dart';
+import 'dart:math';
 
 class Utility {
   static final dbHelper = DatabaseHelper.instance;
+
+
 
   static void createErrorSnackBar(scaffoldContext,
       {error: 'Something went wrong. Try again!'}) {
@@ -165,4 +168,17 @@ class Utility {
     var color = userId.toString().trim().hashCode;
     return Colors.primaries[color % Colors.primaries.length];
   }
+
+    
+
+  static String getRandomString(int length) { 
+
+    String _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+    Random _rnd = Random();
+    
+    return String.fromCharCodes(Iterable.generate(
+    
+    length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
+  }
+
 }

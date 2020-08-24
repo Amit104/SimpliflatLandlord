@@ -32,3 +32,31 @@ String readTaskIds = 'readTaskIds';
 
 String lists="lists";
 String listItems="items";
+
+String userIdValue;
+
+enum BuildingType {
+  PG,
+  Residential
+}
+
+int displayIdLength = 8;
+
+enum OwnerRoles {
+  Admin,
+  Manager
+}
+
+String building = 'building';
+
+String block = 'block';
+
+String ownerFlat = 'ownerFlat';
+
+enum RequestStatus {
+  Pending,
+  Accepted,
+  Rejected
+}
+
+String ownerOwnerJoin = 'owner_owner_join';

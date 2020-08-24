@@ -180,11 +180,7 @@ class DashboardState extends State<Dashboard> {
           }
         }
 
-        String temp = Timestamp.fromMillisecondsSinceEpoch(
-                flatWiseTaskLastSeensTemp['gbvVAkwNtY6FOvhXtCDu'] as int)
-            .toDate()
-            .toIso8601String();
-        debugPrint("lastseen for flat:" + temp);
+        
         if (mounted) {
           setState(() {
             flatWiseTaskLastSeens = flatWiseTaskLastSeensTemp;

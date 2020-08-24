@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/signup/signupBackground.dart';
 import 'package:simpliflat_landlord/screens/tenant_portal/tenant_portal.dart';
-import 'package:simpliflat_landlord/screens/flatSetup/createOrJoinHome.dart';
+import 'package:simpliflat_landlord/screens/home/Home.dart';
 import '../utility.dart';
 import 'create_or_join.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -262,34 +262,16 @@ class _SignUpNameUser extends State<SignUpName> {
         ref.setData(userData).then((addedUser) {
           var userId = user.uid;
           _onSuccess(userId: userId, userName: name);
-          navigateToCreateOrJoinHome();
+          navigateToCreateOrJoinHome(userId);
         }, onError: (e) {
           _serverError(scaffoldContext);
         });
       } else {
-        Map<String, dynamic> existingUser = snapshot.documents[0].data;
-        if (existingUser['flat_id'] == null || existingUser['flat_id'] == "") {
-          debugPrint("userId = " + snapshot.documents[0].documentID);
-          _onSuccess(
+        _onSuccess(
               userId: snapshot.documents[0].documentID,
               userName: snapshot.documents[0].data['name']);
-          navigateToCreateOrJoinHome();
-        } else {
-          Firestore.instance
-              .collection(globals.flat)
-              .document(existingUser['flat_id'][0])
-              .get()
-              .then((flatsnapshot) {
-            debugPrint("userId = " + snapshot.documents[0].documentID);
-            _onSuccess(
-                userId: snapshot.documents[0].documentID,
-                flatId: existingUser['flat_id'],
-                userName: snapshot.documents[0].data['name'],
-                flatName: flatsnapshot.data['name']);
-            new Future.delayed(const Duration(seconds: 1),
-                () => {navigateToHome(existingUser['flat_id'][0])});
-          });
-        }
+          navigateToCreateOrJoinHome(snapshot.documents[0].documentID);
+        
       }
     }, onError: (e) {
       debugPrint("ERROR");
@@ -329,9 +311,9 @@ class _SignUpNameUser extends State<SignUpName> {
     });
   }
 
-  void navigateToCreateOrJoinHome() {
+  void navigateToCreateOrJoinHome(String userId) {
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
-      return CreateOrJoinHome();
+      return Home(userId);
     }), ModalRoute.withName('/'))
         .whenComplete(() {
       _progressCircleState = 0;

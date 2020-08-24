@@ -2,7 +2,7 @@ class TenantFlat {
   String buildingAddress;
   String buildingName;
   String zipcode;
-  String flatNumber;
+  String flatName;
   String flatDisplayId;
 
 	String getBuildingAddress() {
@@ -29,12 +29,12 @@ class TenantFlat {
 		this.zipcode = zipcode;
 	}
 
-	String getFlatNumber() {
-		return this.flatNumber;
+	String getFlatName() {
+		return this.flatName;
 	}
 
-	void setFlatNumber(String flatNumber) {
-		this.flatNumber = flatNumber;
+	void setFlatName(String flatName) {
+		this.flatName = flatName;
 	}
 
 	String getFlatDisplayId() {
@@ -45,6 +45,13 @@ class TenantFlat {
 		this.flatDisplayId = flatDisplayId;
 	}
 
+  static TenantFlat fromJson(Map<String, dynamic> data, String documentId) {
+    TenantFlat flat = new TenantFlat();
+    flat.setFlatDisplayId(data['display_id']);
+    flat.setFlatName(data['name']);
+
+    return flat;
+  }
 
 
 }

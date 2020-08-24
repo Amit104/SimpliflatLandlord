@@ -288,17 +288,17 @@ class MyApp extends StatelessWidget {
                     flatList.add(flatId);
                     Utility.addToSharedPref(
                         flatIdList: flatList, flatIdDefault: flatId[0]);
-                    _navigate(_navigatorContext, 3, flatId: flatId);
+                    _navigate(_navigatorContext, 3, flatId: flatId, userId: userId);
                   } else if (statusForUserReq == "-1") {
                     _navigate(_navigatorContext, 2,
-                        requestDenied: -1, incomingRequests: incomingRequests);
+                        requestDenied: -1, incomingRequests: incomingRequests, userId: userId);
                   } else {
                     _navigate(_navigatorContext, 2,
-                        requestDenied: 0, incomingRequests: incomingRequests);
+                        requestDenied: 0, incomingRequests: incomingRequests, userId: userId);
                   }
                 } else {
                   _navigate(_navigatorContext, 2,
-                      requestDenied: 2, incomingRequests: incomingRequests);
+                      requestDenied: 2, incomingRequests: incomingRequests, userId: userId);
                 }
               }).catchError((e) {
                 debugPrint("SERVER TRANSACTION ERROR");
@@ -306,7 +306,7 @@ class MyApp extends StatelessWidget {
               });
             } else {
               debugPrint("IN ELSE FLAT NULL");
-              _navigate(_navigatorContext, 2, requestDenied: 2);
+              _navigate(_navigatorContext, 2, requestDenied: 2, userId: userId);
             }
           }, onError: (e) {
             debugPrint("CALL ERROR");
@@ -318,7 +318,7 @@ class MyApp extends StatelessWidget {
           });
         } else {
           debugPrint("IN ELSE");
-          _navigate(_navigatorContext, 3, flatId: flatId);
+          _navigate(_navigatorContext, 3, flatId: flatId, userId: userId);
         }
       });
     });
@@ -329,13 +329,13 @@ class MyApp extends StatelessWidget {
   // 2 : CreateOrJoin() page with request status
   // 3 : LandlordPortal()
   void _navigate(context, flag,
-      {flatId, requestDenied = 2, List<String> incomingRequests}) {
+      {flatId, requestDenied = 2, List<String> incomingRequests, userId}) {
     debugPrint("Flag for navigation is " + flag.toString());
     Navigator.pushReplacement(
       _navigatorContext,
       new MaterialPageRoute(builder: (context) {
         return StartNavigation(
-            flag, requestDenied, incomingRequests, flatId, flatIdentifierData);
+            flag, requestDenied, incomingRequests, flatId, flatIdentifierData, userId);
       }),
     );
   }

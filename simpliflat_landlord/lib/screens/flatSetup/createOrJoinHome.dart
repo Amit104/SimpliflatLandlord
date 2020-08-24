@@ -1,13 +1,40 @@
 import 'package:flutter/material.dart';
+import './createProperty.dart';
+import 'package:simpliflat_landlord/screens/utility.dart';
+import './FlatList.dart';
+import './SearchOwner.dart';
+import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import '../models/LandlordRequest.dart';
+import '../home/Home.dart';
+import '../models/OwnershipDetailsDBHandler.dart';
+
+
 
 class CreateOrJoinHome extends StatefulWidget {
+
+  final String userId;
+
+  CreateOrJoinHome(this.userId);
+  
   @override
   State<StatefulWidget> createState() {
-    return new CreateOrJoinHomeState();
+    return new CreateOrJoinHomeState(this.userId);
   }
 }
 
 class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  final String userId;
+
+  CreateOrJoinHomeState(this.userId);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,18 +44,18 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
         centerTitle: true,
       ),
       body: Builder(builder: (BuildContext scaffoldC) {
-        return getBody();
+        return getBody(scaffoldC);
       }),
     );
   }
 
-  Widget getBody() {
+  Widget getBody(BuildContext scaffoldC) {
     return SingleChildScrollView(
       child: Column(
         children: <Widget>[
           getCreateOrJoinOptionsWidget(),
           getInfoWidget(),
-          getIncomingRequestsWidget(),
+          getIncomingRequestsWidget(scaffoldC),
         ],
       ),
     );
@@ -40,7 +67,8 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: <Widget>[
-          Container(
+          GestureDetector(
+            onTap: () {navigateToCreateProperty(false);},
             child: ClipRRect(
               child: Stack(children: [
                 Image.asset(
@@ -65,7 +93,8 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
               borderRadius: BorderRadius.circular(30.0),
             ),
           ),
-          Container(
+          GestureDetector(
+            onTap: () {navigateToCreateProperty(true);},
             child: ClipRRect(
               child: Stack(children: [
                 Image.asset(
@@ -92,6 +121,29 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
         ],
       ),
     );
+  }
+
+  void navigateToCreateProperty(bool join) async {
+    if(join) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) {
+          return FlatList(this.userId, true, null);
+        }),
+      );
+    }
+    else {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) {
+          return CreateProperty(this.userId, null, true, join);
+        }),
+      );
+    }
+
+    // if(ifSuccess) {
+    //   Utility.createErrorSnackBar(scaffoldC, error: 'Saved Successfully!');
+    // }
   }
 
   Widget getInfoWidget() {
@@ -132,7 +184,7 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
     );
   }
 
-  Widget getIncomingRequestsWidget() {
+  Widget getIncomingRequestsWidget(BuildContext scaffoldC) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 30.0),
       child: Column(
@@ -144,57 +196,133 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
             style: TextStyle(fontSize: 16.0),
           ),
           SizedBox(height: 10.0),
-          getIncomingRequestsDataWidget(),
+          //getIncomingRequestsDataWidget(scaffoldC),
         ],
       ),
     );
   }
 
-  Widget getIncomingRequestsDataWidget() {
-    return ListView.builder(
-      physics: NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      scrollDirection: Axis.vertical,
-      itemCount: 5,
-      itemBuilder: (BuildContext context, int position) {
-        return Card(
-          margin: EdgeInsets.symmetric(vertical: 3.0, horizontal: 12.0),
-          elevation: 5.0,
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 10.0),
-            child: Row(
-              children: [
-                Container(
-                    padding: EdgeInsets.all(10.0),
-                    child: Icon(
-                      Icons.check,
-                      color: Colors.green,
-                      size: 25.0,
-                    )),
-                Expanded(
-                  child: Column(children: [
-                    Text(
-                      'Apartment MyHome has sent you a request.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14.0),
-                    ),
-                    SizedBox(height: 5.0),
-                    Text(
-                      'Please join as co-owner',
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey, fontSize: 12.0),
-                    )
-                  ]),
-                ),
-                Container(
-                    padding: EdgeInsets.all(10.0),
-                    child: Icon(Icons.close, color: Colors.red, size: 25.0)),
-              ],
+  Widget getIncomingRequestsDataWidget(BuildContext scaffoldC) {
+    return StreamBuilder(
+        stream: Firestore.instance.collection(globals.ownerOwnerJoin).where('toUserId', isEqualTo: this.userId).snapshots(),
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshots) {
+          if(!snapshots.hasData) {
+            return LoadingContainerVertical(2);
+          }
+          return ListView.builder(
+        physics: NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        scrollDirection: Axis.vertical,
+        itemCount: snapshots.data.documents.length,
+        itemBuilder: (BuildContext context, int position) {
+          Map<String, dynamic> data = snapshots.data.documents[position].data;
+          LandlordRequest req = LandlordRequest.fromJson(data, snapshots.data.documents[position].documentID);
+          return Card(
+            margin: EdgeInsets.symmetric(vertical: 3.0, horizontal: 12.0),
+            elevation: 5.0,
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 10.0),
+              child: Row(
+                children: [
+                  Container(
+                      padding: EdgeInsets.all(10.0),
+                      child: IconButton(
+                        icon: Icon(Icons.check, color: Colors.green,
+                        size: 25.0,),
+                        onPressed: () {},
+                      )),
+                  Expanded(
+                    child: Column(children: [
+                      Text(
+                        getTitleText(req),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 14.0),
+                      ),
+                      SizedBox(height: 5.0),
+                      Text(
+                        'Please join as co-owner',
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey, fontSize: 12.0),
+                      )
+                    ]),
+                  ),
+                  Container(
+                      padding: EdgeInsets.all(10.0),
+                      child: IconButton(icon:Icon(Icons.close, color: Colors.red, size: 25.0), onPressed: () {rejectRequest(req, scaffoldC);},)),
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+        });
   }
+
+
+  String getTitleText( request) {
+    if(request.getFlatId() == null) {
+      return 'Request for building ' + request.getBuildingName();
+    }
+    else {
+      return 'Request for flat ' + request.getFlatNumber();
+    }
+  }
+
+
+  Future<bool> rejectRequest(LandlordRequest request, BuildContext scaffoldC) async {
+    Utility.createErrorSnackBar(scaffoldC, error: 'Rejecting request');
+    Map updateData = {'status': globals.RequestStatus.Rejected.index};
+    bool ret = await Firestore.instance.collection(globals.ownerOwnerJoin).document(request.getRequestId()).updateData(updateData).then((ret){
+      Scaffold.of(scaffoldC).hideCurrentSnackBar();
+      Utility.createErrorSnackBar(scaffoldC, error: 'Request rejected successfully');
+      return true;
+    }).catchError((){
+      Scaffold.of(scaffoldC).hideCurrentSnackBar();
+      Utility.createErrorSnackBar(scaffoldC, error: 'Error while rejecting request');
+      return false;
+    });
+
+    return ret;
+    
+  }
+
+  /*void acceptRequest(LandlordRequest request, BuildContext scaffoldC) async {
+    Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
+    Map reqUpdateData = {'status': globals.RequestStatus.Accepted.index};
+
+    WriteBatch batch = Firestore.instance.batch();
+
+    DocumentReference reqDoc = Firestore.instance.collection(globals.ownerOwnerJoin).document(request.getRequestId());
+    batch.updateData(reqDoc, reqUpdateData);
+
+    DocumentReference propDoc = Firestore.instance.collection(globals.building).document(request.getBuildingId());
+    if(request.getFlatId() != null) {
+      propDoc = propDoc.collection(globals.block).document(request.getBlockId()).collection(globals.ownerFlat).document(request.getFlatId());
+    }
+    
+    Map propUpdateData = {'ownerIdList': FieldValue.arrayUnion([request.getRequesterId()]), 'ownerRoleList': FieldValue.arrayUnion([request.getRequesterId() + ':' + globals.OwnerRoles.Manager.index.toString()])};
+    batch.updateData(propDoc, propUpdateData);
+    await batch.commit().then((ret){
+      Scaffold.of(scaffoldC).hideCurrentSnackBar();
+      Utility.createErrorSnackBar(scaffoldC, error: 'Request accepted successfully');
+
+      Map<String, dynamic> data = {'buildingId': request.getBuildingId(), 'buildingName': request.getBuildingName(), 'blockId': request.getBlockId(), 'blockName': request.getBlockName(), 'flatId': request.getFlatId(), 'flatName': request.getFlatNumber()};
+      OwnershipDetailsDBHelper.instance.insert(data);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) {
+          return Home(this.userId);
+        }),
+      );
+    }).catchError((){
+      Scaffold.of(scaffoldC).hideCurrentSnackBar();
+      Utility.createErrorSnackBar(scaffoldC, error: 'Error while accepting request');
+    });
+
+    
+
+    
+  }*/
 }

@@ -4,6 +4,7 @@ class Owner extends BaseModel {
   String role;
   String name;
   String phone;
+  String ownerId;
 
 	String getRole() {
 		return this.role;
@@ -29,4 +30,20 @@ class Owner extends BaseModel {
 		this.phone = phone;
 	}
 
+  String getOwnerId() {
+    return this.ownerId;
+  }
+
+  void setOwnerId(String ownerId) {
+    this.ownerId = ownerId;
+  }
+
+  static Owner fromJson(Map<String, dynamic> data, String documentId) {
+    Owner owner = new Owner();
+    owner.setName(data['name']);
+    owner.setPhone(data['phone']);
+    owner.setOwnerId(documentId);
+
+    return owner;
+  }
 }

@@ -1,33 +1,22 @@
 import './BaseModel.dart';
 
 class OwnerFlat extends BaseModel {
-  String buildingAddress;
-  String buildingName;
+  String buildingDetails;
   String buildingId;
-  String buildingDisplayId;
   String blockName;
-  String blockDisplayId;
-  String blockId;
-  String zipcode;
-  String flatNumber;
+  String flatName;
   List<String> ownerIdList;
   List<String> ownerRoleList;
   String flatDisplayId;
+  String flatId;
+  String buildingName;
 
-	String getBuildingAddress() {
-		return this.buildingAddress;
+	String getBuildingDetails() {
+		return this.buildingDetails;
 	}
 
-	void setBuildingAddress(String buildingAddress) {
-		this.buildingAddress = buildingAddress;
-	}
-
-	String getBuildingName() {
-		return this.buildingName;
-	}
-
-	void setBuildingName(String buildingName) {
-		this.buildingName = buildingName;
+	void setBuildingDetails(String buildingDetails) {
+		this.buildingDetails = buildingDetails;
 	}
 
 	String getBuildingId() {
@@ -38,28 +27,20 @@ class OwnerFlat extends BaseModel {
 		this.buildingId = buildingId;
 	}
 
-	String getBuildingDisplayId() {
-		return this.buildingDisplayId;
+  String getBuildingName() {
+		return this.buildingName;
 	}
 
-	void setBuildingDisplayId(String buildingDisplayId) {
-		this.buildingDisplayId = buildingDisplayId;
+	void setBuildingName(String buildingName) {
+		this.buildingName = buildingName;
 	}
 
-	String getZipcode() {
-		return this.zipcode;
+	String getFlatName() {
+		return this.flatName;
 	}
 
-	void setZipcode(String zipcode) {
-		this.zipcode = zipcode;
-	}
-
-	String getFlatNumber() {
-		return this.flatNumber;
-	}
-
-	void setFlatNumber(String flatNumber) {
-		this.flatNumber = flatNumber;
+	void setFlatName(String flatName) {
+		this.flatName = flatName;
 	}
 
 	List<String> getOwnerIdList() {
@@ -94,21 +75,44 @@ class OwnerFlat extends BaseModel {
 		this.blockName = blockName;
 	}
 
-	String getBlockDisplayId() {
-		return this.blockDisplayId;
+  String getFlatId() {
+		return this.flatId;
 	}
 
-	void setBlockDisplayId(String blockDisplayId) {
-		this.blockDisplayId = blockDisplayId;
+	void setFlatId(String flatId) {
+		this.flatId = flatId;
 	}
 
-	String getBlockId() {
-		return this.blockId;
-	}
+  Map<String, dynamic> toJson() {
+    return {
+      'flatName': this.flatName,
+      'flatDisplayId': this.flatDisplayId,
+      'ownerIdList': this.ownerIdList,
+      'ownerRoleList': this.ownerRoleList,
+      'buildingDetails': this.buildingDetails,
+      'buildingId': this.buildingId,
+      'blockName': this.blockName,
+      'buildingName': this.buildingName
 
-	void setBlockId(String blockId) {
-		this.blockId = blockId;
-	}
+    };
+  }
+  
+  static OwnerFlat fromJson(Map<String, dynamic> json, String documentId) {
+    OwnerFlat flat = new OwnerFlat();
+    flat.setFlatDisplayId((json['flatDisplayId'] as String));
+    flat.setFlatName((json['flatName'] as String));
+    List<String> ownerIdList = new List<String>.from(json['ownerIdList']);
+    flat.setOwnerIdList(ownerIdList);
+    List<String> ownerRoleList = new List<String>.from(json['ownerRoleList']);
+    flat.setOwnerRoleList(ownerRoleList);
+    flat.setFlatId(documentId);
+    flat.setBuildingDetails(json['buildingDetails']);
+    flat.setBlockName(json['blockName']);
+    flat.setBuildingId(json['buildingId']);
+    flat.setBuildingName(json['buildingName']);
+    return flat;
+
+  }
 
 
 }
