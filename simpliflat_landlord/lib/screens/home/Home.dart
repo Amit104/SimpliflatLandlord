@@ -118,7 +118,7 @@ class HomeState extends State<Home> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) {
-                    return CreateProperty(this.userId, null, true, false);
+                    return FlatList(this.userId, false, null);
                   }),
                  );
 

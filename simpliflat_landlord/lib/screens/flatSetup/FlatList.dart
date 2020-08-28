@@ -104,8 +104,8 @@ class FlatListState extends State<FlatList> {
   }
 
   void navigateToCreateProperty(BuildContext abContext, Building building) async {
-    //bool isAdd = building == null;
-    /*if(!this.join) {
+    bool isAdd = building == null;
+    if(!this.join) {
       bool ifSuccess = await Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {
@@ -117,14 +117,14 @@ class FlatListState extends State<FlatList> {
         Utility.createErrorSnackBar(abContext, error: 'Saved Successfully!');
       }
     }
-    else {*/
+    else {
       Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
         return PropertyRequests(this.userId, building, this.owner == null, this.owner);
       }),
     );
-    //}
+  }
   }
 
   void createDataObjectAndNavigate(Map<String, dynamic> buildingData, documentId, BuildContext ctx) async {
@@ -136,16 +136,18 @@ class FlatListState extends State<FlatList> {
 
     List<Block> blocks = b.getBlocks();
 
-    QuerySnapshot snapshot = await Firestore.instance.collection(globals.ownerFlat).getDocuments();
+    QuerySnapshot snapshot = await Firestore.instance.collection(globals.ownerFlat).where('buildingId', isEqualTo: documentId).getDocuments();
 
     
     for(int i = 0; i < snapshot.documents.length; i++) {
       OwnerFlat flat = OwnerFlat.fromJson(snapshot.documents[i].data, snapshot.documents[i].documentID);
-      Block block = blocks.firstWhere((Block b) { return b.getBlockName() == flat.getBlockName();});
-      if(block.getOwnerFlats() == null) {
-        block.setOwnerFlats(new List());
+      Block block = blocks.firstWhere((Block b) { return b.getBlockName() == flat.getBlockName();}, orElse: () {return null;});
+      if(block != null) {
+        if(block.getOwnerFlats() == null) {
+          block.setOwnerFlats(new List());
+        }
+        block.getOwnerFlats().add(flat);
       }
-      block.getOwnerFlats().add(flat);
     }
 
     setState(() {

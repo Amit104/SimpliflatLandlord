@@ -11,6 +11,7 @@ import './PropertyRequests.dart';
 import '../models/Block.dart';
 import './FlatList.dart';
 import '../models/TenantFlat.dart';
+import './MyBuildingList.dart';
 
 
 
@@ -79,7 +80,7 @@ class SearchTenantState extends State<SearchTenant> {
       return Container();
     }
     return ListTile(
-      onTap: navigateToFlatList,
+      onTap: navigateToMyBuildingList,
       title: Text(this.flat.getFlatName()),
     );
   }
@@ -95,13 +96,13 @@ class SearchTenantState extends State<SearchTenant> {
                                             this.mandatoryWarning = false;  
                                 }); } , decoration: InputDecoration(labelText: 'Display Id', hintText: 'Enter Display Id', labelStyle: TextStyle(color: mandatoryWarning?Colors.red:Colors.grey)),)),
         Container(
-          child:IconButton(icon: Icon(Icons.search), onPressed: () {getUserFromPhoneNumber();},)
+          child:IconButton(icon: Icon(Icons.search), onPressed: () {getTenantFlatFromId();},)
         ),
       ],
     );
   }
 
-  void getUserFromPhoneNumber() async {
+  void getTenantFlatFromId() async {
         String displayId = this.tenantFlatDisplayIdCtlr.text;
         debugPrint(displayId);
     if(displayId == null || displayId == '') {
@@ -131,13 +132,13 @@ class SearchTenantState extends State<SearchTenant> {
         });
   }
 
-  void navigateToFlatList() async {
+  void navigateToMyBuildingList() async {
     
   
       Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return FlatList(this.userId, true, null);
+        return MyBuildingList(this.userId, this.flat);
       }),
     );
   }

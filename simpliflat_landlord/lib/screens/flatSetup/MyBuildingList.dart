@@ -12,36 +12,39 @@ import '../models/Block.dart';
 import '../models/Owner.dart';
 import '../models/OwnershipDetailsDBHandler.dart';
 import './TenantRequests.dart';
+import '../models/TenantFlat.dart';
+import './CreateTenantRequest.dart';
 
 
-
-class TenantRequestBuildingList extends StatefulWidget {
+class MyBuildingList extends StatefulWidget {
 
   final String userId;
 
+  final TenantFlat tenantFlat;
 
-
-  TenantRequestBuildingList(this.userId);
+  MyBuildingList(this.userId, this.tenantFlat);
 
   @override
   State<StatefulWidget> createState() {
-    return TenantRequestBuildingListState(this.userId);
+    return MyBuildingListState(this.userId, this.tenantFlat);
   }
 
 }
 
-class TenantRequestBuildingListState extends State<TenantRequestBuildingList> {
+class MyBuildingListState extends State<MyBuildingList> {
 
   final String userId;
 
   bool loadingState = false;
+
+  TenantFlat tenantFlat;
 
   Map<String, String> ownedBuildings = new Map();
 
   Map<String, String> ownedFlatIds = new Map();
 
 
-  TenantRequestBuildingListState(this.userId);
+  MyBuildingListState(this.userId, this.tenantFlat);
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +96,7 @@ class TenantRequestBuildingListState extends State<TenantRequestBuildingList> {
             List<String> buildingElems = snapshot.data[position].split(';-;');
             return Card(
               child: ListTile(
-                onTap: () {navigateToTenantRequests(snapshot.data[position]);},
+                onTap: () {navigateToCreateTenantRequest(snapshot.data[position]);},
                 title: Text(buildingElems[0]),
                 subtitle: Text(buildingElems[1]),
               ),
@@ -104,20 +107,38 @@ class TenantRequestBuildingListState extends State<TenantRequestBuildingList> {
     );
   }
 
-  void navigateToTenantRequests(String id) async {
-    List<String> ownedFlatsList = new List();
-    if(ownedBuildings.containsKey(id)) {
-      QuerySnapshot flats = await Firestore.instance.collection(globals.ownerFlat).where('buildingId', isEqualTo: ownedBuildings[id]).getDocuments();
-      flats.documents.forEach((DocumentSnapshot d) {ownedFlatsList.add(d.documentID);});
-    }
-    else {
-      ownedFlatIds.forEach((String key, String value) {ownedFlatsList.add(value);});
+  void navigateToCreateTenantRequest(String id) async {
+    
+    String documentId = this.ownedFlatIds[id];
+
+    if(documentId == null) {
+      documentId = this.ownedBuildings[id];
     }
 
+    Building b = new Building();
+    b.setBuildingName(id.split(';-;')[0]);
+    b.setZipcode(id.split(';-;')[1]);
+    b.setBuildingId(documentId);
+
+    List<Block> blocks = b.getBlocks();
+
+    QuerySnapshot snapshot = await Firestore.instance.collection(globals.ownerFlat).where('buildingId', isEqualTo: documentId).getDocuments();
+
+    
+    for(int i = 0; i < snapshot.documents.length; i++) {
+      OwnerFlat flat = OwnerFlat.fromJson(snapshot.documents[i].data, snapshot.documents[i].documentID);
+      Block block = blocks.firstWhere((Block b) { return b.getBlockName() == flat.getBlockName();}, orElse: () {return null;});
+      if(block != null) {
+        if(block.getOwnerFlats() == null) {
+          block.setOwnerFlats(new List());
+        }
+        block.getOwnerFlats().add(flat);
+      }
+    }
     Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) {
-                    return TenantRequests(this.userId, ownedFlatsList, ownedBuildings[id]);
+                    return CreateTenantRequest(this.userId, b, this.tenantFlat);
                   }),
                  );
 

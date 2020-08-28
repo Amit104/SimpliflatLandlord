@@ -52,12 +52,13 @@ class PropertyRequestsState extends State<PropertyRequests> {
   Owner toOwner;
 
   PropertyRequestsState(this.userId, this.building, this.join, this.toOwner) {
-    for (int i = 0; i < this.building.getBlocks().length; i++) {
-      this.blocksExpanded[this.building.getBlocks()[i].getBlockName()] =
-          false;
+    if(this.building != null) {
+      for (int i = 0; i < this.building.getBlocks().length; i++) {
+        this.blocksExpanded[this.building.getBlocks()[i].getBlockName()] =
+            false;
+      }
+      this.buildingsExpanded = true;
     }
-    this.buildingsExpanded = true;
-
     debugPrint("in constructor");
   }
 
@@ -311,6 +312,7 @@ class PropertyRequestsState extends State<PropertyRequests> {
       return Container();
     }
     if (!this.join) {
+      /** reason for below? */
       documents.removeWhere((DocumentSnapshot document) {
         if (document.data['ownerIdList'] == null) {
           return false;

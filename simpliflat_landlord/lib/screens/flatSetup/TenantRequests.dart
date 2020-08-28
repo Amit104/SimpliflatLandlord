@@ -20,12 +20,14 @@ class TenantRequests extends StatefulWidget {
 
   final List<String> flatIds;
 
+  final String buildingId;
 
-  TenantRequests(this.userId, this.flatIds);
+
+  TenantRequests(this.userId, this.flatIds, this.buildingId);
 
   @override
   State<StatefulWidget> createState() {
-    return TenantRequestsState(this.userId, this.flatIds);
+    return TenantRequestsState(this.userId, this.flatIds, this.buildingId);
   }
 
 }
@@ -38,12 +40,16 @@ class TenantRequestsState extends State<TenantRequests> {
 
   final List<String> flatIds;
 
+  final String buildingId;
 
 
-  TenantRequestsState(this.userId, this.flatIds);
+
+  TenantRequestsState(this.userId, this.flatIds, this.buildingId);
 
   @override
   Widget build(BuildContext context) {
+    debugPrint(this.buildingId);
+    debugPrint(this.flatIds.length.toString());
     return Scaffold(
       appBar: AppBar(
         title: Text('All Flats'),
@@ -59,20 +65,28 @@ class TenantRequestsState extends State<TenantRequests> {
     );
   }
 
-  Stream<QuerySnapshot> getFlatList() {
-    Query q = Firestore.instance.collection(globals.ownerOwnerJoin).where('owner_flat_id', arrayContainsAny: this.flatIds).where('status', isEqualTo: globals.RequestStatus.Pending.index);
+  Future<List<DocumentSnapshot>> getFlatList() async {
+    debugPrint(this.buildingId);
+    QuerySnapshot q = await Firestore.instance.collection(globals.joinFlatLandlordTenant).where('building_id', isEqualTo: this.buildingId).where('status', isEqualTo: globals.RequestStatus.Pending.index).getDocuments();
+
+    List<DocumentSnapshot> documents = new List();
+
+    debugPrint(q.documents.length.toString());
+    q.documents.forEach((DocumentSnapshot d) {
+      debugPrint(d.data['owner_flat_id']);
+      if(this.flatIds.contains(d.data['owner_flat_id'])) {
+        documents.add(d);
+      }
+    });
 
 
-    
-
-
-    return q.snapshots();
+    return documents;
   }
 
   Widget getBody(BuildContext scaffoldC) {
-    return StreamBuilder(
-      stream: getFlatList(),
-      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snaphot) {
+    return FutureBuilder(
+      future: getFlatList(),
+      builder: (BuildContext context, AsyncSnapshot<List<DocumentSnapshot>> snaphot) {
         if(!snaphot.hasData) {
           return LoadingContainerVertical(2);
         }
@@ -80,21 +94,20 @@ class TenantRequestsState extends State<TenantRequests> {
           separatorBuilder: (BuildContext ctx, int pos){
             return Divider(height: 1.0);
           },
-          itemCount: snaphot.data.documents.length,
+          itemCount: snaphot.data.length,
           itemBuilder: (BuildContext context, int position) {
-            Map<String, dynamic> request = snaphot.data.documents[position].data;
-            LandlordRequest req = LandlordRequest.fromJson(request, snaphot.data.documents[position].documentID);
+            Map<String, dynamic> request = snaphot.data[position].data;
             
           
-            
+            request['documentID'] = snaphot.data[position].documentID;
             return Dismissible(
-              key: Key(snaphot.data.documents[position].documentID),
-              confirmDismiss: (direction) { return rejectRequest(req, scaffoldC);},
+              key: Key(snaphot.data[position].documentID),
+              confirmDismiss: (direction) { return rejectRequest(request, scaffoldC);},
                           child: Card(
                 child: ListTile(
-                  title: Text(req.getRequesterUserName() + ' ' + req.getRequesterPhone()),
-                  subtitle: Text(getSubtitleText(req)),
-                  trailing: IconButton(icon:Icon(Icons.check), onPressed: () {acceptRequest(req, scaffoldC);},),
+                  title: Text(request['created_by']['name'] + '-' + request['created_by']['phone']),
+                  subtitle: Text('Request for ' +  request['owner_flat_id']),
+                  trailing: IconButton(icon:Icon(Icons.check), onPressed: () {acceptRequest(request, scaffoldC);},),
                   isThreeLine: true,
                 ),
               ),
@@ -105,19 +118,10 @@ class TenantRequestsState extends State<TenantRequests> {
     );
   }
 
-  String getSubtitleText(LandlordRequest request) {
-    if(request.getFlatId() == null) {
-      return 'Request for building ' + request.getBuildingName();
-    }
-    else {
-      return 'Request for flat ' + request.getFlatNumber();
-    }
-  }
-
-  Future<bool> rejectRequest(LandlordRequest request, BuildContext scaffoldC) async {
+  Future<bool> rejectRequest(Map<String, dynamic> request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Rejecting request');
     Map<String, dynamic> updateData = {'status': globals.RequestStatus.Rejected.index};
-    bool ret = await Firestore.instance.collection(globals.ownerOwnerJoin).document(request.getRequestId()).updateData(updateData).then((ret){
+    bool ret = await Firestore.instance.collection(globals.joinFlatLandlordTenant).document(request['documentID'].toString()).updateData(updateData).then((ret){
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Request rejected successfully');
       return true;
@@ -131,26 +135,35 @@ class TenantRequestsState extends State<TenantRequests> {
     
   }
 
-  void acceptRequest(LandlordRequest request, BuildContext scaffoldC) async {
+  void acceptRequest(Map<String, dynamic> request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
+
     Map<String, dynamic> reqUpdateData = {'status': globals.RequestStatus.Accepted.index};
 
     WriteBatch batch = Firestore.instance.batch();
 
-    DocumentReference reqDoc = Firestore.instance.collection(globals.ownerOwnerJoin).document(request.getRequestId());
+    DocumentReference reqDoc = Firestore.instance.collection(globals.joinFlatLandlordTenant).document(request['documentID'].toString());
     batch.updateData(reqDoc, reqUpdateData);
 
 
     DocumentReference propDoc;
-    if(request.getFlatId() != null) {
-      propDoc = Firestore.instance.collection(globals.ownerFlat).document(request.getFlatId());
+    propDoc = Firestore.instance.collection(globals.ownerTenantFlat).document();
+    
+    
+    Map<String, dynamic> reqData = {'owner_flat_id': request['owner_flat_id'].toString(), 'tenant_flat_id': request['tenant_flat_id'].toString(), 'status': 0};
+    batch.setData(propDoc, reqData);
+
+    QuerySnapshot s = await Firestore.instance.collection(globals.joinFlatLandlordTenant).where('owner_flat_id', isEqualTo: request['owner_flat_id'].toString()).where('status', isEqualTo: globals.RequestStatus.Pending.index).getDocuments();
+
+    Map<String, dynamic> reqRejectData = {'status': globals.RequestStatus.Rejected.index};
+
+    for(int i = 0; i < s.documents.length; i++) {
+      if(s.documents[i].documentID != request['documentID'].toString()) {
+        DocumentReference d = Firestore.instance.collection(globals.joinFlatLandlordTenant).document(s.documents[i].documentID);
+        batch.updateData(d, reqRejectData);
+      }
     }
-    else {
-      propDoc = Firestore.instance.collection(globals.building).document(request.getBuildingId());
-    }
-    debugPrint(request.getToUserId());
-    Map<String, dynamic> propUpdateData = {'ownerIdList': FieldValue.arrayUnion([request.getToUserId()]), 'ownerRoleList': FieldValue.arrayUnion([request.getToUserId() + ':' + globals.OwnerRoles.Manager.index.toString()])};
-    batch.updateData(propDoc, propUpdateData);
+
     await batch.commit().then((ret){
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Request accepted successfully');
