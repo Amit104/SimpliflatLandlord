@@ -8,20 +8,10 @@ class Building extends BaseModel {
   String zipcode;
   String description;
   int type;
-  List<String> ownerIdList;
   String buildingDisplayId;
   String buildingId;
   List<Block> blocks;
-  List<String> ownerRoleList;
   bool isVerified;
-
-	List<String> getOwnerRoleList() {
-		return this.ownerRoleList;
-	}
-
-	void setOwnerRoleList(List<String> ownerRoleList) {
-		this.ownerRoleList = ownerRoleList;
-	}
 
 	bool isIsVerified() {
 		return this.isVerified;
@@ -72,14 +62,6 @@ class Building extends BaseModel {
 		this.type = type;
 	}
 
-	List<String> getOwnerIdList() {
-		return this.ownerIdList;
-	}
-
-	void setOwnerIdList(List<String> ownerIdList) {
-		this.ownerIdList = ownerIdList;
-	}
-
 	String getBuildingDisplayId() {
 		return this.buildingDisplayId;
 	}
@@ -115,9 +97,7 @@ class Building extends BaseModel {
       'zipcode': this.zipcode,
       'type': this.type,
       'buildingDisplayId': this.buildingDisplayId,
-      'ownerIdList': this.ownerIdList,
       'description': this.description,
-      'ownerRoleList': this.ownerRoleList,
       'verified': this.isVerified,
       'blocks': blocknames
     };
@@ -131,11 +111,6 @@ class Building extends BaseModel {
     b.setDescription((json['description'] as String));
     b.setType((json['type'] as int));
     b.setBuildingDisplayId((json['buildingDisplayId'] as String));
-    List<String> ownerIdList = new List<String>.from(json['ownerIdList']);
-    b.setOwnerIdList(ownerIdList);
-    b.setBuildingId(documentId);
-    List<String> ownerRoleList = new List<String>.from(json['ownerRoleList']);
-    b.setOwnerRoleList(ownerRoleList);
     b.setIsVerified(json['verified']);
     List<String> blocks = new List<String>.from(json['blocks']);
     List<Block> blockList = new List();

@@ -10,6 +10,8 @@ import '../models/OwnershipDetailsDBHandler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
 import '../flatSetup/TenantRequestsBuildingList.dart';
+import '../flatSetup/SearchTenant.dart';
+import '../flatSetup/MyBuildingList.dart';
 
 
 class Home extends StatefulWidget {
@@ -92,7 +94,7 @@ class HomeState extends State<Home> {
                  Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) {
-                    return SearchOwner(this.userId, false);
+                    return SearchOwner(this.userId);
                   }),
                  );
 
@@ -118,7 +120,7 @@ class HomeState extends State<Home> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) {
-                    return FlatList(this.userId, false, null);
+                    return FlatList(this.userId, false);
                   }),
                  );
 
@@ -140,19 +142,35 @@ class HomeState extends State<Home> {
 
               },
             ),
-            /*ListTile(
+            ListTile(
               title: Text('Join property'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) {
-                    return FlatList(this.userId, true, null);
+                    return FlatList(this.userId, true);
                   }),
                  );
 
               },
-            )*/
+            ),
+            ListTile(
+              title: Text('Add Tenant'),
+              onTap: () async {
+                Navigator.pop(context);
+                setState(() {
+                                  this.loadingState = true;
+                                });
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) {
+                    return SearchTenant(this.userId);
+                  }),
+                 );
+
+              },
+            ),
           ],
         ));
   }

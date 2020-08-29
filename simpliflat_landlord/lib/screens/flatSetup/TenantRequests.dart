@@ -18,16 +18,16 @@ class TenantRequests extends StatefulWidget {
 
   final String userId;
 
+  final Building building;
+
   final List<String> flatIds;
 
-  final String buildingId;
 
-
-  TenantRequests(this.userId, this.flatIds, this.buildingId);
+  TenantRequests(this.userId, this.building, this.flatIds);
 
   @override
   State<StatefulWidget> createState() {
-    return TenantRequestsState(this.userId, this.flatIds, this.buildingId);
+    return TenantRequestsState(this.userId, this.building, this.flatIds);
   }
 
 }
@@ -40,16 +40,12 @@ class TenantRequestsState extends State<TenantRequests> {
 
   final List<String> flatIds;
 
-  final String buildingId;
+  final Building building;
 
-
-
-  TenantRequestsState(this.userId, this.flatIds, this.buildingId);
+  TenantRequestsState(this.userId, this.building, this.flatIds);
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(this.buildingId);
-    debugPrint(this.flatIds.length.toString());
     return Scaffold(
       appBar: AppBar(
         title: Text('All Flats'),
@@ -66,8 +62,9 @@ class TenantRequestsState extends State<TenantRequests> {
   }
 
   Future<List<DocumentSnapshot>> getFlatList() async {
-    debugPrint(this.buildingId);
-    QuerySnapshot q = await Firestore.instance.collection(globals.joinFlatLandlordTenant).where('building_id', isEqualTo: this.buildingId).where('status', isEqualTo: globals.RequestStatus.Pending.index).getDocuments();
+    QuerySnapshot q = await Firestore.instance.collection(globals.joinFlatLandlordTenant).where('building_id', isEqualTo: this.building.getBuildingId())
+    .where('status', isEqualTo: globals.RequestStatus.Pending.index)
+    .where('request_from_tenant', isEqualTo: true).getDocuments();
 
     List<DocumentSnapshot> documents = new List();
 

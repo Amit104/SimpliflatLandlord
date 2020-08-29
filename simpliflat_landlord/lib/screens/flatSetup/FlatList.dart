@@ -10,6 +10,7 @@ import './createProperty.dart';
 import './PropertyRequests.dart';
 import '../models/Block.dart';
 import '../models/Owner.dart';
+import './RequestForCoOwner.dart';
 
 
 
@@ -19,13 +20,12 @@ class FlatList extends StatefulWidget {
 
   final bool join;
 
-  final Owner owner;
 
-  FlatList(this.userId, this.join, this.owner);
+  FlatList(this.userId, this.join);
 
   @override
   State<StatefulWidget> createState() {
-    return FlatListState(this.userId, this.join, this.owner);
+    return FlatListState(this.userId, this.join);
   }
 
 }
@@ -36,11 +36,9 @@ class FlatListState extends State<FlatList> {
 
   bool loadingState = false;
 
-  final Owner owner;
-
   final bool join;
 
-  FlatListState(this.userId, this.join, this.owner);
+  FlatListState(this.userId, this.join);
 
   @override
   Widget build(BuildContext context) {
@@ -66,10 +64,6 @@ class FlatListState extends State<FlatList> {
   Stream<QuerySnapshot> getFlatList() {
     Query q = Firestore.instance.collection(globals.building).where('verified', isEqualTo: false);
 
-
-    if(this.owner != null) {
-      q = q.where('ownerIdList', arrayContains: this.userId);
-    }
 
 
     return q.snapshots();
@@ -105,26 +99,25 @@ class FlatListState extends State<FlatList> {
 
   void navigateToCreateProperty(BuildContext abContext, Building building) async {
     bool isAdd = building == null;
-    if(!this.join) {
-      bool ifSuccess = await Navigator.push(
+    if(this.join) {
+      
+
+      Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) {
+        return RequestForCoOwner(this.userId, building);
+      }),
+    );
+
+    }
+    else {
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {
           return CreateProperty(this.userId, building, isAdd, this.join);
         }),
       );
-
-      if(ifSuccess) {
-        Utility.createErrorSnackBar(abContext, error: 'Saved Successfully!');
-      }
     }
-    else {
-      Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) {
-        return PropertyRequests(this.userId, building, this.owner == null, this.owner);
-      }),
-    );
-  }
   }
 
   void createDataObjectAndNavigate(Map<String, dynamic> buildingData, documentId, BuildContext ctx) async {

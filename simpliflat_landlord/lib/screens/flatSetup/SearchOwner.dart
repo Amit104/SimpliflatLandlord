@@ -11,6 +11,7 @@ import './PropertyRequests.dart';
 import '../models/Block.dart';
 import '../models/Owner.dart';
 import './FlatList.dart';
+import './MyBuildingList.dart';
 
 
 
@@ -18,13 +19,11 @@ class SearchOwner extends StatefulWidget {
 
   final String userId;
 
-  final bool join;
-
-  SearchOwner(this.userId, this.join);
+  SearchOwner(this.userId);
 
   @override
   State<StatefulWidget> createState() {
-    return SearchOwnerState(this.userId, this.join);
+    return SearchOwnerState(this.userId);
   }
 
 }
@@ -35,7 +34,6 @@ class SearchOwnerState extends State<SearchOwner> {
 
   bool loadingState = false;
 
-  final bool join;
 
   bool searched = false;
 
@@ -45,7 +43,7 @@ class SearchOwnerState extends State<SearchOwner> {
 
   final TextEditingController ownerPhoneController = new TextEditingController();
 
-  SearchOwnerState(this.userId, this.join);
+  SearchOwnerState(this.userId);
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +140,7 @@ class SearchOwnerState extends State<SearchOwner> {
       Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return FlatList(this.userId, true, this.owner);
+        return MyBuildingList(this.userId, null, this.owner);
       }),
     );
   }

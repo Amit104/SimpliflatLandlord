@@ -138,7 +138,7 @@ class SearchTenantState extends State<SearchTenant> {
       Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return MyBuildingList(this.userId, this.flat);
+        return MyBuildingList(this.userId, this.flat, null);
       }),
     );
   }

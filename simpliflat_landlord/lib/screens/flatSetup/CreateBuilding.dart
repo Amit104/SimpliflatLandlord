@@ -134,12 +134,7 @@ class CreateBuildingState extends State<CreateBuilding> {
                       if(this.building.getBuildingDisplayId() == null) {
                         this.building.setBuildingDisplayId(Utility.getRandomString(globals.displayIdLength));
                       }
-                      List<String> owners = new List();
-                      owners.add(this.userId);
-                      List<String> ownerRoles = new List();
-                      ownerRoles.add(this.userId + ":" + globals.OwnerRoles.Admin.index.toString());
-                      this.building.setOwnerIdList(owners);
-                      this.building.setOwnerRoleList(ownerRoles);
+                     
                       this.building.setIsVerified(false);
                       
                       Navigator.of(context).pop(this.building);

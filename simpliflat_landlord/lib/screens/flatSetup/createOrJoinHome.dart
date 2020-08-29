@@ -124,22 +124,15 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
   }
 
   void navigateToCreateProperty(bool join) async {
-    if(join) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) {
-          return FlatList(this.userId, true, null);
-        }),
-      );
-    }
-    else {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) {
-          return CreateProperty(this.userId, null, true, join);
-        }),
-      );
-    }
+    
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) {
+        return FlatList(this.userId, join);
+      }),
+    );
+    
+   
 
     // if(ifSuccess) {
     //   Utility.createErrorSnackBar(scaffoldC, error: 'Saved Successfully!');

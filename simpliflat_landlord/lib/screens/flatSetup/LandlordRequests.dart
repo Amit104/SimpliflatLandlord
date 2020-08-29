@@ -19,6 +19,7 @@ class LandlordRequests extends StatefulWidget {
   final String userId;
 
 
+
   LandlordRequests(this.userId);
 
   @override
@@ -34,7 +35,9 @@ class LandlordRequestsState extends State<LandlordRequests> {
 
   bool loadingState = false;
 
+
   List<LandlordRequest> landlordRequests = new List();
+
 
 
   LandlordRequestsState(this.userId);
@@ -56,31 +59,36 @@ class LandlordRequestsState extends State<LandlordRequests> {
     );
   }
 
-  Stream<QuerySnapshot> getFlatList() {
-    Query q = Firestore.instance.collection(globals.ownerOwnerJoin).where('toUserId', isEqualTo: this.userId).where('status', isEqualTo: globals.RequestStatus.Pending.index);
+  Future<List<DocumentSnapshot>> getFlatList() async {
+    QuerySnapshot q = await Firestore.instance.collection(globals.ownerOwnerJoin)
+    .where('status', isEqualTo: globals.RequestStatus.Pending.index)
+    .where('toUserId', isEqualTo: this.userId).getDocuments();
 
+ 
+    debugPrint(q.documents.length.toString());
 
     
 
 
-    return q.snapshots();
+
+    return q.documents;
   }
 
   Widget getBody(BuildContext scaffoldC) {
-    return StreamBuilder(
-      stream: getFlatList(),
-      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snaphot) {
-        if(!snaphot.hasData) {
+    return FutureBuilder(
+      future: getFlatList(),
+      builder: (BuildContext context, AsyncSnapshot<List<DocumentSnapshot>> snapshot) {
+        if(!snapshot.hasData) {
           return LoadingContainerVertical(2);
         }
         return ListView.separated(
           separatorBuilder: (BuildContext ctx, int pos){
             return Divider(height: 1.0);
           },
-          itemCount: snaphot.data.documents.length,
+          itemCount: snapshot.data.length,
           itemBuilder: (BuildContext context, int position) {
-            Map<String, dynamic> request = snaphot.data.documents[position].data;
-            LandlordRequest req = LandlordRequest.fromJson(request, snaphot.data.documents[position].documentID);
+            Map<String, dynamic> request = snapshot.data[position].data;
+            LandlordRequest req = LandlordRequest.fromJson(request, snapshot.data[position].documentID);
             
             if(position == 0) {
               this.landlordRequests = new List();
@@ -89,7 +97,7 @@ class LandlordRequestsState extends State<LandlordRequests> {
             this.landlordRequests.add(req);
             
             return Dismissible(
-              key: Key(snaphot.data.documents[position].documentID),
+              key: Key(snapshot.data[position].documentID),
               confirmDismiss: (direction) { return rejectRequest(req, scaffoldC);},
                           child: Card(
                 child: ListTile(
@@ -107,12 +115,7 @@ class LandlordRequestsState extends State<LandlordRequests> {
   }
 
   String getSubtitleText(LandlordRequest request) {
-    if(request.getFlatId() == null) {
-      return 'Request for building ' + request.getBuildingName();
-    }
-    else {
-      return 'Request for flat ' + request.getFlatNumber();
-    }
+    return 'Request for flat ' + request.getFlatNumber();
   }
 
   Future<bool> rejectRequest(LandlordRequest request, BuildContext scaffoldC) async {
@@ -142,22 +145,22 @@ class LandlordRequestsState extends State<LandlordRequests> {
     batch.updateData(reqDoc, reqUpdateData);
 
     DocumentReference propDoc;
-    if(request.getFlatId() != null) {
-      propDoc = Firestore.instance.collection(globals.ownerFlat).document(request.getFlatId());
-    }
-    else {
-      propDoc = Firestore.instance.collection(globals.building).document(request.getBuildingId());
-    }
-    debugPrint(request.getToUserId());
+    propDoc = Firestore.instance.collection(globals.ownerFlat).document(request.getFlatId());
+    
+    
     Map<String, dynamic> propUpdateData = {'ownerIdList': FieldValue.arrayUnion([request.getToUserId()]), 'ownerRoleList': FieldValue.arrayUnion([request.getToUserId() + ':' + globals.OwnerRoles.Manager.index.toString()])};
     batch.updateData(propDoc, propUpdateData);
     await batch.commit().then((ret){
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Request accepted successfully');
+      setState(() {
+              this.loadingState = false;
+            });
     }).catchError((e){
       debugPrint(e.toString());
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Error while accepting request');
+      this.loadingState = false;
     });
 
     

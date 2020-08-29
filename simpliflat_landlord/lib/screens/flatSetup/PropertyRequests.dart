@@ -19,16 +19,14 @@ class PropertyRequests extends StatefulWidget {
 
   Building building;
 
-  final bool join;
-
   final Owner toOwner;
 
-  PropertyRequests(this.userId, this.building, this.join, this.toOwner);
+  PropertyRequests(this.userId, this.building, this.toOwner);
 
   @override
   State<StatefulWidget> createState() {
     return PropertyRequestsState(
-        this.userId, this.building, this.join, this.toOwner);
+        this.userId, this.building, this.toOwner);
   }
 }
 
@@ -45,13 +43,11 @@ class PropertyRequestsState extends State<PropertyRequests> {
 
   bool loadingState = false;
 
-  final bool join;
-
   Map<String, bool> blocksExpanded = new Map();
 
   Owner toOwner;
 
-  PropertyRequestsState(this.userId, this.building, this.join, this.toOwner) {
+  PropertyRequestsState(this.userId, this.building, this.toOwner) {
     if(this.building != null) {
       for (int i = 0; i < this.building.getBlocks().length; i++) {
         this.blocksExpanded[this.building.getBlocks()[i].getBlockName()] =
@@ -67,7 +63,7 @@ class PropertyRequestsState extends State<PropertyRequests> {
     return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text(this.join ? 'Join property' : 'Add Owner'),
+          title: Text('Add Owner'),
           centerTitle: true,
         ),
         body: Builder(builder: (BuildContext scaffoldC) {
@@ -101,17 +97,6 @@ class PropertyRequestsState extends State<PropertyRequests> {
           headerBuilder: (BuildContext context, bool isExpanded) {
             return ListTile(
               title: Text(building.getBuildingName()),
-              trailing: !ifRequestToBuildingAlreadySent(data) && !ifRequestToBuildingAlreadyReceived(data) && 
-                      !isOwnerOfBuilding()
-                  ? Container(
-                      child: IconButton(
-                        icon: Icon(Icons.link),
-                        onPressed: () {
-                          sendRequestToOwner(scaffoldC);
-                        },
-                      ),
-                    )
-                  : SizedBox(),
             );
           },
           body: getBlocksListWidget(scaffoldC, data),
@@ -121,48 +106,16 @@ class PropertyRequestsState extends State<PropertyRequests> {
     );
   }
 
-  bool isOwnerOfBuilding() {
-    if (join) {
-      if (this.building.getOwnerIdList().contains(this.userId)) {
-        return true;
-      }
-    } else {
-      if (this.building.getOwnerIdList().contains(this.toOwner.getOwnerId())) {
-        return true;
-      }
-    }
-
-    return false;
-  }
 
   bool isOwnerOfFlat(OwnerFlat flat) {
-    if (join) {
-      if (flat.getOwnerIdList().contains(this.userId)) {
-        return true;
-      }
-    } else {
+    
       if (flat.getOwnerIdList().contains(this.toOwner.getOwnerId())) {
         return true;
       }
-    }
+    
 
     return false;
   }
-
-  bool ifRequestToAnyFlat(List<DocumentSnapshot> data) {
-    if (data == null || data.isEmpty) {
-      return false;
-    }
-
-    DocumentSnapshot d = data.firstWhere((request) {
-      return request['flatId'] != null;
-    }, orElse: () {
-      return null;
-    });
-
-    return d != null;
-  }
-
 
   bool ifRequestToFlatAlreadySent(List<DocumentSnapshot> data, String flatId) {
     if (data == null || data.isEmpty || flatId == null) {
@@ -170,72 +123,9 @@ class PropertyRequestsState extends State<PropertyRequests> {
     }
 
     DocumentSnapshot d = data.firstWhere((request) {
-      if (join) {
-        return request['flatId'] == flatId &&
-            request['requesterId'] == this.userId;
-      } else {
-        return request['flatId'] == flatId &&
-            request['toUserId'] == this.toOwner.getOwnerId();
-      }
-    }, orElse: () {
-      return null;
-    });
-    return d != null;
-  }
-
-  bool ifRequestToFlatAlreadyReceived(
-      List<DocumentSnapshot> data, String flatId) {
-    if (data == null || data.isEmpty || flatId == null) {
-      return false;
-    }
-
-    DocumentSnapshot d = data.firstWhere((request) {
-      if (join) {
-        return request['flatId'] == flatId &&
-            request['toUserId'] == this.userId;
-      } else {
-        return request['flatId'] == flatId &&
-            request['requesterId'] == this.toOwner.getOwnerId();
-      }
-    }, orElse: () {
-      return null;
-    });
-    return d != null;
-  }
-
-  bool ifRequestToBuildingAlreadySent(List<DocumentSnapshot> data) {
-    if (data == null || data.isEmpty) {
-      return false;
-    }
-
-    DocumentSnapshot d = data.firstWhere((request) {
-      if (join) {
-        return request['flatId'] == null &&
-            request['requesterId'] == this.userId;
-      } else {
-        return request['flatId'] == null &&
-            request['toUserId'] == this.toOwner.getOwnerId();
-      }
-    }, orElse: () {
-      return null;
-    });
-    return d != null;
-  }
-
-  bool ifRequestToBuildingAlreadyReceived(
-      List<DocumentSnapshot> data) {
-    if (data == null || data.isEmpty) {
-      return false;
-    }
-
-    DocumentSnapshot d = data.firstWhere((request) {
-      if (join) {
-        return request['flatId'] == null &&
-            request['toUserId'] == this.userId;
-      } else {
-        return request['flatId'] == null &&
-            request['requesterId'] == this.toOwner.getOwnerId();
-      }
+     
+        return request['flatId'] == flatId;
+      
     }, orElse: () {
       return null;
     });
@@ -245,16 +135,9 @@ class PropertyRequestsState extends State<PropertyRequests> {
   Future<QuerySnapshot> getExistingRequestsData() {
     Query q = Firestore.instance
         .collection(globals.ownerOwnerJoin)
-        .where('buildingId', isEqualTo: this.building.getBuildingId())
-        .where('status', isEqualTo: globals.RequestStatus.Pending.index);
-
-    /*if(!this.join) {
-      debugPrint("not join");
-      q = q.where('toUserId', isEqualTo: this.toOwner.getOwnerId());
-    }
-    else {
-      q = q.where('requesterId', isEqualTo: this.userId);
-    }*/
+        .where('toUserId', isEqualTo: this.toOwner.getOwnerId())
+        .where('status', isEqualTo: globals.RequestStatus.Pending.index)
+        .where('requestToOwner', isEqualTo: false);
 
     return q.getDocuments();
   }
@@ -311,15 +194,6 @@ class PropertyRequestsState extends State<PropertyRequests> {
     if (flats == null || flats.isEmpty) {
       return Container();
     }
-    if (!this.join) {
-      /** reason for below? */
-      documents.removeWhere((DocumentSnapshot document) {
-        if (document.data['ownerIdList'] == null) {
-          return false;
-        }
-        return !(document.data['ownerIdList'] as List).contains(this.userId);
-      });
-    }
 
     return ListView.separated(
       shrinkWrap: true,
@@ -331,9 +205,7 @@ class PropertyRequestsState extends State<PropertyRequests> {
         return ListTile(
           title: Text(flats[index].getFlatName()),
           trailing: isOwnerOfFlat(flats[index]) ||
-                  ifRequestToFlatAlreadySent(documents, flats[index].getFlatId()) ||
-                  ifRequestToFlatAlreadyReceived(documents, flats[index].getFlatId()) ||
-                  ifRequestToBuildingAlreadySent(documents) || isOwnerOfBuilding()
+                  ifRequestToFlatAlreadySent(documents, flats[index].getFlatId())
               ? SizedBox()
               : IconButton(
                   icon: Icon(Icons.link),
@@ -345,24 +217,6 @@ class PropertyRequestsState extends State<PropertyRequests> {
         );
       },
     );
-  }
-
-  //TODO: check if block is updated and populate isUpdated field correspondingly. If not updated then no need to set in batch
-  void setBlockDetails(Block block, bool isEdit) {
-    debugPrint("in set block details");
-    List<Block> blocks = this.building.getBlocks();
-    if (blocks == null) {
-      blocks = new List();
-    }
-    blocksExpanded[block.getBlockName()] = false;
-    if (!isEdit) {
-      blocks.add(block);
-    }
-    setState(() {
-      this.building.setBlock(blocks);
-      blocksExpanded[block.getBlockName()] = false;
-    });
-    debugPrint(blocks.length.toString());
   }
 
   void sendRequestToOwner(BuildContext ctx,
@@ -382,22 +236,21 @@ class PropertyRequestsState extends State<PropertyRequests> {
     request.setStatus(globals.RequestStatus.Pending.index);
     request.setRequesterPhone(phoneNumber);
     request.setRequesterId(this.userId);
-    request.setRequestToOwner(true);
+    request.setRequestToOwner(false);
     request.setRequesterUserName(userName);
     request.setCreatedAt(Timestamp.now());
 
-    if (forFlat != null && forFlat) {
+    
       request.setBlockName(block.getBlockName());
       request.setFlatId(flat.getFlatId());
       request.setFlatDisplayId(flat.getFlatDisplayId());
       request.setFlatNumber(flat.getFlatName());
-    }
+    
 
-    if (!join) {
       request.setToUserId(this.toOwner.getOwnerId());
       request.setToPhoneNumber(this.toOwner.getPhone());
       request.setToUsername(this.toOwner.getName());
-    }
+    
 
     Map<String, dynamic> data = request.toJson();
     Firestore.instance
@@ -408,15 +261,6 @@ class PropertyRequestsState extends State<PropertyRequests> {
         this.loadingState = false;
       });
       Utility.createErrorSnackBar(ctx, error: 'Request created successfully');
-      if(this.toOwner == null) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-          Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) {
-          return Home(this.userId);
-        }),
-      );
-      }
     }).catchError((e) {
       setState(() {
         this.loadingState = false;

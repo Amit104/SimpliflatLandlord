@@ -13,27 +13,22 @@ import '../models/LandlordRequest.dart';
 import '../models/Owner.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
 import '../home/Home.dart';
-import '../models/TenantFlat.dart';
 
-class CreateTenantRequest extends StatefulWidget {
+class RequestForCoOwner extends StatefulWidget {
   final String userId;
 
+  Building building;
 
-
-  final TenantFlat tenantFlat;
-
-  final Building building;
-
-  CreateTenantRequest(this.userId, this.building, this.tenantFlat);
+  RequestForCoOwner(this.userId, this.building);
 
   @override
   State<StatefulWidget> createState() {
-    return CreateTenantRequestState(
-        this.userId, this.building, this.tenantFlat);
+    return RequestForCoOwnerState(
+        this.userId, this.building);
   }
 }
 
-class CreateTenantRequestState extends State<CreateTenantRequest> {
+class RequestForCoOwnerState extends State<RequestForCoOwner> {
   @override
   void initState() {
     super.initState();
@@ -42,18 +37,13 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
   bool buildingsExpanded = false;
   bool flatExpanded = false;
   final String userId;
+  Building building;
 
   bool loadingState = false;
 
-
-  Building building;
-
-
   Map<String, bool> blocksExpanded = new Map();
 
-  TenantFlat tenantFlat;
-
-  CreateTenantRequestState(this.userId, this.building, this.tenantFlat) {
+  RequestForCoOwnerState(this.userId, this.building) {
     if(this.building != null) {
       for (int i = 0; i < this.building.getBlocks().length; i++) {
         this.blocksExpanded[this.building.getBlocks()[i].getBlockName()] =
@@ -61,6 +51,7 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
       }
       this.buildingsExpanded = true;
     }
+    debugPrint("in constructor");
   }
 
   @override
@@ -68,7 +59,7 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
     return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text('Add Tenant'),
+          title: Text('Add Owner'),
           centerTitle: true,
         ),
         body: Builder(builder: (BuildContext scaffoldC) {
@@ -77,24 +68,19 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
                   alignment: Alignment.center,
                   child: CircularProgressIndicator())
               : Container(
-                  child: SingleChildScrollView(
+                  child: building == null
+                      ? Container()
+                      : SingleChildScrollView(
                           child: Column(children: [
-                            getBody(scaffoldC),
+                            getMainExpansionPanelListForJoin(scaffoldC),
                           ]),
                         ),
                 );
         }));
   }
 
-  Widget getBody(BuildContext scaffoldContext) {
-    
-        return getMainExpansionPanelList(scaffoldContext);
-
-  }
-
-
   Widget getMainExpansionPanelList(
-      BuildContext scaffoldC) {
+      BuildContext scaffoldC, List<DocumentSnapshot> data) {
     return ExpansionPanelList(
       expansionCallback: (int index, bool isExpanded) {
         debugPrint(isExpanded.toString());
@@ -106,10 +92,10 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
         ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
             return ListTile(
-              title: Text(this.building.getBuildingName()),
+              title: Text(building.getBuildingName()),
             );
           },
-          body: getBlocksListWidget(scaffoldC),
+          body: getBlocksListWidget(scaffoldC, data),
           isExpanded: buildingsExpanded,
         ),
       ],
@@ -117,17 +103,55 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
   }
 
 
+  bool isOwnerOfFlat(OwnerFlat flat) {
+    
+      if (flat.getOwnerIdList().contains(this.userId)) {
+        return true;
+      }
+    
+
+    return false;
+  }
+
+  bool ifRequestToFlatAlreadySent(List<DocumentSnapshot> data, String flatId) {
+    if (data == null || data.isEmpty || flatId == null) {
+      return false;
+    }
+
+    DocumentSnapshot d = data.firstWhere((request) {
+     
+        return request['flatId'] == flatId;
+      
+    }, orElse: () {
+      return null;
+    });
+    return d != null;
+  }
 
   Future<QuerySnapshot> getExistingRequestsData() {
     Query q = Firestore.instance
-        .collection(globals.joinFlatLandlordTenant)
-        .where('buildingId', isEqualTo: this.building.getBuildingId());
+        .collection(globals.ownerOwnerJoin)
+        .where('requesterId', isEqualTo: this.userId)
+        .where('status', isEqualTo: globals.RequestStatus.Pending.index)
+        .where('requestToOwner', isEqualTo: true);
 
     return q.getDocuments();
   }
 
+  Widget getMainExpansionPanelListForJoin(BuildContext scaffoldC) {
+    return FutureBuilder(
+      future: getExistingRequestsData(),
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> documents) {
+        if (!documents.hasData) {
+          return LoadingContainerVertical(2);
+        }
+        return getMainExpansionPanelList(scaffoldC, documents.data.documents);
+      },
+    );
+  }
+
   Widget getBlocksListWidget(
-      BuildContext scaffoldC) {
+      BuildContext scaffoldC, List<DocumentSnapshot> documents) {
     List<ExpansionPanel> blocksWidget = new List();
     List<Block> blocks = this.building.getBlocks();
     debugPrint('blocks is empty');
@@ -143,7 +167,7 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
             title: Text(blocks[i].blockName),
           );
         },
-        body: getFlatNamesWidget(blocks[i], scaffoldC),
+        body: getFlatNamesWidget(blocks[i], documents, scaffoldC),
         isExpanded: blocksExpanded[blocks[i].getBlockName()],
       ));
     }
@@ -159,8 +183,9 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
     );
   }
 
+  
   Widget getFlatNamesWidget(
-      Block block, BuildContext ctx) {
+      Block block, List<DocumentSnapshot> documents, BuildContext ctx) {
     List<OwnerFlat> flats = block.getOwnerFlats();
     if (flats == null || flats.isEmpty) {
       return Container();
@@ -175,10 +200,13 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
       itemBuilder: (BuildContext context, int index) {
         return ListTile(
           title: Text(flats[index].getFlatName()),
-          trailing: IconButton(
+          trailing: isOwnerOfFlat(flats[index]) ||
+                  ifRequestToFlatAlreadySent(documents, flats[index].getFlatId())
+              ? SizedBox()
+              : IconButton(
                   icon: Icon(Icons.link),
                   onPressed: () {
-                    sendRequestToTenant(ctx,
+                    sendRequestToOwner(ctx,
                         forFlat: true, block: block, flat: flats[index]);
                   },
                 ),
@@ -187,73 +215,43 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
     );
   }
 
-  void sendRequestToTenant(BuildContext ctx,
+  void sendRequestToOwner(BuildContext ctx,
       {bool forFlat, Block block, OwnerFlat flat}) async {
     setState(() {
       this.loadingState = false;
     });
-
-    QuerySnapshot s =await Firestore.instance.collection(globals.ownerTenantFlat).where('owner_flat_id', isEqualTo: flat.getFlatId()).where('status', isEqualTo: 0).getDocuments();
-
-    if(s.documents.length > 0) {
-      showDialog(
-        context: context,
-        barrierDismissible: true,
-        child: AlertDialog(
-          title: Text('Warning'),
-          content: Text('The flat is already assigned to someone. Vacate the flat to add new tenants'),
-          actions: <Widget>[
-            
-            RaisedButton(child: Text('OK'), onPressed: () {
-              Navigator.of(context,
-                                                    rootNavigator: true)
-                                                .pop();
-            })
-          ],
-        ),
-      );
-    }
-    else {
-      createTenantRequest(ctx, block, flat);
-    }
-  }
-
-  void createTenantRequest(BuildContext ctx, Block block, OwnerFlat ownerFlat) async {
-
     String phoneNumber = await Utility.getUserPhone();
     String userName = await Utility.getUserName();
 
-    Map<String, dynamic> newReq = {
-          'building_id' : this.building.getBuildingId(),
-          'block_id' : block.getBlockName(),
-          'owner_flat_id' : ownerFlat.getFlatId(),
-          'tenant_flat_id': this.tenantFlat.getFlatId(),
-          'request_from_tenant': 1,
-          'status': 0,
-          'created_at': Timestamp.now(),
-          'updated_at': Timestamp.now(),
-          'created_by' : { "user_id" : this.userId, 'name' : userName, 'phone' : phoneNumber },
-          'tenant_flat_name' : this.tenantFlat.getFlatName(),
-          'building_details' : {'building_name' : this.building.getBuildingName(),'building_zipcode' : this.building.getZipcode(),'building_address' : ''} ,
-        };
+    LandlordRequest request = new LandlordRequest();
+    request.setBuildingAddress(this.building.getBuildingAddress());
+    request.setBuildingDisplayId(this.building.getBuildingDisplayId());
+    request.setBuildingId(this.building.getBuildingId());
+    request.setBuildingName(this.building.getBuildingName());
+    request.setZipcode(this.building.getZipcode());
+    request.setStatus(globals.RequestStatus.Pending.index);
+    request.setRequesterPhone(phoneNumber);
+    request.setRequesterId(this.userId);
+    request.setRequestToOwner(true);
+    request.setRequesterUserName(userName);
+    request.setCreatedAt(Timestamp.now());
 
+    
+    request.setBlockName(block.getBlockName());
+    request.setFlatId(flat.getFlatId());
+    request.setFlatDisplayId(flat.getFlatDisplayId());
+    request.setFlatNumber(flat.getFlatName());
+    
 
+    Map<String, dynamic> data = request.toJson();
     Firestore.instance
-        .collection(globals.joinFlatLandlordTenant)
-        .add(newReq)
+        .collection(globals.ownerOwnerJoin)
+        .add(data)
         .then((value) {
       setState(() {
         this.loadingState = false;
       });
       Utility.createErrorSnackBar(ctx, error: 'Request created successfully');
-        Navigator.of(context).popUntil((route) => route.isFirst);
-          Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) {
-          return Home(this.userId);
-        }),
-      );
-      
     }).catchError((e) {
       setState(() {
         this.loadingState = false;
