@@ -3,28 +3,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
-import 'package:share/share.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/screens/home/Home.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
 import 'package:simpliflat_landlord/screens/models/models.dart';
+import 'package:simpliflat_landlord/screens/ownerRequests/SearchOwner.dart';
+import 'package:simpliflat_landlord/screens/utility.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
-import '../../main.dart';
-import '../utility.dart';
 
 class ProfileOptions extends StatefulWidget {
-  var userName;
-  var userPhone;
-  var flatName;
-  var flatId;
 
-  ProfileOptions(this.userName, this.userPhone, this.flatName, this.flatId);
+
+  final Owner owner;
+
+  final OwnerFlat flat;
+
+  ProfileOptions(this.owner, this.flat);
 
   @override
-  State<StatefulWidget> createState() => new _ProfileOptions(flatId);
+  State<StatefulWidget> createState() => new _ProfileOptions(this.owner, this.flat);
 }
 
 class _ProfileOptions extends State<ProfileOptions> {
-  var uID;
-  final flatId;
+  //var uID;
   Set editedData = Set();
   var _formKey1 = GlobalKey<FormState>();
   var _minimumPadding = 5.0;
@@ -32,13 +34,12 @@ class _ProfileOptions extends State<ProfileOptions> {
   TextEditingController textField = TextEditingController();
   List existingUsers;
   int usersCount;
-  String userName;
+  //String userName;
 
-  _ProfileOptions(this.flatId);
+  final Owner owner;
+  final OwnerFlat flat;
 
-  void initPrefs() async {
-    await _getFromSharedPref();
-  }
+  _ProfileOptions(this.owner, this.flat);
 
   void initLists() async {
     if (this.existingUsers == null) {
@@ -50,7 +51,6 @@ class _ProfileOptions extends State<ProfileOptions> {
   @override
   Widget build(BuildContext context) {
     TextStyle textStyle = Theme.of(context).textTheme.title;
-    initPrefs();
     initLists();
     return WillPopScope(
         onWillPop: () {
@@ -58,10 +58,6 @@ class _ProfileOptions extends State<ProfileOptions> {
           return null;
         },
         child: Scaffold(
-            appBar: AppBar(
-              title: Text("Profile"),
-              elevation: 0.0,
-            ),
             body: Builder(builder: (BuildContext scaffoldC) {
               _scaffoldContext = scaffoldC;
               return new Center(
@@ -94,7 +90,7 @@ class _ProfileOptions extends State<ProfileOptions> {
                       elevation: 2.0,
                       child: ListTile(
                           title: Text(
-                            widget.flatName,
+                            this.flat.getFlatName()
                           ),
                           leading: Icon(
                             Icons.home,
@@ -107,7 +103,7 @@ class _ProfileOptions extends State<ProfileOptions> {
                       elevation: 2.0,
                       child: ListTile(
                         title: Text(
-                          widget.userName,
+                          this.owner.getName(),
                         ),
                         leading: Icon(
                           Icons.account_circle,
@@ -131,7 +127,7 @@ class _ProfileOptions extends State<ProfileOptions> {
                                       _changeUserName,
                                       _userNameValidator,
                                       TextInputType.text,
-                                      widget.userName));
+                                      this.owner.getName()));
                             }),
                       ),
                     ),
@@ -140,13 +136,28 @@ class _ProfileOptions extends State<ProfileOptions> {
                       elevation: 2.0,
                       child: ListTile(
                           title: Text(
-                            widget.userPhone,
+                            this.owner.getPhone(),
                           ),
                           leading: Icon(
                             Icons.phone,
                             color: Colors.blue,
                           ),
                           onTap: () {}),
+                    ),
+                    Card(
+                        child: ListTile(
+                          title: Text('Add Owner'),
+                         
+              onTap: () {
+                                 Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) {
+                    return SearchOwner(this.owner, this.flat);
+                  }),
+                 );
+
+              },
+                        ),
                     ),
                     Padding(
                       padding: EdgeInsets.only(left: 5.0, right: 5.0),
@@ -237,11 +248,6 @@ class _ProfileOptions extends State<ProfileOptions> {
     Navigator.pop(_navigatorContext, {'editedData': editedData});
   }
 
-  _getFromSharedPref() async {
-    final prefs = await SharedPreferences.getInstance();
-    uID = await prefs.get(globals.userId);
-  }
-
   void _signOut() async {
     await FirebaseAuth.instance.signOut();
     final prefs = await SharedPreferences.getInstance();
@@ -253,52 +259,15 @@ class _ProfileOptions extends State<ProfileOptions> {
   void _exitFlat() async {
 
     var batch = Firestore.instance.batch();
-    List flatList = await Utility.getFlatIdList();
-    List flatListOnly = new List();
-    for(String id in flatList)
-    {
-      if(id.contains("Name="))
-        flatListOnly.add(id.split("Name=")[0]);
-      else
-        flatListOnly.add(id);
-    }
+    
 
-    //update joinflat
-    var data = {"status": -1};
-    Firestore.instance
-        .collection(globals.requests)
-        .where("user_id", isEqualTo: uID)
-        .where("flat_id", isEqualTo: flatId)
-        .limit(1)
-        .getDocuments()
-        .then((checker) {
-      debugPrint("CHECKING REQUEST EXISTS OR NOT");
-      if (checker.documents != null && checker.documents.length != 0) {
-        debugPrint("UPDATING REQUEST");
-
-        var reqRef = Firestore.instance
-            .collection(globals.requests)
-            .document(checker.documents[0].documentID);
-        batch.updateData(reqRef, data);
-
-        var userRef = Firestore.instance.collection(globals.landlord).document(uID);
-        flatListOnly.remove(flatId);
-        batch.updateData(userRef, {"flat_id": flatListOnly});
-
-        var flatRef = Firestore.instance.collection(globals.flat).document(flatId);
-        batch.updateData(flatRef, {'landlord_id': null});
+      DocumentReference apartmentTenantDoc = Firestore.instance.collection(globals.ownerTenantFlat).document(this.flat.getApartmentTenantId());
+        
+        batch.updateData(apartmentTenantDoc, {'status': 1});
 
         batch.commit().then((res) async {
           debugPrint("Exit flat");
           //remove sharedPreferences
-          List flatListWithName = new List();
-          for(String id in flatList)
-          {
-            if(!id.contains(flatId))
-              flatListWithName.add(id);
-          }
-          Utility.addToSharedPref(
-              flatIdDefault: flatList[0].split("Name=")[0], flatIdList: flatListWithName);
           _backHome();
         }, onError: (e) {
           _setErrorState(_scaffoldContext, "CALL ERROR");
@@ -306,10 +275,6 @@ class _ProfileOptions extends State<ProfileOptions> {
           _setErrorState(_scaffoldContext, "SERVER ERROR");
         });
       }
-    });
-
-
-  }
 
   void _setErrorState(scaffoldContext, error, {textToSend}) {
     setState(() {
@@ -322,10 +287,13 @@ class _ProfileOptions extends State<ProfileOptions> {
   }
 
   void _backHome() async {
-    Navigator.pushAndRemoveUntil(
-        _scaffoldContext,
-        MaterialPageRoute(builder: (BuildContext context) => MyApp()),
-            (Route<dynamic> route) => false);
+    Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) {
+          return Home(this.owner);
+        }),
+      );
   }
 
   Form _getEditPrompt(textStyle, fieldName, editHandler, validatorCallback,
@@ -435,7 +403,7 @@ class _ProfileOptions extends State<ProfileOptions> {
   String _userNameValidator(String name) {
     if (name.isEmpty) {
       return "Cannot be empty";
-    } else if (name == widget.userName) {
+    } else if (name == this.owner.getName()) {
       return "Cannot be the same name";
     }
     return null;
@@ -446,10 +414,10 @@ class _ProfileOptions extends State<ProfileOptions> {
     var data = {"name": name};
     Firestore.instance
         .collection(globals.landlord)
-        .document(uID)
+        .document(this.owner.getOwnerId())
         .updateData(data)
         .then((updated) {
-      widget.userName = name;
+      this.owner.setName(name);
       editedData.add("name");
       Utility.addToSharedPref(userName: name);
     });
@@ -461,11 +429,10 @@ class _ProfileOptions extends State<ProfileOptions> {
   }
 
   void _updateUsersView() async {
-    debugPrint(flatId);
 
     Firestore.instance
         .collection("user")
-        .where("flat_id", isEqualTo: flatId)
+        .where("flat_id", isEqualTo: this.flat.getTenantFlatId())
         .getDocuments()
         .then((snapshot) {
       if (snapshot == null || snapshot.documents.length == 0) {

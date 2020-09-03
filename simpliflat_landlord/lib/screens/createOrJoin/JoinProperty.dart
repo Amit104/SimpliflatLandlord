@@ -1,36 +1,31 @@
 import 'package:flutter/material.dart';
-import './CreateBuilding.dart';
-import '../models/Building.dart';
-import './CreateBlock.dart';
-import '../models/Block.dart';
-import '../models/OwnerFlat.dart';
-import './CreateFlats.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
-import 'dart:convert';
+import 'package:simpliflat_landlord/screens/models/Block.dart';
+import 'package:simpliflat_landlord/screens/models/Building.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
-import '../models/LandlordRequest.dart';
-import '../models/Owner.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
-import '../home/Home.dart';
+import 'package:simpliflat_landlord/service/OwnerRequestsService.dart';
 
-class PropertyRequests extends StatefulWidget {
-  final String userId;
+/// page for owner to join an existing property
+class JoinProperty extends StatefulWidget {
+  final Owner user;
 
+  /// the building in which the flat is to be created
   Building building;
 
-  final Owner toOwner;
-
-  PropertyRequests(this.userId, this.building, this.toOwner);
+  JoinProperty(this.user, this.building);
 
   @override
   State<StatefulWidget> createState() {
-    return PropertyRequestsState(
-        this.userId, this.building, this.toOwner);
+    return JoinPropertyState(
+        this.user, this.building);
   }
 }
 
-class PropertyRequestsState extends State<PropertyRequests> {
+class JoinPropertyState extends State<JoinProperty> {
   @override
   void initState() {
     super.initState();
@@ -38,16 +33,14 @@ class PropertyRequestsState extends State<PropertyRequests> {
 
   bool buildingsExpanded = false;
   bool flatExpanded = false;
-  final String userId;
+  final Owner user;
   Building building;
 
   bool loadingState = false;
 
   Map<String, bool> blocksExpanded = new Map();
 
-  Owner toOwner;
-
-  PropertyRequestsState(this.userId, this.building, this.toOwner) {
+  JoinPropertyState(this.user, this.building) {
     if(this.building != null) {
       for (int i = 0; i < this.building.getBlocks().length; i++) {
         this.blocksExpanded[this.building.getBlocks()[i].getBlockName()] =
@@ -109,7 +102,7 @@ class PropertyRequestsState extends State<PropertyRequests> {
 
   bool isOwnerOfFlat(OwnerFlat flat) {
     
-      if (flat.getOwnerIdList().contains(this.toOwner.getOwnerId())) {
+      if (flat.getOwnerIdList().contains(this.user.getOwnerId())) {
         return true;
       }
     
@@ -135,9 +128,9 @@ class PropertyRequestsState extends State<PropertyRequests> {
   Future<QuerySnapshot> getExistingRequestsData() {
     Query q = Firestore.instance
         .collection(globals.ownerOwnerJoin)
-        .where('toUserId', isEqualTo: this.toOwner.getOwnerId())
+        .where('requesterId', isEqualTo: this.user.getOwnerId())
         .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-        .where('requestToOwner', isEqualTo: false);
+        .where('requestToOwner', isEqualTo: true);
 
     return q.getDocuments();
   }
@@ -211,7 +204,7 @@ class PropertyRequestsState extends State<PropertyRequests> {
                   icon: Icon(Icons.link),
                   onPressed: () {
                     sendRequestToOwner(ctx,
-                        forFlat: true, block: block, flat: flats[index]);
+                        block: block, flat: flats[index]);
                   },
                 ),
         );
@@ -220,52 +213,24 @@ class PropertyRequestsState extends State<PropertyRequests> {
   }
 
   void sendRequestToOwner(BuildContext ctx,
-      {bool forFlat, Block block, OwnerFlat flat}) async {
+      {Block block, OwnerFlat flat}) async {
+ 
     setState(() {
-      this.loadingState = false;
+        this.loadingState = true;
     });
-    String phoneNumber = await Utility.getUserPhone();
-    String userName = await Utility.getUserName();
 
-    LandlordRequest request = new LandlordRequest();
-    request.setBuildingAddress(this.building.getBuildingAddress());
-    request.setBuildingDisplayId(this.building.getBuildingDisplayId());
-    request.setBuildingId(this.building.getBuildingId());
-    request.setBuildingName(this.building.getBuildingName());
-    request.setZipcode(this.building.getZipcode());
-    request.setStatus(globals.RequestStatus.Pending.index);
-    request.setRequesterPhone(phoneNumber);
-    request.setRequesterId(this.userId);
-    request.setRequestToOwner(false);
-    request.setRequesterUserName(userName);
-    request.setCreatedAt(Timestamp.now());
+    bool ifSuccess = await OwnerRequestsService.sendRequestToOwner(this.building, block, flat, this.user);
 
-    
-      request.setBlockName(block.getBlockName());
-      request.setFlatId(flat.getFlatId());
-      request.setFlatDisplayId(flat.getFlatDisplayId());
-      request.setFlatNumber(flat.getFlatName());
-    
-
-      request.setToUserId(this.toOwner.getOwnerId());
-      request.setToPhoneNumber(this.toOwner.getPhone());
-      request.setToUsername(this.toOwner.getName());
-    
-
-    Map<String, dynamic> data = request.toJson();
-    Firestore.instance
-        .collection(globals.ownerOwnerJoin)
-        .add(data)
-        .then((value) {
+    if(ifSuccess) {
       setState(() {
         this.loadingState = false;
       });
       Utility.createErrorSnackBar(ctx, error: 'Request created successfully');
-    }).catchError((e) {
+    } else {
       setState(() {
         this.loadingState = false;
       });
       Utility.createErrorSnackBar(ctx, error: 'Error while creating request');
-    });
+    }
   }
 }

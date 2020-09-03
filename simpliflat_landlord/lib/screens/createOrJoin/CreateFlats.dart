@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
-import '../models/Building.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
-import 'dart:math';
-import '../models/OwnerFlat.dart';
 
+
+/// createFlats form to create flats using name and range
 class CreateFlats extends StatefulWidget {
-  final String userId;
+  final Owner user;
 
   List<OwnerFlat> ownerFlats;
 
   final bool join;
 
-  CreateFlats(this.userId, this.ownerFlats, this.join);
+  CreateFlats(this.user, this.ownerFlats, this.join);
 
   @override
   State<StatefulWidget> createState() {
-    return CreateFlatsState(this.userId, this.ownerFlats, this.join);
+    return CreateFlatsState(this.user, this.ownerFlats, this.join);
   }
 }
 
@@ -31,7 +32,7 @@ class CreateFlatsState extends State<CreateFlats> {
 
   bool isPG = false;
 
-  final String userId;
+  final Owner user;
 
   bool withRange = false;
 
@@ -50,7 +51,7 @@ class CreateFlatsState extends State<CreateFlats> {
 
   String errorMsg;
 
-  CreateFlatsState(this.userId, this.ownerflats, this.join) {
+  CreateFlatsState(this.user, this.ownerflats, this.join) {
     if(this.ownerflats == null) {
       this.ownerflats = new List();
     }
@@ -165,12 +166,14 @@ class CreateFlatsState extends State<CreateFlats> {
                   flat.setFlatDisplayId(
                       Utility.getRandomString(globals.displayIdLength));
                   List<String> owners = new List();
-                  owners.add(this.userId);
+                  owners.add(this.user.getOwnerId());
 
                   flat.setOwnerIdList(owners);
 
+                  flat.setVerified(false);
+
                   List<String> ownerRoleList = new List();
-                  ownerRoleList.add(this.userId +
+                  ownerRoleList.add(this.user.getOwnerId() +
                       ':' +
                       globals.OwnerRoles.Admin.index.toString());
                   flat.setOwnerRoleList(ownerRoleList);
@@ -252,12 +255,14 @@ class CreateFlatsState extends State<CreateFlats> {
                       flat.setFlatDisplayId(
                           Utility.getRandomString(globals.displayIdLength));
                       List<String> owners = new List();
-                      owners.add(this.userId);
+                      owners.add(this.user.getOwnerId());
 
                       flat.setOwnerIdList(owners);
 
+                      flat.setVerified(false);
+
                       List<String> ownerRoleList = new List();
-                      ownerRoleList.add(this.userId +
+                      ownerRoleList.add(this.user.getOwnerId() +
                           ':' +
                           globals.OwnerRoles.Admin.index.toString());
                       flat.setOwnerRoleList(ownerRoleList);
@@ -315,7 +320,7 @@ class CreateFlatsState extends State<CreateFlats> {
       scrollDirection: Axis.vertical,
       itemCount: this.ownerFlatsTemp.length,
       itemBuilder: (BuildContext context, int index) {
-        return this.ownerFlatsTemp[index].getOwnerRoleList().contains(this.userId + ":" + globals.OwnerRoles.Admin.index.toString()) && !this.join?Dismissible(
+        return this.ownerFlatsTemp[index].getOwnerRoleList().contains(this.user.getOwnerId() + ":" + globals.OwnerRoles.Admin.index.toString()) && !this.join?Dismissible(
             key: Key(this.ownerFlatsTemp[this.ownerFlatsTemp.length - index - 1].getFlatDisplayId()),
             onDismissed: (direction) {
               setState(() {
@@ -329,7 +334,6 @@ class CreateFlatsState extends State<CreateFlats> {
         ):ListTile(
             
             title: Text(this.ownerFlatsTemp[this.ownerFlatsTemp.length - index - 1].getFlatName()),
-            trailing: this.join?IconButton(icon: Icon(Icons.link)):SizedBox(),
           );
       },
     );

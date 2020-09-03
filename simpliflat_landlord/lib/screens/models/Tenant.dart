@@ -1,4 +1,5 @@
-import './BaseModel.dart';
+
+import 'package:simpliflat_landlord/screens/models/BaseModel.dart';
 
 class Tenant extends BaseModel {
   String name;

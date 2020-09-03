@@ -1,57 +1,43 @@
 import 'package:flutter/material.dart';
-import '../models/Building.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
-import 'package:simpliflat_landlord/screens/utility.dart';
-import 'dart:math';
-import '../models/OwnerFlat.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:simpliflat_landlord/screens/models/Block.dart';
+import 'package:simpliflat_landlord/screens/models/Building.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
+import 'package:simpliflat_landlord/screens/tenantRequests/TenantRequests.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
-import './createProperty.dart';
-import './PropertyRequests.dart';
-import '../models/Block.dart';
-import '../models/Owner.dart';
-import '../models/OwnershipDetailsDBHandler.dart';
-import './TenantRequests.dart';
-import '../models/TenantFlat.dart';
-import './CreateTenantRequest.dart';
-import '../models/Owner.dart';
 
 
-class MyBuildingList extends StatefulWidget {
 
-  final String userId;
+class TenantRequestBuildingList extends StatefulWidget {
 
-  final TenantFlat tenantFlat;
+  final Owner user;
 
-  final Owner owner;
 
-  MyBuildingList(this.userId, this.tenantFlat, this.owner);
+  TenantRequestBuildingList(this.user);
 
   @override
   State<StatefulWidget> createState() {
-    return MyBuildingListState(this.userId, this.tenantFlat, this.owner);
+    return TenantRequestBuildingListState(this.user);
   }
 
 }
 
-class MyBuildingListState extends State<MyBuildingList> {
+class TenantRequestBuildingListState extends State<TenantRequestBuildingList> {
 
-  final String userId;
+  final Owner user;
 
   bool loadingState = false;
 
-  TenantFlat tenantFlat;
-
-  Owner owner;
 
   Map<String, List<OwnerFlat>> ownedFlatIds = new Map();
 
 
-  MyBuildingListState(this.userId, this.tenantFlat, this.owner);
+  TenantRequestBuildingListState(this.user);
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(this.userId);
     return Scaffold(
       appBar: AppBar(
         title: Text('Your buildings'),
@@ -69,14 +55,18 @@ class MyBuildingListState extends State<MyBuildingList> {
 
   Future<List<OwnerFlat>> getBuildingList() async {
     ownedFlatIds = new Map();
-    QuerySnapshot allFlats = await Firestore.instance.collection(globals.ownerFlat).where('ownerIdList', arrayContains:  this.userId).getDocuments();
+    QuerySnapshot allFlats = await Firestore.instance.collection(globals.ownerFlat).where('ownerIdList', arrayContains:  this.user.getOwnerId()).getDocuments();
     List<OwnerFlat> buildings = new List();
+    debugPrint('full length ' + allFlats.documents.length.toString());
     for(int i = 0; i < allFlats.documents.length; i++) {
+      debugPrint(i.toString());
       DocumentSnapshot d1 = allFlats.documents[i];
+      
       OwnerFlat flatTemp = OwnerFlat.fromJson(d1.data, d1.documentID);
       if(ownedFlatIds[flatTemp.getBuildingId()] == null) {
         ownedFlatIds[flatTemp.getBuildingId()] = new List();
       }
+      debugPrint('loading - ' + flatTemp.getBuildingId() + ' flatTemp - ' + flatTemp.getFlatId());
       ownedFlatIds[flatTemp.getBuildingId()].add(flatTemp);
       OwnerFlat alreadyAdded = buildings.firstWhere((OwnerFlat b) {
         return (b.getBuildingId() == d1.data['buildingId']);
@@ -116,6 +106,7 @@ class MyBuildingListState extends State<MyBuildingList> {
 
   void navigate(OwnerFlat flat) async {
     
+    List<String> flatIds = new List();
 
     Building b = new Building();
     b.setBuildingName(flat.getBuildingName());
@@ -131,6 +122,8 @@ class MyBuildingListState extends State<MyBuildingList> {
     for(int i = 0; i < flats.length; i++) {
 
       OwnerFlat flat = flats[i];
+      debugPrint('flatid = ' + flat.getFlatId());
+      flatIds.add(flat.getFlatId());
       
       Block block = blocks.firstWhere((Block b) { return b.getBlockName() == flat.getBlockName();}, orElse: () {return null;});
       if(block == null) {
@@ -148,26 +141,18 @@ class MyBuildingListState extends State<MyBuildingList> {
 
 
     b.setBlock(blocks);
+      
 
-
-    if(this.tenantFlat !=null) {
+    
       Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) {
-                    return CreateTenantRequest(this.userId, b, this.tenantFlat);
-                  }),
-                 );
-    }
-    else if(this.owner != null) {
-      Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) {
-                    return PropertyRequests(this.userId, b, this.owner);
-                  }),
-                 );
+                    context,
+                    MaterialPageRoute(builder: (context) {
+                      return TenantRequests(this.user, b, flatIds);
+                    }),
+                  );
     }
 
-  }
+
 
   
 

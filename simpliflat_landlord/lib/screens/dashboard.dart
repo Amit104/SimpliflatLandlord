@@ -3,40 +3,38 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
-import 'package:simpliflat_landlord/screens/tenant_portal/tenant_portal.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
 import 'package:simpliflat_landlord/screens/tasks/view_task.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:simpliflat_landlord/screens/widgets/common.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
 import 'dart:async';
-import 'package:async/async.dart';
-import 'package:flutter/services.dart';
+
 
 class Dashboard extends StatefulWidget {
   final flatId;
+  final Owner owner;
 
-  Dashboard(this.flatId);
+  Dashboard(this.flatId, this.owner);
 
   @override
   State<StatefulWidget> createState() {
-    return DashboardState(this.flatId);
+    return DashboardState(this.flatId, this.owner);
   }
 }
 
 class DashboardState extends State<Dashboard> {
   var _navigatorContext;
   final flatId;
-  var currentUserId;
   bool noticesExist = false;
   bool tasksExist = false;
   List existingUsers;
   int usersCount;
-  String landlordUserName;
-  List landlordFlatList = new List();
-  List flatNameList = new List();
-  List readNoticeIds = new List();
-  List readTaskIds = new List();
+
+  bool loadingState = false;
+
+
+  final Owner owner;
 
   var numToMonth = {
     1: 'Jan',
@@ -53,141 +51,27 @@ class DashboardState extends State<Dashboard> {
     12: 'Dec'
   };
 
-  int unreadNoticesCount = 0;
-  bool unreadNoticesCountSet = false;
-  int unreadTasksCount = 0;
-  bool unreadTasksCountSet = false;
 
-  Map<String, int> flatWiseNoticeLastSeens = new Map();
 
-  Map<String, int> flatWiseTaskLastSeens = new Map();
-
-  Map<String, int> readNoticesCount = new Map();
-
-  Map<String, int> readTasksCount = new Map();
 
   Map<String, String> flatIdNameMap = new Map();
 
   Map<String, Map> flatIdentifierData = new Map();
 
-  String flatName;
+  //TODO: Pass flat object instead of hardcoding flatname
+  String flatName = '102';
 
   var _progressCircleState = 0;
 
   var _isButtonDisabled = false;
 
-  DashboardState(this.flatId);
+  DashboardState(this.flatId, this.owner);
 
   @override
   void initState() {
     super.initState();
     _buttonColor = Colors.blue;
     debugPrint("in init");
-    Utility.getUserId().then((id) {
-      debugPrint("id == " + id);
-      if (id == null || id == "") {
-      } else {
-        if (mounted) {
-          setState(() {
-            currentUserId = id;
-          });
-        }
-      }
-    });
-    Utility.getFlatName().then((name) {
-      if (name == null) {
-        if (mounted) {
-          setState(() {
-            flatName = "Flat";
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            flatName = name;
-          });
-        }
-      }
-    });
-    Utility.getUserName().then((name) {
-      if (name != null && name != '') {
-        if (mounted) {
-          setState(() {
-            landlordUserName = name;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            landlordUserName = 'Landlord';
-          });
-        }
-      }
-    });
-    Utility.getFlatIdList().then((flatList) {
-      List tempid = new List();
-      List tempname = new List();
-      for (String id in flatList) {
-        if (id.contains("Name=")) {
-          tempid.add(id.split("Name=")[0]);
-          tempname.add(id.split("Name=")[1]);
-          flatIdNameMap[id.split("Name=")[0]] = id.split("Name=")[1];
-        } else {
-          tempid.add(id);
-          flatIdNameMap[id] = "Flat";
-        }
-      }
-      if (mounted) {
-        setState(() {
-          landlordFlatList = tempid;
-          flatNameList = tempname;
-        });
-      }
-      landlordFlatList = tempid;
-
-      for (int i = 0; i < landlordFlatList.length; i++) {
-        debugPrint(landlordFlatList[i].toString());
-      }
-      Map<String, int> flatWiseNoticeLastSeensTemp = new Map();
-      Map<String, int> flatWiseTaskLastSeensTemp = new Map();
-      for (int i = 0; i < landlordFlatList.length; i++) {
-        flatWiseNoticeLastSeensTemp[landlordFlatList[i]] = 0;
-        readNoticesCount[landlordFlatList[i]] = 0;
-        flatWiseTaskLastSeensTemp[landlordFlatList[i]] = 0;
-        readTasksCount[landlordFlatList[i]] = 0;
-      }
-
-      Utility.getReadNoticesLastSeen().then((notices) {
-        if (notices != null) {
-          for (int i = 0; i < notices.length; i++) {
-            debugPrint('notices ===== ' + notices[i]['flatId'].toString());
-            flatWiseNoticeLastSeensTemp[notices[i]['flatId']] =
-                (notices[i]['lastSeen'] as int);
-          }
-        }
-        if (mounted) {
-          setState(() {
-            flatWiseNoticeLastSeens = flatWiseNoticeLastSeensTemp;
-          });
-        }
-      });
-
-      Utility.getReadTasksLastSeen().then((tasks) {
-        if (tasks != null) {
-          for (int i = 0; i < tasks.length; i++) {
-            flatWiseTaskLastSeensTemp[tasks[i]['flatId']] =
-                (tasks[i]['lastSeen'] as int);
-          }
-        }
-
-        
-        if (mounted) {
-          setState(() {
-            flatWiseTaskLastSeens = flatWiseTaskLastSeensTemp;
-          });
-        }
-      });
-    });
   }
 
   @override
@@ -206,10 +90,7 @@ class DashboardState extends State<Dashboard> {
               children: <Widget>[
                 flatNameWidget(),
 
-                // Today's Items
-
-                getStatistics(),
-                
+                // Today's Items                
 
                 getNewRequestsWidget(),
 
@@ -233,11 +114,10 @@ class DashboardState extends State<Dashboard> {
   Future<dynamic> getNewRequests() async {
     List<DocumentSnapshot> listOfPendingRequests = new List();
 
-    debugPrint(" current user id = " + currentUserId);
 
     QuerySnapshot a = await Firestore.instance
         .collection(globals.requests)
-        .where("user_id", isEqualTo: currentUserId)
+        .where("user_id", isEqualTo: this.owner.getOwnerId())
         .where("status", isEqualTo: 0)
         .getDocuments();
 
@@ -270,10 +150,8 @@ class DashboardState extends State<Dashboard> {
   }
 
   Widget getNewRequestsWidget() {
-    if (landlordFlatList == null ||
-        landlordFlatList.isEmpty ||
-        currentUserId == null ||
-        currentUserId == '') return LoadingContainerVertical(2);
+    if (this.owner.getOwnerId() == null ||
+        this.owner.getOwnerId() == '') return LoadingContainerVertical(2);
     return FutureBuilder(
       future: getNewRequests(),
       builder: (context, AsyncSnapshot<dynamic> documents) {
@@ -403,7 +281,7 @@ class DashboardState extends State<Dashboard> {
       _buttonColor = Colors.lightBlueAccent;
       _isButtonDisabled = true;
     });
-    var userId = currentUserId;
+    var userId = this.owner.getOwnerId();
     List landlordFlatList1 = await Utility.getFlatIdList();
     List flatListOnly = new List();
     for (String id in landlordFlatList1) {
@@ -655,273 +533,17 @@ class DashboardState extends State<Dashboard> {
     //  });
   }
 
-  Stream<List<QuerySnapshot>> getTasksAndNotices(flatid) {
-    Stream stream1 = Firestore.instance
-        .collection(globals.flat)
-        .document(flatId)
-        .collection("tasks_landlord")
-        .where("landlord_id", isEqualTo: currentUserId)
-        .where("completed", isEqualTo: false)
-        .snapshots();
-    Stream stream2 = Firestore.instance
-        .collection(globals.flat)
-        .document(flatId)
-        .collection(globals.messageBoard)
-        .snapshots();
-
-    return StreamZip([stream1, stream2]);
-  }
-
-  Widget getUnreadNoticesWidget(int position) {
-    if (flatWiseNoticeLastSeens.isEmpty)
-      return SpinKitRotatingPlain(
-        color: Colors.grey,
-        size: 5.0,
-      );
-    return StreamBuilder(
-      stream: Firestore.instance
-          .collection(globals.flat)
-          .document(landlordFlatList[position])
-          .collection(globals.messageBoard)
-          .snapshots(),
-      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-        debugPrint("flat id now in notices: " + flatId);
-        if (!snapshot.hasData) return CircularProgressIndicator();
-
-        List<DocumentSnapshot> allNotices = snapshot.data.documents;
-        for (int i = 0; i < flatWiseNoticeLastSeens.length; i++) {
-          flatWiseNoticeLastSeens.forEach((elem, milli) {
-            debugPrint("flat_id - " + elem + ' milli - ' + milli.toString());
-          });
-        }
-        Timestamp lastSeen;
-        int millisecondsSinceEpoch =
-            flatWiseNoticeLastSeens[landlordFlatList[position]];
-        debugPrint("milli = " + millisecondsSinceEpoch.toString());
-        if (millisecondsSinceEpoch == 0) {
-          lastSeen = Timestamp.now();
-        } else {
-          lastSeen =
-              Timestamp.fromMillisecondsSinceEpoch(millisecondsSinceEpoch);
-        }
-        int noticesCount = 0;
-        if (allNotices.isNotEmpty)
-          noticesCount = setUnreadNoticesCount(allNotices, lastSeen);
-        else
-          noticesCount = 0;
-
-        readNoticesCount[landlordFlatList[position]] = noticesCount;
-        return getNoticesIconCountWidget(
-            noticesCount); //Text(noticesCount.toString());
-      },
-    );
-  }
-
-  Widget getNoticesIconCountWidget(int count) {
-    String countStr = count.toString();
-    if (count > 999) {
-      countStr = "99+";
-    }
-    return new Container(
-      width: 70.0,
-      height: 70.0,
-      padding: EdgeInsets.all(5.0),
-      child: new Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Icon(
-            Icons.message,
-            size: 25.0,
-            color: Color(0xFF00CCe0),
-          ),
-          new Align(
-            alignment: Alignment.topRight,
-            child: new Container(
-              width: 30.0,
-              height: 30.0,
-              decoration:
-                  BoxDecoration(color: Color(0xFF3366a0), shape: BoxShape.circle),
-              alignment: Alignment.center,
-              child: new Text(
-                countStr,
-                style: new TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12.0),
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget getTasksIconCountWidget(int count) {
-    String countStr = count.toString();
-    if (count > 999) {
-      countStr = "99+";
-    }
-    return new Container(
-      width: 70.0,
-      height: 70.0,
-      padding: EdgeInsets.all(5.0),
-      child: new Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Icon(
-            Icons.list,
-            size: 25.0,
-            color: Color(0xFF00CCe0),
-          ),
-          new Align(
-            alignment: Alignment.topRight,
-            child: new Container(
-              width: 30.0,
-              height: 30.0,
-              decoration:
-                  BoxDecoration(color: Color(0xFF3366a0), shape: BoxShape.circle),
-              alignment: Alignment.center,
-              child: new Text(
-                countStr,
-                style: new TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12.0),
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget getUnreadTasksWidget(int position) {
-    if (flatWiseTaskLastSeens.isEmpty)
-      return SpinKitRotatingPlain(
-        color: Colors.grey,
-        size: 5.0,
-      );
-    return StreamBuilder(
-      stream: Firestore.instance
-          .collection(globals.flat)
-          .document(landlordFlatList[position])
-          .collection("tasks_landlord")
-          .where("landlord_id", isEqualTo: currentUserId)
-          .where("completed", isEqualTo: false)
-          .snapshots(),
-      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-        debugPrint("flat id now in tasks: " +
-            flatId +
-            " and current user id: " +
-            currentUserId);
-
-        if (!snapshot.hasData) return CircularProgressIndicator();
-
-        List<DocumentSnapshot> allTasks = snapshot.data.documents;
-
-        int tasksCount = 0;
-
-        Timestamp lastSeen;
-        int millisecondsSinceEpoch =
-            flatWiseTaskLastSeens[landlordFlatList[position]];
-        if (millisecondsSinceEpoch == 0) {
-          lastSeen = Timestamp.now();
-        } else {
-          lastSeen =
-              Timestamp.fromMillisecondsSinceEpoch(millisecondsSinceEpoch);
-        }
-
-        if (allTasks.isNotEmpty)
-          tasksCount = setUnreadTasksCount(allTasks, lastSeen);
-        else
-          tasksCount = 0;
-
-        readTasksCount[landlordFlatList[position]] = tasksCount;
-        return getTasksIconCountWidget(tasksCount);
-      },
-    );
-  }
-
-  Widget getStatistics() {
-    debugPrint("in get statistics");
-    if (landlordFlatList == null) {
-      debugPrint("landlordflatlist is null");
-    }
-    if (landlordFlatList != null && landlordFlatList.isEmpty) {
-      debugPrint("landlordflatlist is empty");
-    }
-    if (currentUserId == null) {
-      debugPrint("currentuserid is null");
-    }
-    if (flatNameList == null) {
-      debugPrint("flatnamelist is null");
-    }
-    if (flatNameList != null && flatNameList.isEmpty) {
-      debugPrint("flatNameList is empty");
-    }
-    if (landlordFlatList == null ||
-        landlordFlatList.isEmpty ||
-        currentUserId == null) {
-      return LoadingContainerVertical(2);
-    } else if ((landlordFlatList != null &&
-            landlordFlatList.isNotEmpty &&
-            currentUserId != null) &&
-        (flatNameList == null || flatNameList.isEmpty)) {
-      return Container();
-    }
-    return ExpansionTile(
-      initiallyExpanded: true,
-          title: Text('Unseen tasks and notices'),
-          children: [Container(
-        margin: EdgeInsets.symmetric(horizontal: 5.0),
-        child: Card(
-          elevation: 5.0,
-          child: ListView.separated(
-            separatorBuilder: (context, index) {
-              return Divider(height: 1.0);
-            },
-            itemCount: landlordFlatList.length,
-            scrollDirection: Axis.vertical,
-            shrinkWrap: true,
-            itemBuilder: (context, position) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                      child: Container(
-                          padding: EdgeInsets.only(left: 15.0),
-                          child: Text(flatNameList[position],
-                              style: TextStyle(
-                                  fontSize: 17.0,
-                                  fontFamily: 'Montserrat',
-                                  color: Colors.black)))),
-                  getUnreadNoticesWidget(position),
-                  getUnreadTasksWidget(position)
-                ],
-              );
-            },
-          ),
-        ),
-      )],
-    );
-  }
-
-  Future<dynamic> getLandlordNameAndId() async {
-    String flatNameTemp = await Utility.getUserName();
-    String flatIdTemp = await Utility.getUserId();
-    return {'id': flatIdTemp, 'name': flatNameTemp};
-  }
 
   // Get Tasks data for today
   Widget getTasks() {
-    if (currentUserId == null) return LoadingContainerVertical(2);
+    if (this.owner.getOwnerId() == null) return LoadingContainerVertical(2);
 
     var date = DateFormat("yyyy-MM-dd");
     // return FutureBuilder(
     //       future: getLandlordNameAndId(),
     //       builder: (context, snapshot) {
     //         if(!snapshot.hasData) return LoadingContainerVertical(1);
-
+    //TODO: need to change below
     return StreamBuilder<QuerySnapshot>(
         stream: Firestore.instance
             .collection("user")
@@ -934,7 +556,7 @@ class DashboardState extends State<Dashboard> {
                   .collection(globals.flat)
                   .document(flatId)
                   .collection("tasks_landlord")
-                  .where("landlord_id", isEqualTo: currentUserId)
+                  .where("landlord_id", isEqualTo: this.owner.getOwnerId())
                   .where("completed", isEqualTo: false)
                   .snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> taskSnapshot) {
@@ -953,7 +575,7 @@ class DashboardState extends State<Dashboard> {
                 taskSnapshot.data.documents.removeWhere((s) => !s
                     .data['assignee']
                     .toString()
-                    .contains(currentUserId.trim()));
+                    .contains(this.owner.getOwnerId().trim()));
 
                 /// TASK LIST VIEW
                 var tooltipKey = new List();
@@ -1097,8 +719,8 @@ class DashboardState extends State<Dashboard> {
         ),
       ));
     }
-    if (userList.contains(currentUserId)) {
-      var colorL = currentUserId.toString().trim().hashCode;
+    if (userList.contains(this.owner.getOwnerId())) {
+      var colorL = this.owner.getOwnerId().toString().trim().hashCode;
 
       overlappingUsers.add(new Positioned(
         right: (availableUsers * 20) + overflowAddition,
@@ -1106,7 +728,7 @@ class DashboardState extends State<Dashboard> {
           maxRadius: 14.0,
           backgroundColor: Colors.primaries[colorL % Colors.primaries.length]
               [300],
-          child: Text(landlordUserName[0]),
+          child: Text(this.owner.getName()[0]),
         ),
       ));
     }
@@ -1128,51 +750,12 @@ class DashboardState extends State<Dashboard> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return ViewTask(taskId, flatId, currentUserId, landlordUserName);
+        return ViewTask(taskId, flatId, this.owner);
       }),
     );
   }
 
-  int setUnreadNoticesCount(
-      List<DocumentSnapshot> notices, Timestamp timestamp) {
-    unreadNoticesCount = 0;
-    for (int i = 0; i < notices.length; i++) {
-      if ((notices[i].data['updated_at'] as Timestamp).compareTo(timestamp) >
-          0) {
-        unreadNoticesCount++;
-      }
-    }
-
-    // setState(() {
-    //       unreadNoticesCount = unreadNoticesCount;
-    //       unreadNoticesCountSet = true;
-    //     });
-
-    return unreadNoticesCount;
-  }
-
-  int setUnreadTasksCount(List<DocumentSnapshot> tasks, Timestamp timestamp) {
-    unreadTasksCount = 0;
-    for (int i = 0; i < tasks.length; i++) {
-      debugPrint("---------- " + tasks[i].data['title']);
-      debugPrint((tasks[i].data['updated_at'] as Timestamp)
-          .toDate()
-          .toIso8601String());
-      debugPrint((timestamp).toDate().toIso8601String());
-
-      if ((tasks[i].data['updated_at'] as Timestamp).compareTo(timestamp) > 0) {
-        unreadTasksCount++;
-      }
-    }
-
-    // setState(() {
-    //       unreadTasksCount = unreadTasksCount;
-    //       unreadTasksCountSet = true;
-    //     });
-
-    return unreadTasksCount;
-  }
-
+  //TODO: need to change below
   // Get NoticeBoard data
   Widget getNotices() {
     var date = DateFormat("yyyy-MM-dd");
@@ -1185,8 +768,8 @@ class DashboardState extends State<Dashboard> {
           .snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> notesSnapshot) {
         if (!notesSnapshot.hasData ||
-            currentUserId == null ||
-            currentUserId == "") return LoadingContainerVertical(3);
+            this.owner.getOwnerId() == null ||
+            this.owner.getOwnerId() == "") return LoadingContainerVertical(3);
 
         List<DocumentSnapshot> notices1 =
             List.from(notesSnapshot.data.documents);

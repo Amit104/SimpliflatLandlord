@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
-import './createProperty.dart';
+import 'package:simpliflat_landlord/screens/createOrJoin/FlatList.dart';
+import 'package:simpliflat_landlord/screens/models/LandlordRequest.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
-import './FlatList.dart';
-import './SearchOwner.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
-import '../models/LandlordRequest.dart';
-import '../home/Home.dart';
-import '../models/OwnershipDetailsDBHandler.dart';
 
 
 
 class CreateOrJoinHome extends StatefulWidget {
 
-  final String userId;
+  final Owner user;
 
-  CreateOrJoinHome(this.userId);
+  CreateOrJoinHome(this.user);
   
   @override
   State<StatefulWidget> createState() {
-    return new CreateOrJoinHomeState(this.userId);
+    return new CreateOrJoinHomeState(this.user);
   }
 }
 
@@ -31,9 +28,9 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
     super.initState();
   }
 
-  final String userId;
+  final Owner user;
 
-  CreateOrJoinHomeState(this.userId);
+  CreateOrJoinHomeState(this.user);
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +125,7 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return FlatList(this.userId, join);
+        return FlatList(this.user, join);
       }),
     );
     
@@ -197,7 +194,7 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
 
   Widget getIncomingRequestsDataWidget(BuildContext scaffoldC) {
     return StreamBuilder(
-        stream: Firestore.instance.collection(globals.ownerOwnerJoin).where('toUserId', isEqualTo: this.userId).snapshots(),
+        stream: Firestore.instance.collection(globals.ownerOwnerJoin).where('toUserId', isEqualTo: this.user.getOwnerId()).snapshots(),
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshots) {
           if(!snapshots.hasData) {
             return LoadingContainerVertical(2);

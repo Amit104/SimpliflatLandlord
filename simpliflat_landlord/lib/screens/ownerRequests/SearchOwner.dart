@@ -1,36 +1,33 @@
 import 'package:flutter/material.dart';
-import '../models/Building.dart';
+import 'package:simpliflat_landlord/screens/commonScreens/MyBuildingList.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
+import 'package:simpliflat_landlord/service/OwnerRequestsService.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/utility.dart';
-import 'dart:math';
-import '../models/OwnerFlat.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
-import './createProperty.dart';
-import './PropertyRequests.dart';
-import '../models/Block.dart';
-import '../models/Owner.dart';
-import './FlatList.dart';
-import './MyBuildingList.dart';
 
-
-
+/// page to search a owner user based on phone number
 class SearchOwner extends StatefulWidget {
 
-  final String userId;
+  final Owner user;
 
-  SearchOwner(this.userId);
+  final OwnerFlat ownerFlat;
+
+  SearchOwner(this.user, this.ownerFlat);
 
   @override
   State<StatefulWidget> createState() {
-    return SearchOwnerState(this.userId);
+    return SearchOwnerState(this.user, this.ownerFlat);
   }
 
 }
 
 class SearchOwnerState extends State<SearchOwner> {
 
-  final String userId;
+  final Owner user;
+
+  final OwnerFlat ownerFlat;
 
   bool loadingState = false;
 
@@ -43,7 +40,7 @@ class SearchOwnerState extends State<SearchOwner> {
 
   final TextEditingController ownerPhoneController = new TextEditingController();
 
-  SearchOwnerState(this.userId);
+  SearchOwnerState(this.user, this.ownerFlat);
 
   @override
   Widget build(BuildContext context) {
@@ -65,12 +62,12 @@ class SearchOwnerState extends State<SearchOwner> {
     return Column(
       children: <Widget>[
         getSearchBox(),
-        getUserBox(),
+        getUserBox(scaffoldC),
       ],
     );
   }
 
-  Widget getUserBox() {
+  Widget getUserBox(BuildContext scaffoldC) {
     if(this.loadingState) {
       return Container(alignment: Alignment.center, child: CircularProgressIndicator(),);
     }
@@ -81,7 +78,7 @@ class SearchOwnerState extends State<SearchOwner> {
       return Container();
     }
     return ListTile(
-      onTap: navigateToFlatList,
+      onTap: () {navigateToFlatList(scaffoldC);},
       title: Text(this.owner.getName()),
       subtitle: Text(this.owner.getPhone()),
     );
@@ -108,7 +105,6 @@ class SearchOwnerState extends State<SearchOwner> {
         String phoneNumber = this.ownerPhoneController.text;
         debugPrint(phoneNumber);
     if(phoneNumber == null || phoneNumber == '') {
-      debugPrint('mandatory warning set');
       setState(() {
               this.mandatoryWarning = true;
             });
@@ -124,7 +120,7 @@ class SearchOwnerState extends State<SearchOwner> {
         });
 
     Owner ownerTemp;
-    if(document.documents.length > 0 && document.documents[0].documentID != this.userId) {
+    if(document.documents.length > 0 && document.documents[0].documentID != this.user.getOwnerId()) {
       ownerTemp = Owner.fromJson(document.documents[0].data, document.documents[0].documentID);
     }
     
@@ -134,15 +130,63 @@ class SearchOwnerState extends State<SearchOwner> {
         });
   }
 
-  void navigateToFlatList() async {
+  void navigateToFlatList(BuildContext ctx) async {
+      /** owner flat is not null in case when trying to add owner from within flat */
+      if(this.ownerFlat != null) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          child: AlertDialog(
+            title: Text('Confirm'),
+            content: Text('Add owner to flat?'),
+            actions: <Widget>[
+              RaisedButton(
+                onPressed: () {
+                  sendRequestToCoOwner(ctx);
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
+                child: Text('Confirm'),
+              ),
+              RaisedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cancel'),
+              )
+            ],
+          ),
+        );
+      }
+      else {
+        Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) {
+          return MyBuildingList(this.user, null, this.owner);
+        }),
+      );
+      }
+  }
+
+  void sendRequestToCoOwner(BuildContext ctx) async {
+    setState(() {
+      this.loadingState = true;
+    });
     
-  
-      Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) {
-        return MyBuildingList(this.userId, null, this.owner);
-      }),
-    );
+
+    bool ifSuccess = await OwnerRequestsService.sendRequestToCoOwner(this.ownerFlat, user, this.owner);
+
+    if(ifSuccess) {
+      setState(() {
+        this.loadingState = false;
+      });
+      Utility.createErrorSnackBar(ctx, error: 'Request created successfully');
+    } else {
+      setState(() {
+        this.loadingState = false;
+      });
+      Utility.createErrorSnackBar(ctx, error: 'Error while creating request');
+    }
   }
   
 

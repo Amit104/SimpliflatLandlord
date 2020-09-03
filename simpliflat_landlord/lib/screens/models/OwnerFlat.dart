@@ -1,4 +1,5 @@
-import './BaseModel.dart';
+
+import 'package:simpliflat_landlord/screens/models/BaseModel.dart';
 
 class OwnerFlat extends BaseModel {
   String buildingDetails;
@@ -10,6 +11,70 @@ class OwnerFlat extends BaseModel {
   String flatDisplayId;
   String flatId;
   String buildingName;
+  String tenantFlatId;
+  String tenantFlatName;
+  String apartmentTenantId;
+  String buildingAddress;
+  String zipcode;
+  String buildingDisplayId;
+  bool verified;
+
+	bool isVerified() {
+		return this.verified;
+	}
+
+	void setVerified(bool verified) {
+		this.verified = verified;
+	}
+
+	String getBuildingAddress() {
+		return this.buildingAddress;
+	}
+
+	void setBuildingAddress(String buildingAddress) {
+		this.buildingAddress = buildingAddress;
+	}
+
+  String getBuildingDisplayId() {
+		return this.buildingDisplayId;
+	}
+
+	void setBuildingDisplayId(String buildingDisplayId) {
+		this.buildingDisplayId = buildingDisplayId;
+	}
+
+	String getZipcode() {
+		return this.zipcode;
+	}
+
+	void setZipcode(String zipcode) {
+		this.zipcode = zipcode;
+	}
+
+
+	String getTenantFlatId() {
+		return this.tenantFlatId;
+	}
+
+	void setTenantFlatId(String tenantFlatId) {
+		this.tenantFlatId = tenantFlatId;
+	}
+
+	String getTenantFlatName() {
+		return this.tenantFlatName;
+	}
+
+	void setTenantFlatName(String tenantFlatName) {
+		this.tenantFlatName = tenantFlatName;
+	}
+
+  String getApartmentTenantId() {
+		return this.apartmentTenantId;
+	}
+
+	void setApartmentTenantId(String apartmentTenantId) {
+		this.apartmentTenantId = apartmentTenantId;
+	}
 
 	String getBuildingDetails() {
 		return this.buildingDetails;
@@ -92,7 +157,8 @@ class OwnerFlat extends BaseModel {
       'buildingDetails': this.buildingDetails,
       'buildingId': this.buildingId,
       'blockName': this.blockName,
-      'buildingName': this.buildingName
+      'buildingName': this.buildingName,
+      'verified': this.verified
 
     };
   }
@@ -110,6 +176,7 @@ class OwnerFlat extends BaseModel {
     flat.setBlockName(json['blockName']);
     flat.setBuildingId(json['buildingId']);
     flat.setBuildingName(json['buildingName']);
+    flat.setVerified(json['verified']);
     return flat;
 
   }

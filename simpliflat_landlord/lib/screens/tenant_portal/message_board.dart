@@ -52,7 +52,7 @@ class _MessageBoard extends State<MessageBoard> {
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: Firestore.instance
-                      .collection(globals.flat)
+                      .collection(globals.ownerTenantFlat)
                       .document(_flatId)
                       .collection(globals.messageBoard)
                       .snapshots(),
@@ -569,7 +569,7 @@ class _MessageBoard extends State<MessageBoard> {
         allflatsList.forEach((doc) {
           debugPrint("add to flat - " + doc.toString());
           var docRef = Firestore.instance
-              .collection(globals.flat)
+              .collection(globals.ownerTenantFlat)
               .document(doc)
               .collection(globals.messageBoard)
               .document(); //automatically generate unique id
@@ -585,7 +585,7 @@ class _MessageBoard extends State<MessageBoard> {
         });
       } else {
         DocumentReference addNoteRef = Firestore.instance
-            .collection(globals.flat)
+            .collection(globals.ownerTenantFlat)
             .document(_flatId)
             .collection(globals.messageBoard)
             .document();
@@ -607,7 +607,7 @@ class _MessageBoard extends State<MessageBoard> {
         'user_name': userName
       };
       Firestore.instance
-          .collection(globals.flat)
+          .collection(globals.ownerTenantFlat)
           .document(_flatId)
           .collection(globals.messageBoard)
           .document(noteReference.documentID)
@@ -617,7 +617,7 @@ class _MessageBoard extends State<MessageBoard> {
           if (mounted) Utility.createErrorSnackBar(_navigatorContext);
         } else {
           Firestore.instance
-              .collection(globals.flat)
+              .collection(globals.ownerTenantFlat)
               .document(_flatId)
               .collection(globals.messageBoard)
               .document(freshNote.documentID)
@@ -634,7 +634,7 @@ class _MessageBoard extends State<MessageBoard> {
 
   _deleteNote(scaffoldContext, noticeReference) {
     Firestore.instance
-        .collection(globals.flat)
+        .collection(globals.ownerTenantFlat)
         .document(_flatId)
         .collection(globals.messageBoard)
         .document(noticeReference.documentID)
@@ -644,7 +644,7 @@ class _MessageBoard extends State<MessageBoard> {
         Utility.createErrorSnackBar(_navigatorContext);
       } else {
         Firestore.instance
-            .collection(globals.flat)
+            .collection(globals.ownerTenantFlat)
             .document(_flatId)
             .collection(globals.messageBoard)
             .document(freshNote.documentID)

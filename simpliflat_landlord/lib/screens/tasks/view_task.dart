@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simpliflat_landlord/screens/Res/strings.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
 import 'package:simpliflat_landlord/screens/models/models.dart';
 import 'package:simpliflat_landlord/screens/tasks/create_task.dart';
 import 'package:simpliflat_landlord/screens/tasks/taskHistory.dart';
@@ -14,14 +15,13 @@ import 'package:intl/intl.dart';
 class ViewTask extends StatefulWidget {
   final taskId;
   final _flatId;
-  final landlordId;
-  final landlordName;
+  final Owner owner;
 
-  ViewTask(this.taskId, this._flatId, this.landlordId, this.landlordName);
+  ViewTask(this.taskId, this._flatId, this.owner);
 
   @override
   State<StatefulWidget> createState() {
-    return _ViewTask(taskId, _flatId, landlordId, landlordName);
+    return _ViewTask(taskId, _flatId, this.owner);
   }
 }
 
@@ -41,8 +41,7 @@ class _ViewTask extends State<ViewTask> {
   Set<String> selectedUsers = new Set();
   String collectionname;
 
-  final landlordId;
-  final landlordName;
+  final Owner owner;
 
   Map<int, String> repeatMsgs = {
     -1: 'Occur Once',
@@ -54,7 +53,7 @@ class _ViewTask extends State<ViewTask> {
     5: 'Occurs monthly on particular dates'
   };
 
-  _ViewTask(this.taskId, this._flatId, this.landlordId, this.landlordName) {
+  _ViewTask(this.taskId, this._flatId, this.owner) {
     collectionname = 'tasks_landlord';
   }
 
@@ -174,7 +173,7 @@ class _ViewTask extends State<ViewTask> {
       context,
       MaterialPageRoute(builder: (context) {
         return CreateTask(
-            taskId, _flatId, typeOfTask, landlordId, landlordName);
+            taskId, _flatId, typeOfTask, this.owner);
       }),
     );
   }
@@ -692,12 +691,12 @@ class _ViewTask extends State<ViewTask> {
     if (assignees != null && assignees != '') {
       assigneesList = assignees.split(',').toList();
     }
-    if (assigneesList.contains(landlordId)) {
+    if (assigneesList.contains(this.owner.getOwnerId())) {
       chips.add(Container(
         margin: EdgeInsets.only(right: 5.0),
         child: Chip(
           labelPadding: EdgeInsets.all(0.0),
-          label: Text(' ' + landlordName + ' '),
+          label: Text(' ' + this.owner.getName() + ' '),
           backgroundColor: Colors.grey[200],
         ),
       ));

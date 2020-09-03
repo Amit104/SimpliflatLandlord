@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:simpliflat_landlord/screens/tenant_portal/tenant_portal.dart';
-import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/screens/utility.dart';
 
-import '../utility.dart';
 
 class CreateFlat extends StatefulWidget {
   final flag;
@@ -259,6 +257,7 @@ class _CreateUserFlat extends State<CreateFlat> {
     }
   }
 
+  //TODO: what is this below function?
   void _joinFlatAPI(scaffoldContext) async {
     var flatName = flatname.text;
     var uID = await _getFromSharedPref();
@@ -342,7 +341,6 @@ class _CreateUserFlat extends State<CreateFlat> {
                 debugPrint("ADDED TO FLAT");
                 Utility.addToSharedPref(flatIdDefault: flatId, flatIdList: landlordFlatListWithName, flatName: flatIdName);
                 setState(() {
-                  _navigateToHome(flatId);
                   _isButtonDisabled = false;
                   _progressCircleState = 2;
                   debugPrint("CALL SUCCCESS");
@@ -477,18 +475,6 @@ class _CreateUserFlat extends State<CreateFlat> {
     } else {
       return Icon(Icons.check, color: Colors.white);
     }
-  }
-
-  void _navigateToHome(flatId) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) {
-        return LandlordPortal(flatId);
-      }),
-    ).whenComplete(() {
-      _progressCircleState = 0;
-      _isButtonDisabled = false;
-    });
   }
 
   @override

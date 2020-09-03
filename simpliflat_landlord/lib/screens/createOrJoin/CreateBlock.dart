@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/Building.dart';
-import '../models/Block.dart';
-import 'package:simpliflat_landlord/screens/globals.dart' as globals;
-import 'package:simpliflat_landlord/screens/utility.dart';
+import 'package:simpliflat_landlord/screens/models/Block.dart';
 
+
+/// a dialog box to enter block name
 class CreateBlock extends StatefulWidget {
 
   final Function callBack;

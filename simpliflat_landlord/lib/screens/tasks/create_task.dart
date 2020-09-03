@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
 import 'package:simpliflat_landlord/screens/models/models.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,16 +14,15 @@ class CreateTask extends StatefulWidget {
   final taskId;
   final _flatId;
   final typeOfTask;
-  final landlordId;
-  final landlordName;
 
-  CreateTask(this.taskId, this._flatId, this.typeOfTask, this.landlordId,
-      this.landlordName);
+  final Owner owner;
+
+  CreateTask(this.taskId, this._flatId, this.typeOfTask, this.owner);
 
   @override
   State<StatefulWidget> createState() {
     return _CreateTask(
-        taskId, _flatId, typeOfTask, this.landlordId, this.landlordName);
+        taskId, _flatId, typeOfTask, this.owner);
   }
 }
 
@@ -31,9 +31,8 @@ class _CreateTask extends State<CreateTask> {
   final _flatId;
   String typeOfTask;
   List existingUsers;
-  final landlordId;
-  final landlordName;
 
+  final Owner owner;
   Set<String> selectedUsers = new Set();
 
   //static const existingUsers = ["User1", "User2"];
@@ -95,9 +94,7 @@ class _CreateTask extends State<CreateTask> {
 
   String collectionname;
 
-  _CreateTask(this.taskId, this._flatId, this.typeOfTask, this.landlordId,
-      this.landlordName) {
-    debugPrint(this.landlordName);
+  _CreateTask(this.taskId, this._flatId, this.typeOfTask, this.owner) {
     _isRemindMeOfIssueSelected = false;
     collectionname = 'tasks_landlord';
   }
@@ -423,7 +420,7 @@ class _CreateTask extends State<CreateTask> {
                       "payee": payeetext,
                       "nextDueDate": _nextNewDueDate,
                       "completed": false,
-                      "landlord_id": landlordId,
+                      "landlord_id": this.owner.getOwnerId(),
                       "assigned_to_flat": !ifAssignToUser
                     };
                     if (!ifAssignToUser) {
@@ -816,8 +813,8 @@ class _CreateTask extends State<CreateTask> {
                                 var documentID;
                                 var name;
                                 if (position == 0) {
-                                  documentID = landlordId;
-                                  name = landlordName;
+                                  documentID = this.owner.getOwnerId();
+                                  name = this.owner.getName();
                                 } else {
                                   documentID = snapshot
                                       .data.documents[position - 1].documentID
@@ -1650,7 +1647,7 @@ class _CreateTask extends State<CreateTask> {
         .document(_flatId)
         .collection(collectionname)
         .where("completed", isEqualTo: false)
-        .where("landlord_id", isEqualTo: landlordId)
+        .where("landlord_id", isEqualTo: this.owner.getOwnerId())
         .getDocuments();
 
     if (tasks.documents.isNotEmpty)

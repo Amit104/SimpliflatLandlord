@@ -1,5 +1,7 @@
-import './BaseModel.dart';
-import './OwnerFlat.dart';
+
+
+import 'package:simpliflat_landlord/screens/models/BaseModel.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
 
 class Block extends BaseModel {
   String blockName;

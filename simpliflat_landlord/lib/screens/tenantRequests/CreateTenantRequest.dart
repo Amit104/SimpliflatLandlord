@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import './CreateBuilding.dart';
-import '../models/Building.dart';
-import './CreateBlock.dart';
-import '../models/Block.dart';
-import '../models/OwnerFlat.dart';
-import './CreateFlats.dart';
+import 'package:simpliflat_landlord/screens/home/Home.dart';
+import 'package:simpliflat_landlord/screens/models/Block.dart';
+import 'package:simpliflat_landlord/screens/models/Building.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
+import 'package:simpliflat_landlord/screens/models/TenantFlat.dart';
+import 'package:simpliflat_landlord/service/TenantRequestsService.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
-import 'dart:convert';
 import 'package:simpliflat_landlord/screens/utility.dart';
-import '../models/LandlordRequest.dart';
-import '../models/Owner.dart';
-import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
-import '../home/Home.dart';
-import '../models/TenantFlat.dart';
 
+/// page to create tenant request
 class CreateTenantRequest extends StatefulWidget {
-  final String userId;
+  final Owner user;
 
 
 
@@ -24,12 +20,12 @@ class CreateTenantRequest extends StatefulWidget {
 
   final Building building;
 
-  CreateTenantRequest(this.userId, this.building, this.tenantFlat);
+  CreateTenantRequest(this.user, this.building, this.tenantFlat);
 
   @override
   State<StatefulWidget> createState() {
     return CreateTenantRequestState(
-        this.userId, this.building, this.tenantFlat);
+        this.user, this.building, this.tenantFlat);
   }
 }
 
@@ -41,7 +37,7 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
 
   bool buildingsExpanded = false;
   bool flatExpanded = false;
-  final String userId;
+  final Owner user;
 
   bool loadingState = false;
 
@@ -53,7 +49,7 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
 
   TenantFlat tenantFlat;
 
-  CreateTenantRequestState(this.userId, this.building, this.tenantFlat) {
+  CreateTenantRequestState(this.user, this.building, this.tenantFlat) {
     if(this.building != null) {
       for (int i = 0; i < this.building.getBlocks().length; i++) {
         this.blocksExpanded[this.building.getBlocks()[i].getBlockName()] =
@@ -189,11 +185,12 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
 
   void sendRequestToTenant(BuildContext ctx,
       {bool forFlat, Block block, OwnerFlat flat}) async {
+    Utility.createErrorSnackBar(ctx, error: 'Creating request...');
     setState(() {
-      this.loadingState = false;
+      this.loadingState = true;
     });
 
-    QuerySnapshot s =await Firestore.instance.collection(globals.ownerTenantFlat).where('owner_flat_id', isEqualTo: flat.getFlatId()).where('status', isEqualTo: 0).getDocuments();
+    QuerySnapshot s =await Firestore.instance.collection(globals.ownerTenantFlat).where('ownerFlatId', isEqualTo: flat.getFlatId()).where('status', isEqualTo: 0).getDocuments();
 
     if(s.documents.length > 0) {
       showDialog(
@@ -220,28 +217,11 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
 
   void createTenantRequest(BuildContext ctx, Block block, OwnerFlat ownerFlat) async {
 
-    String phoneNumber = await Utility.getUserPhone();
-    String userName = await Utility.getUserName();
-
-    Map<String, dynamic> newReq = {
-          'building_id' : this.building.getBuildingId(),
-          'block_id' : block.getBlockName(),
-          'owner_flat_id' : ownerFlat.getFlatId(),
-          'tenant_flat_id': this.tenantFlat.getFlatId(),
-          'request_from_tenant': 1,
-          'status': 0,
-          'created_at': Timestamp.now(),
-          'updated_at': Timestamp.now(),
-          'created_by' : { "user_id" : this.userId, 'name' : userName, 'phone' : phoneNumber },
-          'tenant_flat_name' : this.tenantFlat.getFlatName(),
-          'building_details' : {'building_name' : this.building.getBuildingName(),'building_zipcode' : this.building.getZipcode(),'building_address' : ''} ,
-        };
-
-
-    Firestore.instance
-        .collection(globals.joinFlatLandlordTenant)
-        .add(newReq)
-        .then((value) {
+      ownerFlat.setBuildingAddress(this.building.getBuildingAddress());
+      ownerFlat.setZipcode(this.building.getZipcode());
+      bool ifSuccess = await TenantRequestsService.createTenantRequest(ownerFlat, user, this.tenantFlat);
+       
+      if(ifSuccess) {
       setState(() {
         this.loadingState = false;
       });
@@ -250,15 +230,15 @@ class CreateTenantRequestState extends State<CreateTenantRequest> {
           Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) {
-          return Home(this.userId);
+          return Home(this.user);
         }),
       );
       
-    }).catchError((e) {
+    } else {
       setState(() {
         this.loadingState = false;
       });
       Utility.createErrorSnackBar(ctx, error: 'Error while creating request');
-    });
+    }
   }
 }

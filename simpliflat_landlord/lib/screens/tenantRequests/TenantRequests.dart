@@ -1,40 +1,38 @@
 import 'package:flutter/material.dart';
-import '../models/Building.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/screens/models/Building.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
-import 'dart:math';
-import '../models/OwnerFlat.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
-import './createProperty.dart';
-import './PropertyRequests.dart';
-import '../models/Block.dart';
-import '../models/Owner.dart';
-import '../models/LandlordRequest.dart';
+import 'package:simpliflat_landlord/service/TenantRequestsService.dart';
 
 
 
+///list of requests received from tenant
 class TenantRequests extends StatefulWidget {
 
-  final String userId;
+  final Owner user;
 
   final Building building;
 
   final List<String> flatIds;
 
+  //TODO: when changes are made in tenant app of adding owner ids in request. Then over here search using owner id.
 
-  TenantRequests(this.userId, this.building, this.flatIds);
+
+  TenantRequests(this.user, this.building, this.flatIds);
 
   @override
   State<StatefulWidget> createState() {
-    return TenantRequestsState(this.userId, this.building, this.flatIds);
+    return TenantRequestsState(this.user, this.building, this.flatIds);
   }
 
 }
 
 class TenantRequestsState extends State<TenantRequests> {
 
-  final String userId;
+  final Owner user;
 
   bool loadingState = false;
 
@@ -42,7 +40,7 @@ class TenantRequestsState extends State<TenantRequests> {
 
   final Building building;
 
-  TenantRequestsState(this.userId, this.building, this.flatIds);
+  TenantRequestsState(this.user, this.building, this.flatIds);
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +62,7 @@ class TenantRequestsState extends State<TenantRequests> {
   Future<List<DocumentSnapshot>> getFlatList() async {
     QuerySnapshot q = await Firestore.instance.collection(globals.joinFlatLandlordTenant).where('building_id', isEqualTo: this.building.getBuildingId())
     .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-    .where('request_from_tenant', isEqualTo: true).getDocuments();
+    .where('request_from_tenant', isEqualTo: 1).getDocuments();
 
     List<DocumentSnapshot> documents = new List();
 
@@ -117,58 +115,33 @@ class TenantRequestsState extends State<TenantRequests> {
 
   Future<bool> rejectRequest(Map<String, dynamic> request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Rejecting request');
-    Map<String, dynamic> updateData = {'status': globals.RequestStatus.Rejected.index};
-    bool ret = await Firestore.instance.collection(globals.joinFlatLandlordTenant).document(request['documentID'].toString()).updateData(updateData).then((ret){
+    
+    bool ifSuccess = await TenantRequestsService.rejectTenantRequest(request);
+
+    if(ifSuccess) {
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Request rejected successfully');
-      return true;
-    }).catchError((){
+    } else {
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Error while rejecting request');
-      return false;
-    });
+    }
 
-    return ret;
+    return ifSuccess;
     
   }
 
   void acceptRequest(Map<String, dynamic> request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
 
-    Map<String, dynamic> reqUpdateData = {'status': globals.RequestStatus.Accepted.index};
-
-    WriteBatch batch = Firestore.instance.batch();
-
-    DocumentReference reqDoc = Firestore.instance.collection(globals.joinFlatLandlordTenant).document(request['documentID'].toString());
-    batch.updateData(reqDoc, reqUpdateData);
-
-
-    DocumentReference propDoc;
-    propDoc = Firestore.instance.collection(globals.ownerTenantFlat).document();
+    bool ifSuccess = await TenantRequestsService.acceptTenantRequest(request);
     
-    
-    Map<String, dynamic> reqData = {'owner_flat_id': request['owner_flat_id'].toString(), 'tenant_flat_id': request['tenant_flat_id'].toString(), 'status': 0};
-    batch.setData(propDoc, reqData);
-
-    QuerySnapshot s = await Firestore.instance.collection(globals.joinFlatLandlordTenant).where('owner_flat_id', isEqualTo: request['owner_flat_id'].toString()).where('status', isEqualTo: globals.RequestStatus.Pending.index).getDocuments();
-
-    Map<String, dynamic> reqRejectData = {'status': globals.RequestStatus.Rejected.index};
-
-    for(int i = 0; i < s.documents.length; i++) {
-      if(s.documents[i].documentID != request['documentID'].toString()) {
-        DocumentReference d = Firestore.instance.collection(globals.joinFlatLandlordTenant).document(s.documents[i].documentID);
-        batch.updateData(d, reqRejectData);
-      }
-    }
-
-    await batch.commit().then((ret){
+    if(ifSuccess) {
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Request accepted successfully');
-    }).catchError((e){
-      debugPrint(e.toString());
+    } else {
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Error while accepting request');
-    });
+    }
 
     
   }

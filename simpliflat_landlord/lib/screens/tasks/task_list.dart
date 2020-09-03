@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/tasks/create_task.dart';
 import 'package:simpliflat_landlord/screens/tasks/view_task.dart';
+import 'package:simpliflat_landlord/screens/utility.dart';
 import 'package:simpliflat_landlord/screens/widgets/common.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../utility.dart';
-import 'create_task.dart';
 import 'package:flutter/foundation.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
 import 'package:simpliflat_landlord/screens/Res/strings.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
-import 'dart:convert';
 
 typedef TaskItemBodyBuilder<T> = Widget Function(TaskItem<T> item);
 typedef ValueToString<T> = String Function(T value);
@@ -127,14 +127,13 @@ class TaskItem<T> {
 class TaskList extends StatefulWidget {
   final flatId;
 
-  final landlordId;
-  final landlordName;
+  final Owner owner;
 
-  TaskList(this.flatId, this.landlordId, this.landlordName);
+  TaskList(this.flatId, this.owner);
 
   @override
   State<StatefulWidget> createState() {
-    return TaskListState(flatId, landlordId, landlordName);
+    return TaskListState(this.flatId, this.owner);
   }
 }
 
@@ -155,6 +154,7 @@ class TaskListState extends State<TaskList> {
   static var _isPayment = true;
   bool initializedNotifications = false;
   String collectionname;
+  final Owner owner;
   //List<DateTime> _nextDueDatesForIncompleteTasks;
 
   var numToMonth = {
@@ -175,12 +175,7 @@ class TaskListState extends State<TaskList> {
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
   final flatId;
 
-  final landlordId;
-  final landlordName;
-
-  TaskListState(this.flatId, this.landlordId, this.landlordName) {
-    debugPrint("landlord name in task list = " + landlordName);
-    debugPrint("landlord id in task list = " + landlordId);
+  TaskListState(this.flatId, this.owner) {
     collectionname = 'tasks_landlord';
   }
 
@@ -290,7 +285,7 @@ class TaskListState extends State<TaskList> {
                   .document(flatId)
                   .collection(collectionname)
                   .where("completed", isEqualTo: isCompleted)
-                  .where("landlord_id", isEqualTo: landlordId)
+                  .where("landlord_id", isEqualTo: this.owner.getOwnerId())
                   .snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> taskSnapshot) {
                 if (!taskSnapshot.hasData) return LoadingContainerVertical(7);
@@ -994,7 +989,7 @@ class TaskListState extends State<TaskList> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return CreateTask(taskId, flatId, typeOfTask, landlordId, landlordName);
+        return CreateTask(taskId, flatId, typeOfTask, this.owner);
       }),
     );
   }
@@ -1076,8 +1071,8 @@ class TaskListState extends State<TaskList> {
         ),
       ));
     }
-    if (userList.contains(landlordId)) {
-      var colorL = landlordId.toString().trim().hashCode;
+    if (userList.contains(this.owner.getOwnerId())) {
+      var colorL = this.owner.getOwnerId().toString().trim().hashCode;
 
       overlappingUsers.add(new Positioned(
         right: ((availableUsers) * 20) + overflowAddition,
@@ -1085,7 +1080,7 @@ class TaskListState extends State<TaskList> {
           maxRadius: 14.0,
           backgroundColor: Colors.primaries[colorL % Colors.primaries.length]
               [300],
-          child: Text(landlordName[0]),
+          child: Text(this.owner.getName()[0]),
         ),
       ));
     }
@@ -1150,7 +1145,7 @@ class TaskListState extends State<TaskList> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return ViewTask(taskId, flatId, landlordId, landlordName);
+        return ViewTask(taskId, flatId, this.owner);
       }),
     );
   }

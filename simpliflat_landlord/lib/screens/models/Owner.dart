@@ -1,10 +1,12 @@
-import './BaseModel.dart';
+
+import 'package:simpliflat_landlord/screens/models/BaseModel.dart';
 
 class Owner extends BaseModel {
   String role;
   String name;
   String phone;
   String ownerId;
+  String notificationToken;
 
 	String getRole() {
 		return this.role;
@@ -36,6 +38,14 @@ class Owner extends BaseModel {
 
   void setOwnerId(String ownerId) {
     this.ownerId = ownerId;
+  }
+
+  String getNotificationToken() {
+    return this.notificationToken;
+  }
+
+  void setNotificationToken(String notificationToken) {
+    this.notificationToken = notificationToken;
   }
 
   static Owner fromJson(Map<String, dynamic> data, String documentId) {

@@ -2,12 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:simpliflat_landlord/icons/icons_custom_icons.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
 import 'package:simpliflat_landlord/screens/profile/profile_options.dart';
 import 'package:simpliflat_landlord/screens/tasks/task_list.dart';
-import '../../main.dart';
 import '../dashboard.dart';
 import '../utility.dart';
-import 'add_flat.dart';
 import 'document_manager.dart';
 import 'message_board.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
@@ -15,15 +15,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:simpliflat_landlord/screens/tasks/create_task.dart';
 
 class LandlordPortal extends StatefulWidget {
-  var flatId;
+  OwnerFlat flat;
 
-  LandlordPortal(flatId) {
-    this.flatId = flatId;
-  }
+  final Owner owner;
+
+  LandlordPortal(this.flat, this.owner);
 
   @override
   State<StatefulWidget> createState() {
-    return _LandlordPortal(this.flatId);
+    return _LandlordPortal(this.flat, this.owner);
   }
 }
 
@@ -31,33 +31,27 @@ class _LandlordPortal extends State<LandlordPortal> {
   int _selectedIndex = 0;
 
   //profile details
-  var flatId;
+  OwnerFlat flat;
+
+  final Owner owner;
+
   String flatName = "Hey!";
   String userName = "";
   String userPhone = "";
   var userId;
   String _appBarTitle = "Simpliflat";
-  var titleList = ["Simpliflat", "Tasks", "Message Board", "Documents Manager"];
+  var titleList = ["Simpliflat", "Tasks", "Message Board", "Documents Manager", "Profile"];
 
-  String landlordId;
-
-  String landlordName;
 
   FirebaseMessaging firebaseMessaging = new FirebaseMessaging();
 
-  _LandlordPortal(flatId) {
-    this.flatId = flatId;
-  }
+  _LandlordPortal(this.flat, this.owner);
 
   // Initialise Firestore notifications
   @override
   void initState() {
     super.initState();
-    Utility.getFlatIdDefault().then((flat) {
-      if (flat != null) flatId = flat;
-    });
-    _updateUserDetails();
-    fetchFlatName(context);
+
     var notificationToken;
     firebaseMessaging.configure(onLaunch: (Map<String, dynamic> message) {
       debugPrint("lanuch called");
@@ -117,51 +111,27 @@ class _LandlordPortal extends State<LandlordPortal> {
           return null;
         },
         child: Scaffold(
-          drawer: getDrawer(),
           appBar: AppBar(
             backgroundColor: Colors.white,
             title: Text(
               _appBarTitle,
               style: TextStyle(color: Colors.indigo[900]),
             ),
+            actions: <Widget>[_selectedIndex == 1?IconButton(icon: Icon(Icons.add), onPressed: () {openActionMenu();},):SizedBox()],
             elevation: 0.0,
             centerTitle: true,
-            /*leading: IconButton(
-              icon: Icon(
-                Icons.group,
-                color: Colors.indigo,
-              ),
-              onPressed: () {
-                changeDefaultFlat();
-              },
-            ),
-            actions: <Widget>[
-              _selectedIndex == 1
-                  ? IconButton(
-                      icon: Icon(Icons.add_circle),
-                      onPressed: () {
-                        openActionMenu();
-                      })
-                  : Container(),
-              IconButton(
-                icon: Icon(
-                  Icons.person,
-                  color: Colors.indigo,
-                ),
-                onPressed: () {
-                  navigateToProfileOptions();
-                },
-              ),
-            ],*/
+            
           ),
           body: Center(
             child: _selectedIndex == 0
-                ? Dashboard(flatId)
+                ? Dashboard(this.flat.getFlatId(), this.owner)
                 : (_selectedIndex == 1
                     ? getTasksListScreen()
                     : (_selectedIndex == 2
-                        ? MessageBoard(flatId)
-                        : DocumentManager(flatId))),
+                        ? MessageBoard(this.flat.getFlatId())
+                        : (_selectedIndex == 3
+                        ? DocumentManager(this.flat.getFlatId())
+                        : ProfileOptions(this.owner, this.flat))))
           ),
           bottomNavigationBar: new BottomNavigationBar(
             items: <BottomNavigationBarItem>[
@@ -174,6 +144,9 @@ class _LandlordPortal extends State<LandlordPortal> {
               BottomNavigationBarItem(
                   icon: Icon(Icons.insert_drive_file),
                   title: Text('Documents')),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  title: Text('Profile')),
             ],
             currentIndex: _selectedIndex,
             unselectedItemColor: Colors.indigo[900],
@@ -185,13 +158,7 @@ class _LandlordPortal extends State<LandlordPortal> {
   }
 
   Widget getTasksListScreen() {
-    if (landlordId == null || landlordName == null) {
-      return Container(
-        child: CircularProgressIndicator(),
-      );
-    }
-    debugPrint("passing landlordName = " + landlordName);
-    return TaskList(flatId, landlordId, landlordName);
+    return TaskList(this.flat.getFlatId(), this.owner);
   }
 
   void openActionMenu() {
@@ -238,48 +205,13 @@ class _LandlordPortal extends State<LandlordPortal> {
   }
 
 
-  Widget getDrawer() {
-    return Drawer(
-        // Add a ListView to the drawer. This ensures the user can scroll
-        // through the options in the drawer if there isn't enough vertical
-        // space to fit everything.
-        child: ListView(
-          // Important: Remove any padding from the ListView.
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              child: Container(),
-              decoration: BoxDecoration(
-                color: Colors.blue[100],
-              ),
-            ),
-            ListTile(
-              title: Text('My buildings'),
-              onTap: () {
-                // Update the state of the app
-                // ...
-                // Then close the drawer
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: Text('Profile'),
-              onTap: () {
-                // Update the state of the app
-                // ...
-                // Then close the drawer
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ));
-  }
+  
 
   void navigateToAddTask(String typeOfTask, {taskId}) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return CreateTask(taskId, flatId, typeOfTask, landlordId, landlordName);
+        return CreateTask(taskId, this.flat.getFlatId(), typeOfTask, this.owner);
       }),
     );
   }
@@ -292,278 +224,8 @@ class _LandlordPortal extends State<LandlordPortal> {
     });
   }
 
-  //update user info if missing in shared preferences
-  void _updateUserDetails() async {
-    var _userId = await Utility.getUserId();
-
-    var _userName = await Utility.getUserName();
-    var _userPhone = await Utility.getUserPhone();
-    if (_userName == null ||
-        _userName == "" ||
-        _userPhone == null ||
-        _userPhone == "") {
-      Firestore.instance
-          .collection(globals.landlord)
-          .document(_userId)
-          .get()
-          .then((snapshot) {
-        if (snapshot.exists) {
-          debugPrint("in if = " + snapshot.data['name']);
-          if (mounted) {
-            setState(() {
-              userName = snapshot.data['name'];
-              userPhone = snapshot.data['phone'];
-              landlordName = userName;
-            });
-          }
-          Utility.addToSharedPref(userName: userName);
-          Utility.addToSharedPref(userPhone: userPhone);
-        }
-      }, onError: (e) {});
-    } else {
-      debugPrint("in else = " + _userName);
-      userName = _userName;
-      userPhone = _userPhone;
-    }
-    if (mounted) {
-      if (_userName == null || _userName == '') {
-        setState(() {
-          landlordId = _userId;
-        });
-      } else {
-        setState(() {
-          landlordName = _userName;
-          landlordId = _userId;
-        });
-      }
-    }
-  }
-
-  // update flat info if missing in shared preferences
-  // TODO update name of flats stored in landlord table
-  void fetchFlatName(context) async {
-    Utility.getFlatName().then((name) {
-      if (flatName == null || flatName == "") {
-        Firestore.instance
-            .collection(globals.flat)
-            .document(flatId)
-            .get()
-            .then((flat) {
-          if (flat != null) {
-            Utility.addToSharedPref(flatName: flat['name'].toString());
-            if (mounted)
-              setState(() {
-                flatName = flat['name'].toString().trim();
-                if (flatName == null || flatName == "") flatName = "Hey!";
-              });
-          }
-        });
-      }
-      if (name != null) {
-        if (mounted)
-          setState(() {
-            flatName = name;
-          });
-      } else {
-        if (mounted)
-          setState(() {
-            flatName = "Hey there!";
-          });
-      }
-    });
-  }
-
-  void navigateToProfileOptions() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-          builder: (context) =>
-              ProfileOptions(userName, userPhone, flatName, flatId)),
-    );
-  }
-
   moveToLastScreen(_navigatorContext) {
     Navigator.pop(_navigatorContext, true);
   }
-
-  void changeDefaultFlat() async {
-    List flatList = await Utility.getFlatIdList();
-    bool sanityCheck = await checkSanityOfNames(flatList);
-    for (String id in flatList) {
-      debugPrint(id);
-      if (!id.contains("Name=")) sanityCheck = false;
-    }
-    if (sanityCheck)
-      showModalBottomSheet(
-        context: context,
-        builder: (context) {
-          return FilterSheet(this.filterChange, flatList, flatId);
-        },
-      );
-    else
-      Utility.createErrorSnackBar(context,
-          error:
-              "Something went wrong! Please turn on internet or restart the app.");
-  }
-
-  void filterChange(String flat, String name) {
-    if (flat != null && flat != "") {
-      setState(() {
-        Utility.addToSharedPref(
-            flatIdDefault: flat, flatName: name.toString().trim());
-        flatId = flat;
-        flatName = name;
-      });
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) {
-          return LandlordPortal(flatId);
-        }),
-      );
-    }
-  }
-
-  Future<bool> checkSanityOfNames(List flatList) async {
-    var updated = true;
-
-    if (flatList == null) {
-      flatList = new List();
-    }
-
-    var defaultFlatName = await Utility.getFlatName();
-    List toUpdateFlatRefs = new List();
-    if (flatList != null) {
-      for (String id in flatList) {
-        debugPrint(id);
-        if (id.contains("Name=")) continue;
-        toUpdateFlatRefs.add(FlatIncomingReq(
-            Firestore.instance.collection(globals.flat).document(id), id));
-      }
-    }
-
-    Map<String, String> flatIdName = new Map();
-
-    Firestore.instance.runTransaction((transaction) async {
-      for (int i = 0; i < toUpdateFlatRefs.length; i++) {
-        DocumentSnapshot flatData =
-            await transaction.get(toUpdateFlatRefs[i].ref);
-        if (flatData.exists)
-          flatIdName[toUpdateFlatRefs[i].displayId] = flatData.data['name'];
-      }
-    }).whenComplete(() {
-      debugPrint("IN WHEN COMPLETE TRANSACTION");
-      List updatedFlatList = new List();
-      for (String id in flatList) {
-        if (id == flatId) {
-          if (defaultFlatName == null || defaultFlatName == "") {
-            if (id.contains("Name=")) {
-              Utility.addToSharedPref(flatName: id.split("Name=")[1]);
-            } else if (flatIdName.containsKey(id)) {
-              Utility.addToSharedPref(flatName: flatIdName[id]);
-            }
-          }
-        }
-        if (id.contains("Name="))
-          updatedFlatList.add(id);
-        else {
-          if (flatIdName.containsKey(id))
-            updatedFlatList.add(id + "Name=" + flatIdName[id]);
-          else
-            updated = false;
-        }
-      }
-      if (updated) Utility.addToSharedPref(flatIdList: updatedFlatList);
-    });
-    return updated;
-  }
 }
 
-class FilterSheet extends StatefulWidget {
-  Function callback;
-  final flatList;
-  final defaultFlat;
-
-  FilterSheet(this.callback, this.flatList, this.defaultFlat);
-
-  @override
-  State<StatefulWidget> createState() {
-    return new _FilterSheet(this.flatList, this.defaultFlat);
-  }
-}
-
-class _FilterSheet extends State<FilterSheet> {
-  final flatList, defaultFlat;
-
-  _FilterSheet(this.flatList, this.defaultFlat);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(left: 30.0),
-                child: Text(
-                  "Select Flat",
-                  style: TextStyle(
-                    fontSize: 16.0,
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(right: 10.0),
-              child: IconButton(
-                icon: Icon(
-                  Icons.add,
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) {
-                      return AddFlat(defaultFlat);
-                    }),
-                  );
-                },
-              ),
-            )
-          ],
-        ),
-        ListView.builder(
-          itemCount: flatList.length,
-          shrinkWrap: true,
-          itemBuilder: (context, index) {
-            return ListTile(
-              title: Text(
-                flatList[index].split("Name=")[1] != null
-                    ? flatList[index].split("Name=")[1]
-                    : "PlaceholderFlatName",
-                style: defaultFlat == flatList[index].split("Name=")[0]
-                    ? TextStyle(color: Colors.redAccent)
-                    : TextStyle(color: Colors.black),
-              ),
-              leading: Icon(
-                Icons.arrow_right,
-                color: defaultFlat == flatList[index].split("Name=")[0]
-                    ? Colors.redAccent
-                    : Colors.black,
-              ),
-              onTap: () {
-                Navigator.of(context).pop();
-                this.widget.callback(
-                    flatList[index].split("Name=")[0],
-                    flatList[index].split("Name=")[1] != null
-                        ? flatList[index].split("Name=")[1]
-                        : "PlaceholderFlatName");
-              },
-            );
-          },
-        ),
-      ],
-    );
-  }
-}

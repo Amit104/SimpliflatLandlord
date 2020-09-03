@@ -1,36 +1,32 @@
 import 'package:flutter/material.dart';
-import '../models/Building.dart';
+import 'package:simpliflat_landlord/screens/commonScreens/MyBuildingList.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
+import 'package:simpliflat_landlord/screens/models/TenantFlat.dart';
+import 'package:simpliflat_landlord/service/TenantRequestsService.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/utility.dart';
-import 'dart:math';
-import '../models/OwnerFlat.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
-import './createProperty.dart';
-import './PropertyRequests.dart';
-import '../models/Block.dart';
-import './FlatList.dart';
-import '../models/TenantFlat.dart';
-import './MyBuildingList.dart';
 
-
-
+/// page to search tenant flat based on its display id
 class SearchTenant extends StatefulWidget {
 
-  final String userId;
+  final Owner user;
 
-  SearchTenant(this.userId);
+  final OwnerFlat ownerFlat;
+
+  SearchTenant(this.user, this.ownerFlat);
 
   @override
   State<StatefulWidget> createState() {
-    return SearchTenantState(this.userId);
+    return SearchTenantState(this.user, this.ownerFlat);
   }
 
 }
 
 class SearchTenantState extends State<SearchTenant> {
 
-  final String userId;
+  final Owner user;
 
   bool loadingState = false;
 
@@ -38,11 +34,15 @@ class SearchTenantState extends State<SearchTenant> {
 
   TenantFlat flat;
 
+  OwnerFlat ownerFlat;
+
   bool mandatoryWarning = false;
 
   final TextEditingController tenantFlatDisplayIdCtlr = new TextEditingController();
 
-  SearchTenantState(this.userId);
+  SearchTenantState(this.user, this.ownerFlat) {
+    debugPrint("in search tenant");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,12 +64,12 @@ class SearchTenantState extends State<SearchTenant> {
     return Column(
       children: <Widget>[
         getSearchBox(),
-        getUserBox(),
+        getUserBox(scaffoldC),
       ],
     );
   }
 
-  Widget getUserBox() {
+  Widget getUserBox(BuildContext scaffoldC) {
     if(this.loadingState) {
       return Container(alignment: Alignment.center, child: CircularProgressIndicator(),);
     }
@@ -80,7 +80,7 @@ class SearchTenantState extends State<SearchTenant> {
       return Container();
     }
     return ListTile(
-      onTap: navigateToMyBuildingList,
+      onTap: () {navigateToMyBuildingList(scaffoldC);},
       title: Text(this.flat.getFlatName()),
     );
   }
@@ -122,7 +122,7 @@ class SearchTenantState extends State<SearchTenant> {
         });
 
     TenantFlat flatTemp;
-    if(document.documents.length > 0 && document.documents[0].documentID != this.userId) {
+    if(document.documents.length > 0 && document.documents[0].documentID != this.user.getOwnerId()) {
       flatTemp = TenantFlat.fromJson(document.documents[0].data, document.documents[0].documentID);
     }
     
@@ -132,15 +132,28 @@ class SearchTenantState extends State<SearchTenant> {
         });
   }
 
-  void navigateToMyBuildingList() async {
-    
-  
-      Navigator.push(
+  void navigateToMyBuildingList(BuildContext scaffoldC) async {
+      /** owner flat is not null in case when owner has initiated request from inside flat */
+      if(this.ownerFlat != null) {
+        bool ifSuccess = await TenantRequestsService.createTenantRequest(this.ownerFlat, user, this.flat);
+        if(ifSuccess) {
+          Navigator.of(context).pop();
+        }
+        else {
+          Utility.createErrorSnackBar(scaffoldC, error: 'Error while creating request');
+        }
+      }
+      /** owner flat is null when owner has initiated request from home */
+      else {
+        Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return MyBuildingList(this.userId, this.flat, null);
+        return MyBuildingList(this.user, this.flat, null);
       }),
     );
+      }
+
+      
   }
   
 

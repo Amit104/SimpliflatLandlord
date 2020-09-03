@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
 import 'package:simpliflat_landlord/screens/signup/signupBackground.dart';
 import 'package:simpliflat_landlord/screens/tenant_portal/tenant_portal.dart';
 import 'package:simpliflat_landlord/screens/home/Home.dart';
@@ -213,7 +214,7 @@ class _SignUpNameUser extends State<SignUpName> {
     });
   }
 
-  void _onSuccess({userId, flatId, displayId, userName, flatName}) {
+  void _onSuccess({String userId, String flatId, String displayId, String userName, String flatName}) {
     String flatTemp;
     if (flatId != null && flatId.length > 0) {
       flatTemp = flatId[0];
@@ -261,8 +262,8 @@ class _SignUpNameUser extends State<SignUpName> {
             _firestore.collection(globals.landlord).document(user.uid);
         ref.setData(userData).then((addedUser) {
           var userId = user.uid;
-          _onSuccess(userId: userId, userName: name);
-          navigateToCreateOrJoinHome(userId);
+          _onSuccess(userId: userId, userName: name.text);
+          navigateToCreateOrJoinHome(userId, name.text, phone);
         }, onError: (e) {
           _serverError(scaffoldContext);
         });
@@ -270,7 +271,7 @@ class _SignUpNameUser extends State<SignUpName> {
         _onSuccess(
               userId: snapshot.documents[0].documentID,
               userName: snapshot.documents[0].data['name']);
-          navigateToCreateOrJoinHome(snapshot.documents[0].documentID);
+          navigateToCreateOrJoinHome(snapshot.documents[0].documentID, snapshot.documents[0].data['name'], phone);
         
       }
     }, onError: (e) {
@@ -311,9 +312,13 @@ class _SignUpNameUser extends State<SignUpName> {
     });
   }
 
-  void navigateToCreateOrJoinHome(String userId) {
+  void navigateToCreateOrJoinHome(String userId, String userName, String userPhone) async {
+    Owner user = new Owner();
+    user.setName(userName);
+    user.setOwnerId(userId);
+    user.setPhone(userPhone);
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
-      return Home(userId);
+      return Home(user);
     }), ModalRoute.withName('/'))
         .whenComplete(() {
       _progressCircleState = 0;
@@ -321,15 +326,6 @@ class _SignUpNameUser extends State<SignUpName> {
     });
   }
 
-  void navigateToHome(flatId) {
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
-      return LandlordPortal(flatId);
-    }), ModalRoute.withName('/'))
-        .whenComplete(() {
-      _progressCircleState = 0;
-      _isButtonDisabled = false;
-    });
-  }
 
   @override
   void dispose() {

@@ -1,34 +1,33 @@
 import 'package:flutter/material.dart';
-import './CreateBuilding.dart';
-import '../models/Building.dart';
-import './CreateBlock.dart';
-import '../models/Block.dart';
-import '../models/OwnerFlat.dart';
-import './CreateFlats.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:simpliflat_landlord/screens/createOrJoin/CreateBlock.dart';
+import 'package:simpliflat_landlord/screens/createOrJoin/CreateBuilding.dart';
+import 'package:simpliflat_landlord/screens/createOrJoin/CreateFlats.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
-import 'dart:convert';
+import 'package:simpliflat_landlord/screens/home/Home.dart';
+import 'package:simpliflat_landlord/screens/models/Block.dart';
+import 'package:simpliflat_landlord/screens/models/Building.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
+import 'package:simpliflat_landlord/screens/models/OwnershipDetailsDBHandler.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
-import '../models/LandlordRequest.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
-import '../home/Home.dart';
-import '../models/OwnershipDetailsDBHandler.dart';
 
 
+///create property
 class CreateProperty extends StatefulWidget {
-  final String userId;
+  final Owner user;
 
+  ///building is needed when owner wants to create flat in existing building
   Building building;
 
   final bool isAdd;
 
-  final bool join;
-
-  CreateProperty(this.userId, this.building, this.isAdd, this.join);
+  CreateProperty(this.user, this.building, this.isAdd);
 
   @override
   State<StatefulWidget> createState() {
-    return CreatePropertyState(this.userId, this.building, this.isAdd, this.join);
+    return CreatePropertyState(this.user, this.building, this.isAdd);
   }
 }
 
@@ -40,7 +39,7 @@ class CreatePropertyState extends State<CreateProperty> {
 
   bool buildingsExpanded = false;
   bool flatExpanded = false;
-  final String userId;
+  final Owner user;
   Building building;
 
   bool loadingState = false;
@@ -48,11 +47,10 @@ class CreatePropertyState extends State<CreateProperty> {
 
   final bool isAdd;
 
-  final bool join;
 
   Map<String, bool> blocksExpanded = new Map();
 
-  CreatePropertyState(this.userId, this.building, this.isAdd, this.join) {
+  CreatePropertyState(this.user, this.building, this.isAdd) {
     if(!this.isAdd) {
       for(int i = 0; i < this.building.getBlocks().length; i++) {
         this.blocksExpanded[this.building.getBlocks()[i].getBlockName()] = false;
@@ -66,13 +64,14 @@ class CreatePropertyState extends State<CreateProperty> {
 
   @override
   Widget build(BuildContext context) {
+    //TODO: on expandind the dropdowns, getting overflow error
     return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text(this.join? 'Join property':'Create Property'),
+          title: Text('Create Property'),
           centerTitle: true,
           actions: <Widget>[
-            this.join?Container():Container(
+            Container(
                 padding: EdgeInsets.all(10.0),
                 child: IconButton(
                   icon: Icon(Icons.add),
@@ -91,8 +90,8 @@ class CreatePropertyState extends State<CreateProperty> {
                   child: building == null
                       ? Container()
                       : Column(children: [
-                            this.join?getMainExpansionPanelListForJoin(scaffoldC):getMainExpansionPanelList(scaffoldC, null),
-                            this.join?Container():Expanded(
+                            getMainExpansionPanelList(scaffoldC, null),
+                            Expanded(
                                 child: Align(
                                     alignment: FractionalOffset.bottomCenter,
                                     child: RaisedButton(
@@ -122,11 +121,11 @@ class CreatePropertyState extends State<CreateProperty> {
                                     (BuildContext context, bool isExpanded) {
                                   return ListTile(
                                     onTap: () {
-                                      if(isAdd && !this.join)
+                                      if(isAdd)
                                         navigateToCreateBuilding();
                                     },
                                     title: Text(building.getBuildingName()),
-                                    trailing: this.join && !ifRequestToBuilding(data)?Container(child:IconButton(icon:Icon(Icons.link), onPressed: (){sendRequestToOwner(scaffoldC);},)):this.join?SizedBox():IconButton(
+                                    trailing: IconButton(
                                       icon: Icon(Icons.add),
                                       onPressed: () {
                                         acceptBlockName(null);
@@ -165,7 +164,7 @@ class CreatePropertyState extends State<CreateProperty> {
 
   Widget getMainExpansionPanelListForJoin(BuildContext scaffoldC) {
     return FutureBuilder(
-      future: Firestore.instance.collection(globals.ownerOwnerJoin).where('requesterId', isEqualTo: this.userId).where('buildingId', isEqualTo: this.building.getBuildingId()).getDocuments(),
+      future: Firestore.instance.collection(globals.ownerOwnerJoin).where('requesterId', isEqualTo: this.user.getOwnerId()).where('buildingId', isEqualTo: this.building.getBuildingId()).getDocuments(),
       builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> documents) {
         if(!documents.hasData) {
           return LoadingContainerVertical(2);
@@ -193,7 +192,7 @@ class CreatePropertyState extends State<CreateProperty> {
                 acceptBlockName(blocks[i]);
             },
             title: Text(blocks[i].blockName),
-            trailing: this.join?SizedBox():IconButton(
+            trailing: IconButton(
               icon: Icon(Icons.add),
               onPressed: () {
                 navigateToAddFlats(blocks[i]);
@@ -201,7 +200,7 @@ class CreatePropertyState extends State<CreateProperty> {
             ),
           );
         },
-        body: GestureDetector(onTap: (){if(!this.join) {navigateToAddFlats(blocks[i]);}}, child:getFlatNamesWidget(blocks[i], documents, scaffoldC)),
+        body: GestureDetector(onTap: (){navigateToAddFlats(blocks[i]);}, child:getFlatNamesWidget(blocks[i], documents, scaffoldC)),
         isExpanded: blocksExpanded[blocks[i].getBlockName()],
       ));
     }
@@ -224,7 +223,7 @@ class CreatePropertyState extends State<CreateProperty> {
     }
 
 
-    if(!this.join) {
+    
       List<Widget> flatsWidget = new List();
       for (int i = 0; i < flats.length; i++) {
         flatsWidget.add(new Chip(
@@ -245,19 +244,6 @@ class CreatePropertyState extends State<CreateProperty> {
           ),
         ),
       );
-    }
-    return 
-      ListView.separated(
-        shrinkWrap: true,
-        separatorBuilder: (BuildContext context, int position) {return Divider(height:1.0);},
-        itemCount: flats.length,
-        itemBuilder: (BuildContext context, int index) {
-          return ListTile(
-            title: Text(flats[index].getFlatName()),
-            trailing: ifRequestToFlat(documents, flats[index].getFlatId())?SizedBox():IconButton(icon: Icon(Icons.link), onPressed: () {sendRequestToOwner(ctx, forFlat: true, block: block, flat: flats[index]);},),
-          );
-        },
-      );
     
   }
 
@@ -265,7 +251,7 @@ class CreatePropertyState extends State<CreateProperty> {
     Building b = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return CreateBuilding(this.userId, this.building);
+        return CreateBuilding(this.user, this.building);
       }),
     );
 
@@ -304,7 +290,7 @@ class CreatePropertyState extends State<CreateProperty> {
     List<OwnerFlat> ownerFlats = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return CreateFlats(this.userId, block.getOwnerFlats(), this.join);
+        return CreateFlats(this.user, block.getOwnerFlats(), false);
       }),
     );
     ownerFlats.forEach((OwnerFlat flat) {
@@ -376,7 +362,7 @@ class CreatePropertyState extends State<CreateProperty> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) {
-          return Home(this.userId);
+          return Home(this.user);
         }),
       );
     }).catchError((e) {
@@ -388,46 +374,5 @@ class CreatePropertyState extends State<CreateProperty> {
     });
   }
 
-  void sendRequestToOwner(BuildContext ctx, {bool forFlat, Block block, OwnerFlat flat}) async {
-
-    setState(() {
-          this.loadingState = false;
-        });
-    String phoneNumber = await Utility.getUserPhone();
-    String userName = await Utility.getUserName();
-
-    LandlordRequest request = new LandlordRequest();
-    request.setBuildingAddress(this.building.getBuildingAddress());
-    request.setBuildingDisplayId(this.building.getBuildingDisplayId());
-    request.setBuildingId(this.building.getBuildingId());
-    request.setBuildingName(this.building.getBuildingName());
-    request.setZipcode(this.building.getZipcode());
-    request.setStatus(globals.RequestStatus.Pending.index);
-    request.setRequesterPhone(phoneNumber);
-    request.setRequesterId(this.userId);
-    request.setRequestToOwner(true);
-    request.setRequesterUserName(userName);
-    request.setCreatedAt(Timestamp.now());
-
-    if(forFlat) {
-      request.setBlockName(block.getBlockName());
-      request.setFlatId(flat.getFlatId());
-      request.setFlatDisplayId(flat.getFlatDisplayId());
-      request.setFlatNumber(flat.getFlatName());
-    }
-
-
-    Map<String, dynamic> data = request.toJson();
-    Firestore.instance.collection(globals.ownerOwnerJoin).add(data).then((value) {
-      setState(() {
-              this.loadingState = false;
-            });
-      Utility.createErrorSnackBar(ctx, error: 'Request created successfully');
-    }).catchError((e) {
-      setState(() {
-              this.loadingState = false;
-            });
-      Utility.createErrorSnackBar(ctx, error: 'Error while creating request');
-    });
-  }
+  
 }

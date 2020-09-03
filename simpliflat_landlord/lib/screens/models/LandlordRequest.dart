@@ -1,4 +1,5 @@
-import './BaseModel.dart';
+
+import 'package:simpliflat_landlord/screens/models/BaseModel.dart';
 
 class LandlordRequest extends BaseModel {
   String flatId;
@@ -19,6 +20,16 @@ class LandlordRequest extends BaseModel {
   String toUserId;
   String toPhoneNumber;
   String toUsername;
+  List<String> ownerIdList;
+
+
+	List<String> getOwnerIdList() {
+		return this.ownerIdList;
+	}
+
+	void setOwnerIdList(List<String> ownerIdList) {
+		this.ownerIdList = ownerIdList;
+	}
 
 	String getToUserId() {
 		return this.toUserId;
@@ -186,6 +197,7 @@ class LandlordRequest extends BaseModel {
       'toUserId': this.toUserId,
       'toPhoneNumber': this.toPhoneNumber,
       'toUsername': this.toUsername,
+      'ownerIdList': this.ownerIdList
     };
   }
 
@@ -209,6 +221,8 @@ class LandlordRequest extends BaseModel {
     request.setToUserId(data['toUserId']);
     request.setToUsername(data['toUsername']);
     request.setRequestId(documentId);
+    List<String> ownerIdList = new List<String>.from(data['ownerIdList']);
+    request.setOwnerIdList(ownerIdList);
 
     return request;
   }

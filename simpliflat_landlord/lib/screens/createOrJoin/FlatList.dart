@@ -1,44 +1,50 @@
 import 'package:flutter/material.dart';
-import '../models/Building.dart';
+import 'package:simpliflat_landlord/screens/createOrJoin/JoinProperty.dart';
+import 'package:simpliflat_landlord/screens/createOrJoin/createProperty.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
-import 'package:simpliflat_landlord/screens/utility.dart';
-import 'dart:math';
-import '../models/OwnerFlat.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:simpliflat_landlord/screens/models/Block.dart';
+import 'package:simpliflat_landlord/screens/models/Building.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
-import './createProperty.dart';
-import './PropertyRequests.dart';
-import '../models/Block.dart';
-import '../models/Owner.dart';
-import './RequestForCoOwner.dart';
 
 
-
+/// list of all buildings
 class FlatList extends StatefulWidget {
 
-  final String userId;
+  final Owner user;
 
   final bool join;
 
 
-  FlatList(this.userId, this.join);
+  FlatList(this.user, this.join);
 
   @override
   State<StatefulWidget> createState() {
-    return FlatListState(this.userId, this.join);
+    return FlatListState(this.user, this.join);
   }
 
 }
 
 class FlatListState extends State<FlatList> {
 
-  final String userId;
+  final Owner user;
 
   bool loadingState = false;
 
   final bool join;
 
-  FlatListState(this.userId, this.join);
+  Stream<QuerySnapshot> allFlatsStream;
+
+  FlatListState(this.user, this.join);
+
+  @override
+  void initState() {
+    super.initState();
+    allFlatsStream = Firestore.instance.collection(globals.building).snapshots();
+    
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,17 +67,9 @@ class FlatListState extends State<FlatList> {
     );
   }
 
-  Stream<QuerySnapshot> getFlatList() {
-    Query q = Firestore.instance.collection(globals.building).where('verified', isEqualTo: false);
-
-
-
-    return q.snapshots();
-  }
-
   Widget getBody(BuildContext scaffoldC) {
     return StreamBuilder(
-      stream: getFlatList(),
+      stream: allFlatsStream,
       builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snaphot) {
         if(!snaphot.hasData) {
           return LoadingContainerVertical(2);
@@ -105,7 +103,7 @@ class FlatListState extends State<FlatList> {
       Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return RequestForCoOwner(this.userId, building);
+        return JoinProperty(this.user, building);
       }),
     );
 
@@ -114,7 +112,7 @@ class FlatListState extends State<FlatList> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {
-          return CreateProperty(this.userId, building, isAdd, this.join);
+          return CreateProperty(this.user, building, isAdd);
         }),
       );
     }

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:simpliflat_landlord/screens/signup/create_or_join.dart';
 import 'package:simpliflat_landlord/screens/signup/signupPhoneNumber.dart';
-import 'package:simpliflat_landlord/screens/tenant_portal/tenant_portal.dart';
-import 'package:simpliflat_landlord/screens/flatSetup/createOrJoinHome.dart';
 import 'package:simpliflat_landlord/screens/home/Home.dart';
-
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
 
 class StartNavigation extends StatelessWidget {
   final flag;
@@ -13,10 +10,10 @@ class StartNavigation extends StatelessWidget {
   final List incomingRequests;
   final flatId;
   final Map<String, Map> flatIdentifierData;
-  final String userId;
+  final Owner user;
 
   StartNavigation(this.flag, this.requestDenied, this.incomingRequests,
-      this.flatId, this.flatIdentifierData, this.userId);
+      this.flatId, this.flatIdentifierData, this.user);
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +25,7 @@ class StartNavigation extends StatelessWidget {
       },
       child: flag == 1
           ? SignUpPhone()
-          : (flag == 2
-              ? Home(this.userId)
-              : LandlordPortal(flatId)),
+          : Home(this.user)
     );
   }
 

@@ -1,6 +1,8 @@
-import './BaseModel.dart';
-import './Block.dart';
 
+
+
+import 'package:simpliflat_landlord/screens/models/BaseModel.dart';
+import 'package:simpliflat_landlord/screens/models/Block.dart';
 
 class Building extends BaseModel {
   String buildingName;
@@ -11,16 +13,6 @@ class Building extends BaseModel {
   String buildingDisplayId;
   String buildingId;
   List<Block> blocks;
-  bool isVerified;
-
-	bool isIsVerified() {
-		return this.isVerified;
-	}
-
-	void setIsVerified(bool isVerified) {
-		this.isVerified = isVerified;
-	}
-
 
 	String getBuildingName() {
 		return this.buildingName;
@@ -98,7 +90,6 @@ class Building extends BaseModel {
       'type': this.type,
       'buildingDisplayId': this.buildingDisplayId,
       'description': this.description,
-      'verified': this.isVerified,
       'blocks': blocknames
     };
   }
@@ -111,7 +102,6 @@ class Building extends BaseModel {
     b.setDescription((json['description'] as String));
     b.setType((json['type'] as int));
     b.setBuildingDisplayId((json['buildingDisplayId'] as String));
-    b.setIsVerified(json['verified']);
     List<String> blocks = new List<String>.from(json['blocks']);
     List<Block> blockList = new List();
     blocks.forEach((String blockName) {Block b = new Block(); b.setBlockName(blockName); blockList.add(b);});

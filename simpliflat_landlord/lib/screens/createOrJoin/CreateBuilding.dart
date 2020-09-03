@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import '../models/Building.dart';
+import 'package:simpliflat_landlord/screens/models/Building.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/utility.dart';
-import 'dart:math';
 
+
+/// create building form
 class CreateBuilding extends StatefulWidget {
 
-  final String userId;
+  final Owner user;
   Building building;
 
-  CreateBuilding(this.userId, this.building);
+  CreateBuilding(this.user, this.building);
 
   @override
   State<StatefulWidget> createState() {
-    return CreateBuildingState(this.userId, this.building);
+    return CreateBuildingState(this.user, this.building);
   }
 }
 
@@ -33,11 +35,11 @@ class CreateBuildingState extends State<CreateBuilding> {
   final TextEditingController addressCtlr = TextEditingController();
   final TextEditingController zipcodeCtlr = TextEditingController();
 
-  final String userId;
+  final Owner user;
 
   Building building;
 
-  CreateBuildingState(this.userId, this.building) {
+  CreateBuildingState(this.user, this.building) {
     if(this.building != null) {
     isPG = (globals.BuildingType.PG.index == this.building.getType());
     nameCtlr.text = this.building.getBuildingName();
@@ -134,9 +136,7 @@ class CreateBuildingState extends State<CreateBuilding> {
                       if(this.building.getBuildingDisplayId() == null) {
                         this.building.setBuildingDisplayId(Utility.getRandomString(globals.displayIdLength));
                       }
-                     
-                      this.building.setIsVerified(false);
-                      
+                                           
                       Navigator.of(context).pop(this.building);
                     }  
                   },    

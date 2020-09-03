@@ -153,7 +153,6 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
               flatList.add(flatId.toString().trim());
               Utility.addToSharedPref(
                   flatIdDefault: flatId, flatIdList: flatList);
-              _navigateToHome(flatId);
             } else if (statusForUserReq == "-1") {
               setState(() {
                 lastRequestStatus = "Your last join request was denied!";
@@ -616,7 +615,6 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
                       flatName: flatName,
                       flatIdList: landlordFlatListWithName);
                   setState(() {
-                    _navigateToHome(flatId);
                     _isButtonDisabled = false;
                     debugPrint("CALL SUCCCESS");
                   });
@@ -677,7 +675,6 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
         Utility.addToSharedPref(
             flatIdDefault: landlordUser['flat_id'][0],
             flatIdList: landlordUser['flat_id']);
-        _navigateToHome(landlordUser['flat_id'][0]);
       } else {
         flatId = "";
       }
@@ -693,15 +690,6 @@ class _CreateOrJoinBody extends State<CreateOrJoin> {
       else
         Utility.createErrorSnackBar(scaffoldContext);
     });
-  }
-
-  void _navigateToHome(flatId) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) {
-        return LandlordPortal(flatId);
-      }),
-    );
   }
 
   Future<int> navigateToCreate(BuildContext context, createOrJoin) async {
