@@ -79,7 +79,7 @@ class _DocumentManager extends State<DocumentManager> {
   Widget getLists() {
     return StreamBuilder<QuerySnapshot>(
       stream: Firestore.instance
-          .collection(globals.flat)
+          .collection(globals.ownerTenantFlat)
           .document(_flatId)
           .collection(globals.documentManager)
           .snapshots(),
@@ -258,7 +258,7 @@ class _DocumentManager extends State<DocumentManager> {
 
   _deleteList(scaffoldContext, docReference) {
     Firestore.instance
-        .collection(globals.flat)
+        .collection(globals.ownerTenantFlat)
         .document(_flatId)
         .collection(globals.documentManager)
         .document(docReference.documentID)
@@ -274,7 +274,7 @@ class _DocumentManager extends State<DocumentManager> {
             .child("TenantDocuments/" + _fileName);
         storageReference.delete().then((deleted){
           Firestore.instance
-              .collection(globals.flat)
+              .collection(globals.ownerTenantFlat)
               .document(_flatId)
               .collection(globals.documentManager)
               .document(freshDoc.documentID)
@@ -411,7 +411,7 @@ class _DocumentManager extends State<DocumentManager> {
       addNote.text = '';
     });
     DocumentReference addNoteRef = Firestore.instance
-        .collection(globals.flat)
+        .collection(globals.ownerTenantFlat)
         .document(_flatId)
         .collection(globals.documentManager)
         .document();

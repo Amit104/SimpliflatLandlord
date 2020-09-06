@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
 import 'package:simpliflat_landlord/screens/tasks/view_task.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
 import 'package:simpliflat_landlord/screens/widgets/common.dart';
@@ -12,21 +13,21 @@ import 'dart:async';
 
 
 class Dashboard extends StatefulWidget {
-  final flatId;
+  final OwnerFlat flat;
   final Owner owner;
 
-  Dashboard(this.flatId, this.owner);
+  Dashboard(this.flat, this.owner);
 
   @override
   State<StatefulWidget> createState() {
-    return DashboardState(this.flatId, this.owner);
+    return DashboardState(this.flat, this.owner);
   }
 }
 
 class DashboardState extends State<Dashboard> {
   var _navigatorContext;
-  final flatId;
-  bool noticesExist = false;
+  final OwnerFlat flat;
+  //bool noticesExist = false;
   bool tasksExist = false;
   List existingUsers;
   int usersCount;
@@ -58,19 +59,15 @@ class DashboardState extends State<Dashboard> {
 
   Map<String, Map> flatIdentifierData = new Map();
 
-  //TODO: Pass flat object instead of hardcoding flatname
-  String flatName = '102';
-
   var _progressCircleState = 0;
 
   var _isButtonDisabled = false;
 
-  DashboardState(this.flatId, this.owner);
+  DashboardState(this.flat, this.owner);
 
   @override
   void initState() {
     super.initState();
-    _buttonColor = Colors.blue;
     debugPrint("in init");
   }
 
@@ -90,13 +87,6 @@ class DashboardState extends State<Dashboard> {
               children: <Widget>[
                 flatNameWidget(),
 
-                // Today's Items                
-
-                getNewRequestsWidget(),
-
-                
-                // Today's Items
-
                 getTasks(),
                 
 
@@ -109,388 +99,8 @@ class DashboardState extends State<Dashboard> {
     );
   }
 
-  Map<String, String> pendingRequestsFlatNameIdList = new Map();
-
-  Future<dynamic> getNewRequests() async {
-    List<DocumentSnapshot> listOfPendingRequests = new List();
-
-
-    QuerySnapshot a = await Firestore.instance
-        .collection(globals.requests)
-        .where("user_id", isEqualTo: this.owner.getOwnerId())
-        .where("status", isEqualTo: 0)
-        .getDocuments();
-
-    listOfPendingRequests.addAll(a.documents);
-
-    for (int i = 0; i < listOfPendingRequests.length; i++) {
-      debugPrint("in loop = " + listOfPendingRequests[i].data['flat_id']);
-    }
-
-    await Firestore.instance.runTransaction((transaction) async {
-      for (int i = 0; i < listOfPendingRequests.length; i++) {
-        debugPrint("flat in loop = " +
-            listOfPendingRequests[i].data['flat_id'].toString());
-        DocumentReference flat = Firestore.instance
-            .collection(globals.flat)
-            .document(listOfPendingRequests[i].data['flat_id']);
-        DocumentSnapshot d = await flat.get();
-        debugPrint("in another loop = " + d.data['name']);
-        pendingRequestsFlatNameIdList[
-            listOfPendingRequests[i].data['flat_id']] = d.data['name'];
-        flatIdentifierData[listOfPendingRequests[i].data['flat_id']] = {
-          'apartment_name': d.data['apartment_name'],
-          'apartment_number': d.data['apartment_number'],
-          'zipcode': d.data['zipcode']
-        };
-      }
-    });
-
-    return listOfPendingRequests;
-  }
-
-  Widget getNewRequestsWidget() {
-    if (this.owner.getOwnerId() == null ||
-        this.owner.getOwnerId() == '') return LoadingContainerVertical(2);
-    return FutureBuilder(
-      future: getNewRequests(),
-      builder: (context, AsyncSnapshot<dynamic> documents) {
-        if (!documents.hasData) {
-          return LoadingContainerVertical(2);
-        }
-
-        if(documents.data.length == 0)
-          return Container();
-
-        return Container(
-          margin: EdgeInsets.symmetric(horizontal: 5.0),
-          child: Card(
-            elevation: 5.0,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-              Container(padding: EdgeInsets.only(top: 20.0,bottom:20.0,left:10.0),  decoration: getBlueGradientBackground(), child: Text('Requests For You', style: TextStyle(color: Colors.white),)),
-              ListView.builder(
-                shrinkWrap: true,
-                scrollDirection: Axis.vertical,
-                itemCount: documents.data.length,
-                itemBuilder: (context, position) {
-                  return getRequestTile(
-                      context, position, documents.data[position], documents);
-                  // return ListTile(
-                  //   title: Text(pendingRequestsFlatNameIdList[documents.data[position]['flat_id']]),
-                  // );
-                },
-              ),
-            ]),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget getRequestTile(BuildContext context, int index,
-      DocumentSnapshot document, AsyncSnapshot<dynamic> documents) {
-    debugPrint("flat name = " + document['flat_id']);
-    return Container(
-      child: SizedBox(
-        child: Dismissible(
-          key: ObjectKey(document['flat_id']),
-          background: swipeBackground(),
-          onDismissed: (direction) {
-            String request = document['flat_id'];
-            setState(() {
-              (documents.data as List).removeAt(index);
-            });
-            _respondToJoinRequest(context, request, -1);
-          },
-          child: ListTile(
-            title: Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Text(
-                pendingRequestsFlatNameIdList[document['flat_id']],
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 15.0,
-                  fontFamily: 'Montserrat',
-                ),
-              ),
-            ),
-            subtitle: getFlatIdentifierTextWidget(document['flat_id']),
-            trailing: ButtonTheme(
-                height: 25.0,
-                minWidth: 30.0,
-                child: RaisedButton(
-                    elevation: 0.0,
-                    
-                    color: Colors.white,
-                    textColor: Theme.of(context).primaryColorDark,
-                    child: (_progressCircleState == 0)
-                        ? setUpButtonChild("Accept")
-                        : setUpButtonChild("Waiting"),
-                    onPressed: () {
-                      if (_isButtonDisabled == false) {
-                        setState(() {
-                          _progressCircleState = 1;
-                        });
-                        _respondToJoinRequest(context, document['flat_id'], 1);
-                      } else {
-                        setState(() {
-                          _progressCircleState = 1;
-                        });
-                        Utility.createErrorSnackBar(context,
-                            error: "Waiting for Request Call to Complete!");
-                      }
-                    })),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget getFlatIdentifierTextWidget(String displayId) {
-    if (flatIdentifierData == null ||
-        !flatIdentifierData.containsKey(displayId)) {
-      return Text('');
-    }
-    String text = '';
-    if (flatIdentifierData[displayId]['apartment_name'] != null &&
-        flatIdentifierData[displayId]['apartment_name'] != '')
-      text = text + flatIdentifierData[displayId]['apartment_name'] + ', ';
-
-    if (flatIdentifierData[displayId]['apartment_number'] != null &&
-        flatIdentifierData[displayId]['apartment_number'] != '')
-      text = text + flatIdentifierData[displayId]['apartment_number'] + ', ';
-
-    if (flatIdentifierData[displayId]['zipcode'] != null &&
-        flatIdentifierData[displayId]['zipcode'] != '')
-      text = text + flatIdentifierData[displayId]['zipcode'];
-
-    text = text.trim();
-    if (text.endsWith(", ")) {
-      text = text.substring(0, text.length - 1);
-    }
-
-    return Text(text);
-  }
-
-  var _buttonColor;
-
-  void _respondToJoinRequest(scaffoldContext, flatId, didAccept) async {
-    setState(() {
-      _buttonColor = Colors.lightBlueAccent;
-      _isButtonDisabled = true;
-    });
-    var userId = this.owner.getOwnerId();
-    List landlordFlatList1 = await Utility.getFlatIdList();
-    List flatListOnly = new List();
-    for (String id in landlordFlatList1) {
-      if (id.contains("Name="))
-        flatListOnly.add(id.split("Name=")[0]);
-      else
-        flatListOnly.add(id);
-    }
-    var timeNow = DateTime.now();
-
-    var flatName = pendingRequestsFlatNameIdList[flatId];
-    //check if we have a request from this flat
-    if (didAccept == 1) {
-      Firestore.instance
-          .collection(globals.requests)
-          .where("user_id", isEqualTo: userId)
-          .where("flat_id", isEqualTo: flatId)
-          .where("request_from_flat", isEqualTo: 1)
-          .limit(1)
-          .getDocuments()
-          .then((incomingReq) {
-        var now = new DateTime.now();
-        if (incomingReq.documents != null &&
-            incomingReq.documents.length != 0) {
-          List<DocumentReference> toRejectList = new List();
-          DocumentReference toAccept;
-          debugPrint("FLAT REQUEST TO USER EXISTS!");
-
-          // accept current request
-          Firestore.instance
-              .collection(globals.requests)
-              .where("user_id", isEqualTo: userId)
-              .where("flat_id", isEqualTo: flatId)
-              .where("request_from_flat", isEqualTo: 1)
-              .getDocuments()
-              .then((toAcceptData) async {
-            if (toAcceptData.documents != null &&
-                toAcceptData.documents.length != 0) {
-              toAccept = Firestore.instance
-                  .collection(globals.requests)
-                  .document(toAcceptData.documents[0].documentID);
-            }
-            //perform actual batch operations
-            var batch = Firestore.instance.batch();
-            for (int i = 0; i < toRejectList.length; i++) {
-              batch.updateData(
-                  toRejectList[i], {'status': -1, 'updated_at': timeNow});
-            }
-            batch.updateData(toAccept, {'status': 1, 'updated_at': timeNow});
-
-            //update user
-            flatListOnly.add(flatId.toString().trim());
-            var userRef = Firestore.instance
-                .collection(globals.landlord)
-                .document(userId);
-            batch.updateData(userRef, {'flat_id': flatListOnly});
-
-            // to store flat id with name in shared preferences
-            List landlordFlatListWithName = landlordFlatList1;
-            landlordFlatListWithName.add(flatId.toString().trim() +
-                "Name=" +
-                flatName.toString().trim());
-
-            //update flat landlord
-            var flatRef =
-                Firestore.instance.collection(globals.flat).document(flatId);
-            batch.updateData(flatRef, {'landlord_id': userId});
-
-            batch.commit().then((res) {
-              debugPrint("ADDED TO FLAT");
-              Utility.addToSharedPref(
-                  flatIdDefault: flatId,
-                  flatName: flatName,
-                  flatIdList: landlordFlatListWithName);
-              setState(() {
-                _isButtonDisabled = false;
-                debugPrint("CALL SUCCCESS");
-              });
-            }, onError: (e) {
-              _setErrorState(scaffoldContext, "CALL ERROR");
-            }).catchError((e) {
-              _setErrorState(scaffoldContext, "SERVER ERROR");
-            });
-          }, onError: (e) {
-            _setErrorState(scaffoldContext, "CALL ERROR");
-          }).catchError((e) {
-            _setErrorState(scaffoldContext, "SERVER ERROR");
-          });
-        }
-      });
-    } else if (didAccept == -1) {
-      DocumentReference toReject;
-      Firestore.instance
-          .collection(globals.requests)
-          .where("user_id", isEqualTo: userId)
-          .where("flat_id", isEqualTo: flatId)
-          .where("request_from_flat", isEqualTo: 1)
-          .getDocuments()
-          .then((toRejectData) {
-        if (toRejectData.documents != null &&
-            toRejectData.documents.length != 0) {
-          toReject = Firestore.instance
-              .collection(globals.requests)
-              .document(toRejectData.documents[0].documentID);
-        }
-        //perform actual batch operations
-        var batch = Firestore.instance.batch();
-
-        batch.updateData(toReject, {'status': -1, 'updated_at': timeNow});
-
-        batch.commit().then((res) {
-          setState(() {
-            _isButtonDisabled = false;
-          });
-        }, onError: (e) {
-          _setErrorState(scaffoldContext, "CALL ERROR");
-        }).catchError((e) {
-          _setErrorState(scaffoldContext, "SERVER ERROR");
-        });
-      });
-    }
-  }
-
-  void _setErrorState(scaffoldContext, error, {textToSend}) {
-    setState(() {
-      _isButtonDisabled = false;
-      debugPrint(error);
-      if (textToSend != null && textToSend != "")
-        Utility.createErrorSnackBar(scaffoldContext, error: textToSend);
-      else
-        Utility.createErrorSnackBar(scaffoldContext);
-    });
-  }
-
-  Widget swipeBackground() {
-    return Container(
-      color: Colors.red[600],
-      child: Column(
-        children: <Widget>[
-          Expanded(
-            flex: 1,
-            child: Container(),
-          ),
-          Expanded(
-            flex: 5,
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  flex: 1,
-                  child: Container(),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Icon(Icons.delete, color: Colors.white),
-                ),
-                Expanded(
-                  flex: 10,
-                  child: Container(),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Icon(
-                    Icons.delete,
-                    color: Colors.white,
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Container(),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Container(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget setUpButtonChild(buttonText) {
-    if (_progressCircleState == 0) {
-      if(buttonText != 'Accept') {
-      return new Text(
-        buttonText,
-        style: const TextStyle(
-          color: Colors.black,
-          fontSize: 10.0,
-          fontFamily: 'Montserrat',
-          fontWeight: FontWeight.w700,
-        ),
-      );
-      }
-      else {
-        return new CircleAvatar(
-        child: Icon(Icons.check),
-        backgroundColor: Colors.blue[50],
-      );
-      }
-    } else if (_progressCircleState == 1) {
-      return CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-      );
-    } else {
-      return Icon(Icons.check, color: Colors.black);
-    }
-  }
+  
+  
 
   BoxDecoration getBlueGradientBackground() {
     return new BoxDecoration(
@@ -507,9 +117,6 @@ class DashboardState extends State<Dashboard> {
   }
 
   Widget flatNameWidget() {
-    if (flatName == null) {
-      return CircularProgressIndicator();
-    }
 
     return Card(
       elevation: 5.0,
@@ -521,7 +128,7 @@ class DashboardState extends State<Dashboard> {
         width: MediaQuery.of(context).size.width,
         padding: EdgeInsets.all(15.0),
         child: Text(
-          flatName,
+          this.flat.getFlatName(),
           style: TextStyle(
             color: Colors.white,
             fontSize: 25.0,
@@ -536,46 +143,24 @@ class DashboardState extends State<Dashboard> {
 
   // Get Tasks data for today
   Widget getTasks() {
-    if (this.owner.getOwnerId() == null) return LoadingContainerVertical(2);
+    //DONE: need to change below
 
-    var date = DateFormat("yyyy-MM-dd");
-    // return FutureBuilder(
-    //       future: getLandlordNameAndId(),
-    //       builder: (context, snapshot) {
-    //         if(!snapshot.hasData) return LoadingContainerVertical(1);
-    //TODO: need to change below
-    return StreamBuilder<QuerySnapshot>(
-        stream: Firestore.instance
-            .collection("user")
-            .where('flat_id', isEqualTo: flatId)
-            .snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot1) {
-          if (!snapshot1.hasData) return LoadingContainerVertical(7);
-          return StreamBuilder<QuerySnapshot>(
+    DateTime now= new DateTime.now();
+    Timestamp start = Timestamp.fromDate(DateTime(now.year, now.month, now.day));
+    Timestamp end = Timestamp.fromDate(DateTime(now.year, now.month, now.day).add(new Duration(days: 1)));
+
+    return 
+           StreamBuilder<QuerySnapshot>(
               stream: Firestore.instance
-                  .collection(globals.flat)
-                  .document(flatId)
-                  .collection("tasks_landlord")
-                  .where("landlord_id", isEqualTo: this.owner.getOwnerId())
+                  .collection(globals.ownerTenantFlat)
+                  .document(this.flat.getApartmentTenantId())
+                  .collection(globals.tasks)
+                  .where('nextDueDate', isGreaterThan: start)
+                  .where('nextDueDate', isLessThan: end)
                   .where("completed", isEqualTo: false)
                   .snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> taskSnapshot) {
                 if (!taskSnapshot.hasData) return LoadingContainerVertical(3);
-
-                taskSnapshot.data.documents.sort(
-                    (DocumentSnapshot a, DocumentSnapshot b) => int.parse(b
-                        .data['nextDueDate']
-                        .compareTo(a.data['nextDueDate'])
-                        .toString()));
-
-                taskSnapshot.data.documents.removeWhere((data) =>
-                    date.format((data['nextDueDate'] as Timestamp).toDate()) !=
-                    date.format(DateTime.now().toLocal()));
-
-                taskSnapshot.data.documents.removeWhere((s) => !s
-                    .data['assignee']
-                    .toString()
-                    .contains(this.owner.getOwnerId().trim()));
 
                 /// TASK LIST VIEW
                 var tooltipKey = new List();
@@ -642,10 +227,6 @@ class DashboardState extends State<Dashboard> {
                                       color: Colors.black45),
                                 ],
                               ),
-                              trailing: getUsersAssignedView(
-                                  taskSnapshot.data.documents[position]
-                                      ["assignee"],
-                                  snapshot1),
                               onTap: () {
                                 navigateToViewTask(
                                     taskId: taskSnapshot
@@ -657,91 +238,8 @@ class DashboardState extends State<Dashboard> {
                   ),
                 ])));
               });
-        });
+        
     // });
-  }
-
-  Widget getUsersAssignedView(users, AsyncSnapshot<QuerySnapshot> snapshot1) {
-    //get user color id
-    List userList = users.toString().trim().split(';');
-    var overflowAddition = 0.0;
-    if (userList.length > 3) overflowAddition = 8.0;
-
-    return new Container(
-      margin: EdgeInsets.only(right: 5.0),
-      child: Stack(
-        alignment: Alignment.centerRight,
-        overflow: Overflow.visible,
-        children:
-            _getPositionedOverlappingUsers(users, snapshot1.data.documents),
-      ),
-    );
-  }
-
-  List<Widget> _getPositionedOverlappingUsers(
-      users, List<DocumentSnapshot> flatUsers) {
-    List<String> userList = users.toString().trim().split(',').toList();
-    var overflowAddition = 0.0;
-    if (userList.length > 3) overflowAddition = 8.0;
-
-    List<Widget> overlappingUsers = new List();
-    overflowAddition > 0
-        ? overlappingUsers.add(Text('+', style: TextStyle(fontSize: 16.0)))
-        : overlappingUsers.add(Container(
-            height: 0.0,
-            width: 0.0,
-          ));
-
-    for (var j in userList) {
-      debugPrint("elems == " + j);
-    }
-
-    userList.sort();
-    int length = userList.length > 3 ? 3 : userList.length;
-    debugPrint("length == " + userList.length.toString());
-
-    int availableUsers = 0;
-    for (int i = 0; i < length; i++) {
-      String initial = getInitial(userList[i], flatUsers);
-      if (initial == '') {
-        continue;
-      }
-      availableUsers++;
-      debugPrint("i == " + i.toString());
-      var color = userList[i].toString().trim().hashCode;
-      overlappingUsers.add(new Positioned(
-        right: (i * 20.0) + overflowAddition,
-        child: new CircleAvatar(
-          maxRadius: 14.0,
-          backgroundColor: Colors.primaries[color % Colors.primaries.length]
-              [300],
-          child: Text(initial),
-        ),
-      ));
-    }
-    if (userList.contains(this.owner.getOwnerId())) {
-      var colorL = this.owner.getOwnerId().toString().trim().hashCode;
-
-      overlappingUsers.add(new Positioned(
-        right: (availableUsers * 20) + overflowAddition,
-        child: new CircleAvatar(
-          maxRadius: 14.0,
-          backgroundColor: Colors.primaries[colorL % Colors.primaries.length]
-              [300],
-          child: Text(this.owner.getName()[0]),
-        ),
-      ));
-    }
-    return overlappingUsers;
-  }
-
-  String getInitial(documentId, flatUsers) {
-    for (int i = 0; i < flatUsers.length; i++) {
-      if (flatUsers[i].documentID == documentId) {
-        return flatUsers[i].data['name'][0];
-      }
-    }
-    return '';
   }
 
   /// TODO: Change taskList code to store names along with user id in array. Then change this hardcoded values to show those.
@@ -750,39 +248,31 @@ class DashboardState extends State<Dashboard> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return ViewTask(taskId, flatId, this.owner);
+        return ViewTask(taskId, this.flat.getFlatId(), this.owner);
       }),
     );
   }
 
-  //TODO: need to change below
+  //DONE: need to change below
   // Get NoticeBoard data
   Widget getNotices() {
-    var date = DateFormat("yyyy-MM-dd");
+    DateTime now= new DateTime.now();
+    Timestamp start = Timestamp.fromDate(DateTime(now.year, now.month, now.day));
+    Timestamp end = Timestamp.fromDate(DateTime(now.year, now.month, now.day).add(new Duration(days: 1)));
+
     return StreamBuilder<QuerySnapshot>(
       stream: Firestore.instance
-          .collection(globals.flat)
-          .document(flatId)
+          .collection(globals.ownerTenantFlat)
+          .document(this.flat.getApartmentTenantId())
           .collection(globals.messageBoard)
-          //.where('updated_at', isGreaterThanOrEqualTo: date.format(DateTime.now().toLocal()))
+          .where('updated_at', isGreaterThan: start)
+          .where('updated_at', isLessThan: end)
           .snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> notesSnapshot) {
-        if (!notesSnapshot.hasData ||
-            this.owner.getOwnerId() == null ||
-            this.owner.getOwnerId() == "") return LoadingContainerVertical(3);
+        if (!notesSnapshot.hasData)
+             return LoadingContainerVertical(3);
 
-        List<DocumentSnapshot> notices1 =
-            List.from(notesSnapshot.data.documents);
-        notesSnapshot.data.documents
-            .sort((a, b) => b['updated_at'].compareTo(a['updated_at']));
-        notesSnapshot.data.documents.removeWhere((data) =>
-            date.format((data['updated_at'] as Timestamp).toDate()) !=
-            date.format(DateTime.now().toLocal()));
-        if (notesSnapshot.data.documents.length > 0) {
-          noticesExist = true;
-        } else {
-          noticesExist = false;
-        }
+       
 
         if(notesSnapshot.data.documents.isEmpty)
           return Container();

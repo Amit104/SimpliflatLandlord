@@ -54,7 +54,7 @@ class _ViewTask extends State<ViewTask> {
   };
 
   _ViewTask(this.taskId, this._flatId, this.owner) {
-    collectionname = 'tasks_landlord';
+    collectionname = 'tasks';
   }
 
   @override
@@ -80,7 +80,7 @@ class _ViewTask extends State<ViewTask> {
                   ? Container()
                   : StreamBuilder(
                       stream: Firestore.instance
-                          .collection(globals.flat)
+                          .collection(globals.ownerTenantFlat)
                           .document(_flatId)
                           .collection(collectionname)
                           .document(taskId)
@@ -147,7 +147,7 @@ class _ViewTask extends State<ViewTask> {
                                         onPressed: () {
                                           Navigator.of(_navigatorContext).pop();
                                           Firestore.instance
-                                              .collection(globals.flat)
+                                              .collection(globals.ownerTenantFlat)
                                               .document(_flatId)
                                               .collection(collectionname)
                                               .document(taskId)

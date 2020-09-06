@@ -56,7 +56,7 @@ class JoinPropertyState extends State<JoinProperty> {
     return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text('Add Owner'),
+          title: Text('Join Property'),
           centerTitle: true,
         ),
         body: Builder(builder: (BuildContext scaffoldC) {
@@ -189,6 +189,7 @@ class JoinPropertyState extends State<JoinProperty> {
     }
 
     return ListView.separated(
+      physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       separatorBuilder: (BuildContext context, int position) {
         return Divider(height: 1.0);

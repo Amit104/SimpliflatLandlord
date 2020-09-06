@@ -96,7 +96,7 @@ class _CreateTask extends State<CreateTask> {
 
   _CreateTask(this.taskId, this._flatId, this.typeOfTask, this.owner) {
     _isRemindMeOfIssueSelected = false;
-    collectionname = 'tasks_landlord';
+    collectionname = 'tasks';
   }
 
   void initUsers() {
@@ -131,7 +131,7 @@ class _CreateTask extends State<CreateTask> {
                       ? buildForm(null)
                       : StreamBuilder(
                           stream: Firestore.instance
-                              .collection(globals.flat)
+                              .collection(globals.ownerTenantFlat)
                               .document(_flatId)
                               .collection(collectionname)
                               .document(taskId)
@@ -429,7 +429,7 @@ class _CreateTask extends State<CreateTask> {
                       assignedFlatIds.forEach((doc) {
                         debugPrint("add to flat - " + doc.toString());
                         var docRef = Firestore.instance
-                            .collection(globals.flat)
+                            .collection(globals.ownerTenantFlat)
                             .document(doc)
                             .collection(collectionname)
                             .document(); //automatically generate unique id
@@ -438,7 +438,7 @@ class _CreateTask extends State<CreateTask> {
                       await batch.commit();
                     } else {
                       Firestore.instance
-                          .collection(globals.flat)
+                          .collection(globals.ownerTenantFlat)
                           .document(_flatId)
                           .collection(collectionname)
                           .add(data);
@@ -484,7 +484,7 @@ class _CreateTask extends State<CreateTask> {
                     };
 
                     Firestore.instance
-                        .collection(globals.flat)
+                        .collection(globals.ownerTenantFlat)
                         .document(_flatId)
                         .collection(collectionname)
                         .document(taskId)
@@ -1643,7 +1643,7 @@ class _CreateTask extends State<CreateTask> {
   ///get all tasks to check conflicts
   Future<List<DocumentSnapshot>> _getAllTasks() async {
     QuerySnapshot tasks = await Firestore.instance
-        .collection(globals.flat)
+        .collection(globals.ownerTenantFlat)
         .document(_flatId)
         .collection(collectionname)
         .where("completed", isEqualTo: false)

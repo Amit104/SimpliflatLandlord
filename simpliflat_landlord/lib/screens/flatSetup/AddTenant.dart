@@ -72,7 +72,7 @@ class AddTenantState extends State<AddTenant> {
         .collection(globals.joinFlatLandlordTenant)
         .where('owner_flat_id', isEqualTo: this.flat.getFlatId())
         .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-        .where('request_from_tenant', isEqualTo: 0)
+        .where('request_from_tenant', isEqualTo: true)
         .snapshots();
   }
 
@@ -145,7 +145,7 @@ class AddTenantState extends State<AddTenant> {
         .collection(globals.joinFlatLandlordTenant)
         .where('owner_flat_id', isEqualTo: this.flat.getFlatId())
         .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-        .where('request_from_tenant', isEqualTo: 1)
+        .where('request_from_tenant', isEqualTo: false)
         .snapshots();
   }
 
@@ -229,9 +229,13 @@ class AddTenantState extends State<AddTenant> {
       Map<String, dynamic> request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
 
-    bool ifSuccess = await TenantRequestsService.acceptTenantRequest(request);
+    String docId = await TenantRequestsService.acceptTenantRequest(request);
 
-    if (ifSuccess) {
+    if (docId != null) {
+      flat.setBuildingAddress(request['building_details']['building_address']);
+      flat.setTenantFlatId(request['tenant_flat_id']);
+      flat.setTenantFlatName(request['tenant_flat_name']);
+      flat.setApartmentTenantId(docId);
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC,
           error: 'Request accepted successfully');

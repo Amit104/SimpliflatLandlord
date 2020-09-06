@@ -54,7 +54,7 @@ class FlatListState extends State<FlatList> {
         centerTitle: true,
         backgroundColor: Colors.white,
         actions: <Widget>[Builder(builder: (BuildContext abContext){
-                  return Container(padding: EdgeInsets.all(10.0),child:IconButton(icon:Icon(Icons.add), onPressed: () {navigateToCreateProperty(abContext, null);},));
+                  return this.join?SizedBox():Container(padding: EdgeInsets.all(10.0),child:IconButton(icon:Icon(Icons.add), onPressed: () {navigateToCreateProperty(abContext, null);},));
 
         },),
       ],
@@ -127,7 +127,10 @@ class FlatListState extends State<FlatList> {
 
     List<Block> blocks = b.getBlocks();
 
-    QuerySnapshot snapshot = await Firestore.instance.collection(globals.ownerFlat).where('buildingId', isEqualTo: documentId).getDocuments();
+    Query query = Firestore.instance.collection(globals.ownerFlat).where('buildingId', isEqualTo: documentId);
+    //query = query.where('verified', isEqualTo: false);
+
+    QuerySnapshot snapshot = await query.getDocuments();
 
     
     for(int i = 0; i < snapshot.documents.length; i++) {

@@ -14,18 +14,11 @@ class TenantRequests extends StatefulWidget {
 
   final Owner user;
 
-  final Building building;
-
-  final List<String> flatIds;
-
-  //TODO: when changes are made in tenant app of adding owner ids in request. Then over here search using owner id.
-
-
-  TenantRequests(this.user, this.building, this.flatIds);
+  TenantRequests(this.user);
 
   @override
   State<StatefulWidget> createState() {
-    return TenantRequestsState(this.user, this.building, this.flatIds);
+    return TenantRequestsState(this.user);
   }
 
 }
@@ -36,11 +29,8 @@ class TenantRequestsState extends State<TenantRequests> {
 
   bool loadingState = false;
 
-  final List<String> flatIds;
 
-  final Building building;
-
-  TenantRequestsState(this.user, this.building, this.flatIds);
+  TenantRequestsState(this.user);
 
   @override
   Widget build(BuildContext context) {
@@ -59,29 +49,18 @@ class TenantRequestsState extends State<TenantRequests> {
     );
   }
 
-  Future<List<DocumentSnapshot>> getFlatList() async {
-    QuerySnapshot q = await Firestore.instance.collection(globals.joinFlatLandlordTenant).where('building_id', isEqualTo: this.building.getBuildingId())
+  Stream<QuerySnapshot> getFlatList() {
+    return Firestore.instance.collection(globals.joinFlatLandlordTenant).where('ownerIdList', arrayContains: this.user.getOwnerId())
     .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-    .where('request_from_tenant', isEqualTo: 1).getDocuments();
+    .where('request_from_tenant', isEqualTo: true).snapshots();
 
-    List<DocumentSnapshot> documents = new List();
-
-    debugPrint(q.documents.length.toString());
-    q.documents.forEach((DocumentSnapshot d) {
-      debugPrint(d.data['owner_flat_id']);
-      if(this.flatIds.contains(d.data['owner_flat_id'])) {
-        documents.add(d);
-      }
-    });
-
-
-    return documents;
+    
   }
 
   Widget getBody(BuildContext scaffoldC) {
-    return FutureBuilder(
-      future: getFlatList(),
-      builder: (BuildContext context, AsyncSnapshot<List<DocumentSnapshot>> snaphot) {
+    return StreamBuilder(
+      stream: getFlatList(),
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snaphot) {
         if(!snaphot.hasData) {
           return LoadingContainerVertical(2);
         }
@@ -89,14 +68,14 @@ class TenantRequestsState extends State<TenantRequests> {
           separatorBuilder: (BuildContext ctx, int pos){
             return Divider(height: 1.0);
           },
-          itemCount: snaphot.data.length,
+          itemCount: snaphot.data.documents.length,
           itemBuilder: (BuildContext context, int position) {
-            Map<String, dynamic> request = snaphot.data[position].data;
+            Map<String, dynamic> request = snaphot.data.documents[position].data;
             
           
-            request['documentID'] = snaphot.data[position].documentID;
+            request['documentID'] = snaphot.data.documents[position].documentID;
             return Dismissible(
-              key: Key(snaphot.data[position].documentID),
+              key: Key(snaphot.data.documents[position].documentID),
               confirmDismiss: (direction) { return rejectRequest(request, scaffoldC);},
                           child: Card(
                 child: ListTile(
@@ -133,9 +112,9 @@ class TenantRequestsState extends State<TenantRequests> {
   void acceptRequest(Map<String, dynamic> request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
 
-    bool ifSuccess = await TenantRequestsService.acceptTenantRequest(request);
+    String docId = await TenantRequestsService.acceptTenantRequest(request);
     
-    if(ifSuccess) {
+    if(docId != null) {
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Request accepted successfully');
     } else {

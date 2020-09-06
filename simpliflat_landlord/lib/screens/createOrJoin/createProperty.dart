@@ -47,6 +47,8 @@ class CreatePropertyState extends State<CreateProperty> {
 
   final bool isAdd;
 
+  BuildContext scaffoldContext;
+
 
   Map<String, bool> blocksExpanded = new Map();
 
@@ -64,14 +66,23 @@ class CreatePropertyState extends State<CreateProperty> {
 
   @override
   Widget build(BuildContext context) {
-    //TODO: on expandind the dropdowns, getting overflow error
+    debugPrint(this.user.getOwnerId());
     return Scaffold(
         backgroundColor: Colors.white,
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            saveProperty();
+          },
+          isExtended: true,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          icon: Icon(Icons.save),
+          label: Text('Save'),
+        ),
         appBar: AppBar(
           title: Text('Create Property'),
           centerTitle: true,
           actions: <Widget>[
-            Container(
+            this.building.getBuildingId()!=null?SizedBox(): Container(
                 padding: EdgeInsets.all(10.0),
                 child: IconButton(
                   icon: Icon(Icons.add),
@@ -82,6 +93,7 @@ class CreatePropertyState extends State<CreateProperty> {
           ],
         ),
         body: Builder(builder: (BuildContext scaffoldC) {
+          this.scaffoldContext = scaffoldC;
           return loadingState
               ? Container(
                   alignment: Alignment.center,
@@ -89,20 +101,14 @@ class CreatePropertyState extends State<CreateProperty> {
               : Container(
                   child: building == null
                       ? Container()
-                      : Column(children: [
-                            getMainExpansionPanelList(scaffoldC, null),
-                            Expanded(
-                                child: Align(
-                                    alignment: FractionalOffset.bottomCenter,
-                                    child: RaisedButton(
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 15.0),
-                                      child: Text('Save'),
-                                      onPressed: () {
-                                        saveProperty(scaffoldC);
-                                      },
-                                    ))),
-                          ]),
+                      : SingleChildScrollView(
+                                              child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                              getMainExpansionPanelList(scaffoldC, null),
+                              SizedBox(height: 100.0),
+                            ]),
+                      ),
                 );
         }));
   }
@@ -275,13 +281,16 @@ class CreatePropertyState extends State<CreateProperty> {
     if (blocks == null) {
       blocks = new List();
     }
+    blocksExpanded.forEach((String key, bool value) {
+      blocksExpanded[key] = false;
+    });
     blocksExpanded[block.getBlockName()] = false;
     if (!isEdit) {
       blocks.add(block);
     }
     setState(() {
       this.building.setBlock(blocks);
-      blocksExpanded[block.getBlockName()] = false;
+      blocksExpanded = blocksExpanded;
     });
     debugPrint(blocks.length.toString());
   }
@@ -296,13 +305,17 @@ class CreatePropertyState extends State<CreateProperty> {
     ownerFlats.forEach((OwnerFlat flat) {
       flat.setBlockName(block.getBlockName());
     });
+    blocksExpanded.forEach((String key, bool value) {
+      blocksExpanded[key] = false;
+    });
     block.setOwnerFlats(ownerFlats);
     setState(() {
       block = block;
     });
   }
 
-  void saveProperty(BuildContext ctx) async {
+  void saveProperty() async {
+
     setState(() {
       loadingState = true;
     });
@@ -314,15 +327,16 @@ class CreatePropertyState extends State<CreateProperty> {
     var batch = db.batch();
     DocumentReference dr;
     if(this.building.getBuildingId() != null) {
-      dr = Firestore.instance.collection(globals.building).document(this.building.getBuildingId());
+      //dr = Firestore.instance.collection(globals.building).document(this.building.getBuildingId());
     }
     else {
       dr = Firestore.instance.collection(globals.building).document();
+      Map<String, dynamic> buildingData = this.building.toJson();
+      batch.setData(dr, buildingData);
       localData.add({'buildingId': dr.documentID, 'buildingName': this.building.getBuildingName(), 'blockName': null, 'flatId': null, 'flatName': null});
     }
 
-    Map<String, dynamic> buildingData = this.building.toJson();
-    batch.setData(dr, buildingData);
+    
 
 
         
@@ -339,17 +353,18 @@ class CreatePropertyState extends State<CreateProperty> {
       for (int j = 0; j < flats.length; j++) {
         DocumentReference flatDocRef;
         if(flats[j].getFlatId() != null) {
-          flatDocRef = flatColRef.document(flats[j].getFlatId());
+          //flatDocRef = flatColRef.document(flats[j].getFlatId());
         }
         else {
           flatDocRef = flatColRef.document();
           localData.add({'buildingId': dr.documentID, 'buildingName': this.building.getBuildingName(), 'blockName': blocks[i].getBlockName(), 'flatId': flatDocRef.documentID, 'flatName': flats[j].getFlatName()});
-        }
+        
         flats[j].setBuildingDetails(this.building.getZipcode());
         flats[j].setBuildingName(this.building.getBuildingName());
         flats[j].setBuildingId(dr.documentID);
         Map<String, dynamic> flatData = flats[j].toJson();
         batch.setData(flatDocRef, flatData, merge: true);
+        }
       }
       }
     }
@@ -370,7 +385,7 @@ class CreatePropertyState extends State<CreateProperty> {
       setState(() {
         loadingState = false;
       });
-      Utility.createErrorSnackBar(ctx, error: 'Error while saving');
+      Utility.createErrorSnackBar(this.scaffoldContext, error: 'Error while saving');
     });
   }
 

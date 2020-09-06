@@ -124,7 +124,7 @@ class _LandlordPortal extends State<LandlordPortal> {
           ),
           body: Center(
             child: _selectedIndex == 0
-                ? Dashboard(this.flat.getFlatId(), this.owner)
+                ? Dashboard(this.flat, this.owner)
                 : (_selectedIndex == 1
                     ? getTasksListScreen()
                     : (_selectedIndex == 2

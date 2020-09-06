@@ -47,7 +47,7 @@ class _TaskHistory extends State<TaskHistory> {
               padding: EdgeInsets.only(top: 10.0),
               child: StreamBuilder<QuerySnapshot>(
                 stream: Firestore.instance
-                    .collection(globals.flat)
+                    .collection(globals.ownerTenantFlat)
                     .document(_flatId)
                     .collection(collectionname)
                     .document(taskId)
@@ -141,7 +141,7 @@ class _TaskHistory extends State<TaskHistory> {
 
   void _deleteItem(BuildContext context, DocumentReference reference) {
     Firestore.instance
-        .collection(globals.flat)
+        .collection(globals.ownerTenantFlat)
         .document(_flatId)
         .collection(collectionname)
         .document(taskId)

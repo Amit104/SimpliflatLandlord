@@ -106,6 +106,7 @@ class Building extends BaseModel {
     List<Block> blockList = new List();
     blocks.forEach((String blockName) {Block b = new Block(); b.setBlockName(blockName); blockList.add(b);});
     b.setBlock(blockList);
+    b.setBuildingId(documentId);
 
     return b;
   }

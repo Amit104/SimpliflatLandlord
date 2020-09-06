@@ -176,7 +176,7 @@ class TaskListState extends State<TaskList> {
   final flatId;
 
   TaskListState(this.flatId, this.owner) {
-    collectionname = 'tasks_landlord';
+    collectionname = 'tasks';
   }
 
   Future<void> onSelectNotification(String payload) async {
@@ -281,7 +281,7 @@ class TaskListState extends State<TaskList> {
           if (!snapshot1.hasData) return LoadingContainerVertical(7);
           return StreamBuilder<QuerySnapshot>(
               stream: Firestore.instance
-                  .collection(globals.flat)
+                  .collection(globals.ownerTenantFlat)
                   .document(flatId)
                   .collection(collectionname)
                   .where("completed", isEqualTo: isCompleted)
@@ -431,7 +431,7 @@ class TaskListState extends State<TaskList> {
                               },
                               onDismissed: (actionType) {
                                 Firestore.instance
-                                    .collection(globals.flat)
+                                    .collection(globals.ownerTenantFlat)
                                     .document(flatId)
                                     .collection(collectionname)
                                     .document(taskSnapshot
@@ -468,7 +468,7 @@ class TaskListState extends State<TaskList> {
                                         nextDueDate.toIso8601String());
 
                                     Firestore.instance
-                                        .collection(globals.flat)
+                                        .collection(globals.ownerTenantFlat)
                                         .document(flatId)
                                         .collection(collectionname)
                                         .document(taskSnapshot.data
@@ -482,7 +482,7 @@ class TaskListState extends State<TaskList> {
                                       "user_name": _userName,
                                     };
                                     Firestore.instance
-                                        .collection(globals.flat)
+                                        .collection(globals.ownerTenantFlat)
                                         .document(flatId)
                                         .collection(collectionname)
                                         .document(taskSnapshot.data
@@ -491,7 +491,7 @@ class TaskListState extends State<TaskList> {
                                         .add(taskHistoryData);
                                   } else {
                                     Firestore.instance
-                                        .collection(globals.flat)
+                                        .collection(globals.ownerTenantFlat)
                                         .document(flatId)
                                         .collection(collectionname)
                                         .document(taskSnapshot.data
@@ -504,7 +504,7 @@ class TaskListState extends State<TaskList> {
                                       "user_name": _userName,
                                     };
                                     Firestore.instance
-                                        .collection(globals.flat)
+                                        .collection(globals.ownerTenantFlat)
                                         .document(flatId)
                                         .collection(collectionname)
                                         .document(taskSnapshot.data
@@ -549,7 +549,7 @@ class TaskListState extends State<TaskList> {
 
                                   if (dismiss) {
                                     Firestore.instance
-                                        .collection(globals.flat)
+                                        .collection(globals.ownerTenantFlat)
                                         .document(flatId)
                                         .collection(collectionname)
                                         .document(taskSnapshot.data

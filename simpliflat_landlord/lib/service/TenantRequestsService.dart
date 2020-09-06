@@ -27,7 +27,7 @@ class TenantRequestsService {
     return ifSuccess;
   }
 
-  static Future<bool> acceptTenantRequest(Map<String, dynamic> request) async {
+  static Future<String> acceptTenantRequest(Map<String, dynamic> request) async {
     /** accept request */
 
     Map<String, dynamic> reqUpdateData = {'status': globals.RequestStatus.Accepted.index};
@@ -50,7 +50,7 @@ class TenantRequestsService {
 
     QuerySnapshot s = await Firestore.instance.collection(globals.joinFlatLandlordTenant).where('owner_flat_id', isEqualTo: request['owner_flat_id'].toString())
     .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-    .where('request_from_tenant', isEqualTo: 1).getDocuments();
+    .where('request_from_tenant', isEqualTo: true).getDocuments();
 
     Map<String, dynamic> reqRejectData = {'status': globals.RequestStatus.Rejected.index};
 
@@ -65,7 +65,7 @@ class TenantRequestsService {
 
     QuerySnapshot del = await Firestore.instance.collection(globals.joinFlatLandlordTenant).where('owner_flat_id', isEqualTo: request['owner_flat_id'].toString())
     .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-    .where('request_from_tenant', isEqualTo: 0).getDocuments();
+    .where('request_from_tenant', isEqualTo: false).getDocuments();
 
     for(int i = 0; i < del.documents.length; i++) {
       if(del.documents[i].documentID != request['documentID'].toString()) {
@@ -80,7 +80,12 @@ class TenantRequestsService {
       return false;
     });
 
-    return ifSuccess;
+    if(ifSuccess) {
+      return reqDoc.documentID;
+    }
+    else {
+      return null;
+    }
   }
 
   static Future<bool> createTenantRequest(OwnerFlat flat, Owner user, TenantFlat tenantFlat) async {
@@ -89,7 +94,7 @@ class TenantRequestsService {
           'block_id' : flat.getBlockName(),
           'owner_flat_id' : flat.getFlatId(),
           'tenant_flat_id': tenantFlat.getFlatId(),
-          'request_from_tenant': 1,
+          'request_from_tenant': false,
           'status': 0,
           'created_at': Timestamp.now(),
           'updated_at': Timestamp.now(),
