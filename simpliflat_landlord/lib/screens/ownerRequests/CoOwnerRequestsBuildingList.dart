@@ -148,7 +148,7 @@ class CoOwnerRequestBuildingListState extends State<CoOwnerRequestBuildingList> 
       Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) {
-                      return CoOwnerRequests(this.user);
+                      return CoOwnerRequests(this.user, false);
                     }),
                   );
     }

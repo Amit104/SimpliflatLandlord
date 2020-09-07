@@ -13,13 +13,15 @@ class LandlordRequests extends StatefulWidget {
 
   final Owner user;
 
+  final bool onlyNewRequests;
 
 
-  LandlordRequests(this.user);
+
+  LandlordRequests(this.user, this.onlyNewRequests);
 
   @override
   State<StatefulWidget> createState() {
-    return LandlordRequestsState(this.user);
+    return LandlordRequestsState(this.user, this.onlyNewRequests);
   }
 
 }
@@ -30,18 +32,20 @@ class LandlordRequestsState extends State<LandlordRequests> {
 
   bool loadingState = false;
 
+  final bool onlyNewRequests;
+
 
   List<LandlordRequest> landlordRequests = new List();
 
 
 
-  LandlordRequestsState(this.user);
+  LandlordRequestsState(this.user, this.onlyNewRequests);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('All Flats'),
+      appBar: this.onlyNewRequests?null: AppBar(
+        title: Text('Owner Requests'),
         centerTitle: true,
         backgroundColor: Colors.white,
         

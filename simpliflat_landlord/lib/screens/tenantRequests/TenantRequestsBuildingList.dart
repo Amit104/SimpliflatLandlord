@@ -147,7 +147,7 @@ class TenantRequestBuildingListState extends State<TenantRequestBuildingList> {
       Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) {
-                      return TenantRequests(this.user);
+                      return TenantRequests(this.user, false);
                     }),
                   );
     }

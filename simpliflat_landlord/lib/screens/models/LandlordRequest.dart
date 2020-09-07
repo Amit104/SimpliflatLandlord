@@ -221,7 +221,7 @@ class LandlordRequest extends BaseModel {
     request.setToUserId(data['toUserId']);
     request.setToUsername(data['toUsername']);
     request.setRequestId(documentId);
-    List<String> ownerIdList = new List<String>.from(data['ownerIdList']);
+    List<String> ownerIdList = new List<String>.from(data['ownerIdList'] == null?new List():data['ownerIdList']);
     request.setOwnerIdList(ownerIdList);
 
     return request;

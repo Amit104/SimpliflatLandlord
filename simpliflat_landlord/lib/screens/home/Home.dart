@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:simpliflat_landlord/screens/createOrJoin/FlatList.dart';
 import 'package:simpliflat_landlord/screens/flatSetup/AddTenant.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/screens/home/AllIncomingRequests.dart';
 import 'package:simpliflat_landlord/screens/models/Block.dart';
 import 'package:simpliflat_landlord/screens/models/Building.dart';
 import 'package:simpliflat_landlord/screens/models/Owner.dart';
@@ -38,7 +39,7 @@ class HomeState extends State<Home> {
 
   final Owner user;
 
-  bool requestsExist = false;
+  bool requestsExist = true;
 
   bool loadingState = false;
 
@@ -120,6 +121,14 @@ class HomeState extends State<Home> {
     debugPrint(this.requestsExist.toString());
     return this.requestsExist? Container(
       child: ListTile(
+        onTap: () {
+          Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) {
+          return AllIncomingRequests(this.user);
+        }),
+      );
+        },
         title:Text('You have new requests'),
       ),
     ):Container();
@@ -336,7 +345,7 @@ class HomeState extends State<Home> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) {
-                return LandlordRequests(this.user);
+                return LandlordRequests(this.user, false);
               }),
             );
           },
@@ -348,7 +357,7 @@ class HomeState extends State<Home> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) {
-                return CoOwnerRequests(this.user);
+                return CoOwnerRequests(this.user, false);
               }),
             );
           },
@@ -372,7 +381,7 @@ class HomeState extends State<Home> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) {
-                return TenantRequests(this.user);
+                return TenantRequests(this.user, false);
               }),
             );
           },

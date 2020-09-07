@@ -13,12 +13,14 @@ import 'package:simpliflat_landlord/service/TenantRequestsService.dart';
 class TenantRequests extends StatefulWidget {
 
   final Owner user;
+  
+  final bool onlyNewRequests;
 
-  TenantRequests(this.user);
+  TenantRequests(this.user, this.onlyNewRequests);
 
   @override
   State<StatefulWidget> createState() {
-    return TenantRequestsState(this.user);
+    return TenantRequestsState(this.user, this.onlyNewRequests);
   }
 
 }
@@ -29,14 +31,16 @@ class TenantRequestsState extends State<TenantRequests> {
 
   bool loadingState = false;
 
+  final bool onlyNewRequests;
 
-  TenantRequestsState(this.user);
+
+  TenantRequestsState(this.user, this.onlyNewRequests);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('All Flats'),
+      appBar: this.onlyNewRequests?null:AppBar(
+        title: Text('Tenant Requests'),
         centerTitle: true,
         backgroundColor: Colors.white,
         
