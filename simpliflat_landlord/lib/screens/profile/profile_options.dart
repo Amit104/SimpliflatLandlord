@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:simpliflat_landlord/screens/flatSetup/AddTenant.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/home/Home.dart';
 import 'package:simpliflat_landlord/screens/models/Owner.dart';
@@ -11,6 +12,9 @@ import 'package:simpliflat_landlord/screens/models/models.dart';
 import 'package:simpliflat_landlord/screens/ownerRequests/SearchOwner.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
+import 'package:simpliflat_landlord/service/OwnerRequestsService.dart';
+import 'package:flutter/cupertino.dart';
+
 
 class ProfileOptions extends StatefulWidget {
 
@@ -84,6 +88,24 @@ class _ProfileOptions extends State<ProfileOptions> {
                           MediaQuery.of(context).size.height / 10 -
                               10.0)
                           : _getExistingUsers(),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 10.0, top: 10.0),
+                      child: Text(
+                        "Owners",
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          fontFamily: 'Montserrat',
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.only(top: 5.0),
+                      height: 118.0,
+                      color: Colors.white,
+                      child: _getOwners(scaffoldC),
                     ),
                     Card(
                       color: Colors.white,
@@ -216,6 +238,46 @@ class _ProfileOptions extends State<ProfileOptions> {
                             context: context,
                             builder: (context) {
                               return new AlertDialog(
+                                title: new Text('Evacuate Flat'),
+                                content: new Text(
+                                    'Are you sure you want to evacuate this flat?'),
+                                actions: <Widget>[
+                                  new FlatButton(
+                                    child: new Text('Cancel'),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
+                                  ),
+                                  new FlatButton(
+                                      child: new Text('Yes'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop(true);
+                                        _evacuateFlat(scaffoldC);
+                                      }),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        child: Text('Evacuate Flat'),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 5.0, right: 5.0),
+                      child: RaisedButton(
+                        shape: new RoundedRectangleBorder(
+                          borderRadius: new BorderRadius.circular(40.0),
+                          side: BorderSide(
+                            width: 0.5,
+                            color: Colors.indigo[900],
+                          ),
+                        ),
+                        color: Colors.white,
+                        textColor: Colors.indigo[900],
+                        onPressed: () {
+                          showDialog<bool>(
+                            context: context,
+                            builder: (context) {
+                              return new AlertDialog(
                                 title: new Text('Log out'),
                                 content:
                                 new Text('Are you sure you want to log out?'),
@@ -254,6 +316,117 @@ class _ProfileOptions extends State<ProfileOptions> {
     await prefs.clear();
     //SystemChannels.platform.invokeMethod('SystemNavigator.pop');
     _backHome();
+  }
+
+  Widget _getOwners(BuildContext scaffoldC) {
+    return ListView.builder(
+        itemCount: this.flat.getOwners().length,
+        scrollDirection: Axis.horizontal,
+        itemBuilder: (BuildContext context, int position) {
+          return SizedBox(
+            width: 100,
+            height: 105,
+            child: Card(
+              color: Colors.white30,
+              elevation: 0.0,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 15.0),
+                child: Column(
+                  children: <Widget>[
+                    //TODO: on tapping this give an option to remove the owner
+                    GestureDetector(
+                      onLongPress: () {
+                        debugPrint("on long press");
+                        getOwnerActions(scaffoldC, this.flat.getOwners()[position]);
+                      },
+                                          child: CircleAvatar(
+                        backgroundColor: Utility.userIdColor(
+                            this.flat.getOwners()[position].getOwnerId()),
+                        child: Align(
+                          child: Text(
+                            this.flat.getOwners()[position]
+                                .getName() == ""
+                                ? "S"
+                                : 
+                                this.flat.getOwners()[position]
+                                .getName()[0]
+                                .toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 30.0,
+                              fontFamily: 'Satisfy',
+                              color: Colors.white,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 7.5),
+                      child: Text(
+                        this.flat.getOwners()[position]
+                              .getName(),
+                        style:
+                        TextStyle(fontSize: 14.0, fontFamily: 'Montserrat'),
+                        maxLines: 2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
+  }
+
+  void getOwnerActions(BuildContext scaffoldC, Owner ownerTemp) async {
+ final action = CupertinoActionSheet(
+      title: Text(
+        "Actions",
+        style: TextStyle(fontSize: 25),
+      ),
+      actions: <Widget>[
+        CupertinoActionSheetAction(
+          child: Text("Delete"),
+          onPressed: () {
+            Navigator.pop(context);
+            _removeOwnerForFlat(scaffoldC, ownerTemp);
+          },
+        ),
+        
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        child: Text("Cancel"),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+    showCupertinoModalPopup(context: context, builder: (context) => action);
+                
+  }
+
+  void _removeOwnerForFlat(BuildContext scaffoldC, Owner ownerTemp) async {
+    /** check if user is allowed to remove owner */
+    if(this.flat.getOwners() != null) {
+      Owner allowed = this.flat.getOwners().firstWhere((Owner ownerTemp1) {
+        return ownerTemp1.getOwnerId() == this.owner.getOwnerId() && ownerTemp1.getRole() == globals.OwnerRoles.Admin.index.toString();
+      }, orElse: () {return null;});
+      if(allowed == null) {
+        //not allowed to remove as this user is not admin
+        return;
+      }
+    }
+    
+    bool ifSuccess = await OwnerRequestsService.removeOwnerFromFlat(ownerTemp, flat);
+
+    if(ifSuccess) {
+      Utility.createErrorSnackBar(scaffoldC, error: 'Owner removed successfully');
+    }
+    else {
+      Utility.createErrorSnackBar(scaffoldC, error: 'Error while removoing owner');
+    }
+
   }
 
   void _exitFlat() async {
@@ -400,6 +573,25 @@ class _ProfileOptions extends State<ProfileOptions> {
             )));
   }
 
+  void _evacuateFlat(BuildContext scaffoldC) async {
+    DocumentReference doc = Firestore.instance.collection(globals.ownerTenantFlat).document(this.flat.getApartmentTenantId());
+    doc.updateData({'status': 1}).then((ret) {
+      flat.setApartmentTenantId(null);
+      flat.setTenantFlatId(null);
+      flat.setTenantFlatName(null);
+      Navigator.of(context).pop();
+      Navigator.of(context).push(
+        new MaterialPageRoute(
+          builder: (BuildContext ctx) {
+            return AddTenant(this.owner, this.flat);
+          }
+        )
+      );
+    }).catchError((e) {
+      Utility.createErrorSnackBar(scaffoldC, error: 'Error while evacuating flat');
+    });
+  }
+
   String _userNameValidator(String name) {
     if (name.isEmpty) {
       return "Cannot be empty";
@@ -429,7 +621,7 @@ class _ProfileOptions extends State<ProfileOptions> {
   }
 
   void _updateUsersView() async {
-
+    debugPrint('tenant_flat_id - ' + this.flat.getTenantFlatId());
     Firestore.instance
         .collection("user")
         .where("flat_id", isEqualTo: this.flat.getTenantFlatId())
@@ -445,6 +637,7 @@ class _ProfileOptions extends State<ProfileOptions> {
               .map((m) => new FlatUsersResponse.fromJson(m.data, m.documentID))
               .toList();
           this.usersCount = responseArray.length;
+          debugPrint(this.usersCount.toString());
           this.existingUsers = responseArray;
         });
       }

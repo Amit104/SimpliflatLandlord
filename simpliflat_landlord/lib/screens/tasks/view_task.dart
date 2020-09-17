@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simpliflat_landlord/screens/Res/strings.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
 import 'package:simpliflat_landlord/screens/models/models.dart';
 import 'package:simpliflat_landlord/screens/tasks/create_task.dart';
 import 'package:simpliflat_landlord/screens/tasks/taskHistory.dart';
@@ -13,21 +14,21 @@ import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
 import 'package:intl/intl.dart';
 
 class ViewTask extends StatefulWidget {
-  final taskId;
-  final _flatId;
+  final String taskId;
+  final OwnerFlat _flat;
   final Owner owner;
 
-  ViewTask(this.taskId, this._flatId, this.owner);
+  ViewTask(this.taskId, this._flat, this.owner);
 
   @override
   State<StatefulWidget> createState() {
-    return _ViewTask(taskId, _flatId, this.owner);
+    return _ViewTask(taskId, _flat, this.owner);
   }
 }
 
 class _ViewTask extends State<ViewTask> {
-  final taskId;
-  final _flatId;
+  final String taskId;
+  final OwnerFlat _flat;
   bool _remind = false;
   String _selectedType = "Responsibility";
   String _selectedPriority = "Low";
@@ -53,8 +54,8 @@ class _ViewTask extends State<ViewTask> {
     5: 'Occurs monthly on particular dates'
   };
 
-  _ViewTask(this.taskId, this._flatId, this.owner) {
-    collectionname = 'tasks';
+  _ViewTask(this.taskId, this._flat, this.owner) {
+    collectionname = 'tasks_landlord';
   }
 
   @override
@@ -81,7 +82,7 @@ class _ViewTask extends State<ViewTask> {
                   : StreamBuilder(
                       stream: Firestore.instance
                           .collection(globals.ownerTenantFlat)
-                          .document(_flatId)
+                          .document(_flat.getApartmentTenantId())
                           .collection(collectionname)
                           .document(taskId)
                           .snapshots(),
@@ -148,7 +149,7 @@ class _ViewTask extends State<ViewTask> {
                                           Navigator.of(_navigatorContext).pop();
                                           Firestore.instance
                                               .collection(globals.ownerTenantFlat)
-                                              .document(_flatId)
+                                              .document(_flat.getApartmentTenantId())
                                               .collection(collectionname)
                                               .document(taskId)
                                               .delete();
@@ -173,7 +174,7 @@ class _ViewTask extends State<ViewTask> {
       context,
       MaterialPageRoute(builder: (context) {
         return CreateTask(
-            taskId, _flatId, typeOfTask, this.owner);
+            taskId, _flat, typeOfTask, this.owner);
       }),
     );
   }
@@ -365,7 +366,7 @@ class _ViewTask extends State<ViewTask> {
             color: Colors.black, fontSize: 18.0, fontFamily: 'Montserrat'),
       ),
       onPressed: () {
-        _navigateToTaskHistory(taskId, _flatId);
+        _navigateToTaskHistory(taskId, _flat);
       },
     );
   }
@@ -472,7 +473,7 @@ class _ViewTask extends State<ViewTask> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return TaskHistory(taskId, _flatId);
+        return TaskHistory(taskId, _flat.getApartmentTenantId());
       }),
     );
   }
@@ -654,7 +655,7 @@ class _ViewTask extends State<ViewTask> {
     return StreamBuilder(
       stream: Firestore.instance
           .collection("user")
-          .where('flat_id', isEqualTo: _flatId)
+          .where('flat_id', isEqualTo: _flat.getTenantFlatId())
           .snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData) return LoadingContainerVertical(1);

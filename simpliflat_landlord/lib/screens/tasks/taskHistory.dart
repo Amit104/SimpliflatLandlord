@@ -7,8 +7,8 @@ import 'package:simpliflat_landlord/screens/widgets/common.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
 
 class TaskHistory extends StatefulWidget {
-  final taskId;
-  final _flatId;
+  final String taskId;
+  final String _flatId;
 
   TaskHistory(this.taskId, this._flatId);
 
@@ -19,8 +19,8 @@ class TaskHistory extends StatefulWidget {
 }
 
 class _TaskHistory extends State<TaskHistory> {
-  final taskId;
-  final _flatId;
+  final String taskId;
+  final String _flatId;
   var _navigatorContext;
   String collectionname;
 

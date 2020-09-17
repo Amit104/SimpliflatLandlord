@@ -174,8 +174,7 @@ class CreateFlatsState extends State<CreateFlats> {
 
                   List<String> ownerRoleList = new List();
                   ownerRoleList.add(this.user.getOwnerId() +
-                      ':' +
-                      globals.OwnerRoles.Admin.index.toString());
+                      ':' + this.user.getName() + ':' + globals.OwnerRoles.Admin.index.toString());
                   flat.setOwnerRoleList(ownerRoleList);
 
                   this.ownerFlatsTemp.add(flat);
@@ -263,7 +262,7 @@ class CreateFlatsState extends State<CreateFlats> {
 
                       List<String> ownerRoleList = new List();
                       ownerRoleList.add(this.user.getOwnerId() +
-                          ':' +
+                          ':' + this.user.getName() + ':' +
                           globals.OwnerRoles.Admin.index.toString());
                       flat.setOwnerRoleList(ownerRoleList);
 

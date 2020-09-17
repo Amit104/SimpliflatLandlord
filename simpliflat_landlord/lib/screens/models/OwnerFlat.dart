@@ -1,5 +1,6 @@
 
 import 'package:simpliflat_landlord/screens/models/BaseModel.dart';
+import 'package:simpliflat_landlord/screens/models/Owner.dart';
 
 class OwnerFlat extends BaseModel {
   String buildingDetails;
@@ -18,6 +19,7 @@ class OwnerFlat extends BaseModel {
   String zipcode;
   String buildingDisplayId;
   bool verified;
+  List<Owner> owners;
 
 	bool isVerified() {
 		return this.verified;
@@ -148,6 +150,14 @@ class OwnerFlat extends BaseModel {
 		this.flatId = flatId;
 	}
 
+  List<Owner> getOwners() {
+		return this.owners;
+	}
+
+	void setOwners(List<Owner> owners) {
+		this.owners = owners;
+	}
+
   Map<String, dynamic> toJson() {
     return {
       'flatName': this.flatName,
@@ -170,6 +180,23 @@ class OwnerFlat extends BaseModel {
     List<String> ownerIdList = new List<String>.from(json['ownerIdList']);
     flat.setOwnerIdList(ownerIdList);
     List<String> ownerRoleList = new List<String>.from(json['ownerRoleList']);
+    flat.setOwners(new List());
+    //TODO: added try catch since name is not stored in ownerRoleList right now
+    try {
+    if(ownerRoleList != null) {
+      ownerRoleList.forEach((String e) {
+        List<String> val = e.split(':');
+        Owner o = new Owner();
+        o.setOwnerId(val[0]);
+        o.setName(val[1]);
+        o.setRole(val[2]);
+        flat.getOwners().add(o);
+      });
+    }
+    }
+    catch(e) {
+
+    }
     flat.setOwnerRoleList(ownerRoleList);
     flat.setFlatId(documentId);
     flat.setBuildingDetails(json['buildingDetails']);
@@ -177,6 +204,7 @@ class OwnerFlat extends BaseModel {
     flat.setBuildingId(json['buildingId']);
     flat.setBuildingName(json['buildingName']);
     flat.setVerified(json['verified']);
+    flat.setZipcode(json['buildingDetails']);
     return flat;
 
   }

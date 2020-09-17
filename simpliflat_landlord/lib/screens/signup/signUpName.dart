@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:simpliflat_landlord/screens/createOrJoin/createOrJoinHome.dart';
 import 'dart:math';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/models/Owner.dart';
@@ -214,7 +215,12 @@ class _SignUpNameUser extends State<SignUpName> {
     });
   }
 
-  void _onSuccess({String userId, String flatId, String displayId, String userName, String flatName}) {
+  void _onSuccess(
+      {String userId,
+      String flatId,
+      String displayId,
+      String userName,
+      String flatName}) {
     String flatTemp;
     if (flatId != null && flatId.length > 0) {
       flatTemp = flatId[0];
@@ -263,16 +269,16 @@ class _SignUpNameUser extends State<SignUpName> {
         ref.setData(userData).then((addedUser) {
           var userId = user.uid;
           _onSuccess(userId: userId, userName: name.text);
-          navigateToCreateOrJoinHome(userId, name.text, phone);
+          navigate(userId, name.text, phone, true);
         }, onError: (e) {
           _serverError(scaffoldContext);
         });
       } else {
         _onSuccess(
-              userId: snapshot.documents[0].documentID,
-              userName: snapshot.documents[0].data['name']);
-          navigateToCreateOrJoinHome(snapshot.documents[0].documentID, snapshot.documents[0].data['name'], phone);
-        
+            userId: snapshot.documents[0].documentID,
+            userName: snapshot.documents[0].data['name']);
+        navigate(snapshot.documents[0].documentID,
+            snapshot.documents[0].data['name'], phone, false);
       }
     }, onError: (e) {
       debugPrint("ERROR");
@@ -302,21 +308,40 @@ class _SignUpNameUser extends State<SignUpName> {
     }
   }
 
-  void navigateToCreateOrJoin() {
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
-      return CreateOrJoin(2, null, null);
-    }), ModalRoute.withName('/'))
-        .whenComplete(() {
-      _progressCircleState = 0;
-      _isButtonDisabled = false;
-    });
-  }
-
-  void navigateToCreateOrJoinHome(String userId, String userName, String userPhone) async {
+  void navigate(
+      String userId, String userName, String userPhone, bool newUser) async {
     Owner user = new Owner();
     user.setName(userName);
     user.setOwnerId(userId);
     user.setPhone(userPhone);
+    if (newUser) {
+      navigateToCreateOrJoin(user);
+    } else {
+      bool propReg = await Utility.getPropertyRegistered();
+      if (propReg == null) {
+        propReg = await getAndSetIfPropertyRegistred(userId);
+      }
+
+      if (propReg) {
+        navigateToHome(user);
+      } else {
+        navigateToCreateOrJoin(user);
+      }
+    }
+  }
+
+  Future<bool> getAndSetIfPropertyRegistred(String userId) async {
+    QuerySnapshot docs = await Firestore.instance
+        .collection(globals.ownerFlat)
+        .where('ownerIdList', arrayContains: userId)
+        .limit(1)
+        .getDocuments();
+    bool propReg = docs.documents != null && docs.documents.length > 0;
+    Utility.addToSharedPref(propertyRegistered: propReg);
+    return propReg;
+  }
+
+  navigateToHome(Owner user) {
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
       return Home(user);
     }), ModalRoute.withName('/'))
@@ -326,6 +351,15 @@ class _SignUpNameUser extends State<SignUpName> {
     });
   }
 
+  navigateToCreateOrJoin(Owner user) {
+    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
+      return CreateOrJoinHome(user);
+    }), ModalRoute.withName('/'))
+        .whenComplete(() {
+      _progressCircleState = 0;
+      _isButtonDisabled = false;
+    });
+  }
 
   @override
   void dispose() {

@@ -119,7 +119,7 @@ class FlatListState extends State<FlatList> {
   }
 
   void createDataObjectAndNavigate(Map<String, dynamic> buildingData, documentId, BuildContext ctx) async {
-
+    debugPrint("navigating");
     setState(() {
           loadingState = true;
         });

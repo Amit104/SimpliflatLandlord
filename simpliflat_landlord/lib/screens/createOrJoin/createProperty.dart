@@ -69,7 +69,7 @@ class CreatePropertyState extends State<CreateProperty> {
     debugPrint(this.user.getOwnerId());
     return Scaffold(
         backgroundColor: Colors.white,
-        floatingActionButton: FloatingActionButton.extended(
+        floatingActionButton: this.building != null? FloatingActionButton.extended(
           onPressed: () {
             saveProperty();
           },
@@ -77,12 +77,12 @@ class CreatePropertyState extends State<CreateProperty> {
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           icon: Icon(Icons.save),
           label: Text('Save'),
-        ),
+        ):null,
         appBar: AppBar(
           title: Text('Create Property'),
           centerTitle: true,
           actions: <Widget>[
-            this.building.getBuildingId()!=null?SizedBox(): Container(
+            this.building != null && this.building.getBuildingId()!=null?SizedBox(): Container(
                 padding: EdgeInsets.all(10.0),
                 child: IconButton(
                   icon: Icon(Icons.add),
@@ -372,6 +372,7 @@ class CreatePropertyState extends State<CreateProperty> {
 
     batch.commit().then((retVal) {
       debugPrint("saved successfully");
+      Utility.addToSharedPref(propertyRegistered: true);
       OwnershipDetailsDBHelper.instance.insertAll(localData);
       Navigator.of(context).popUntil((route) => route.isFirst);
       Navigator.pushReplacement(

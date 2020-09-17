@@ -64,3 +64,5 @@ String ownerOwnerJoin = 'owner_owner_join';
 String joinFlatLandlordTenant = 'joinflat_landlord_tenant';
 
 String ownerTenantFlat = 'owner_tenant_flat';
+
+String propertyRegistered = "propertyRegistered";

@@ -154,7 +154,7 @@ class DashboardState extends State<Dashboard> {
               stream: Firestore.instance
                   .collection(globals.ownerTenantFlat)
                   .document(this.flat.getApartmentTenantId())
-                  .collection(globals.tasks)
+                  .collection('tasks_landlord')
                   .where('nextDueDate', isGreaterThan: start)
                   .where('nextDueDate', isLessThan: end)
                   .where("completed", isEqualTo: false)
@@ -248,7 +248,7 @@ class DashboardState extends State<Dashboard> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return ViewTask(taskId, this.flat.getFlatId(), this.owner);
+        return ViewTask(taskId, this.flat, this.owner);
       }),
     );
   }

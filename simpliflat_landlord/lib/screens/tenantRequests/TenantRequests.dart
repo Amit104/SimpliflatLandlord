@@ -54,7 +54,7 @@ class TenantRequestsState extends State<TenantRequests> {
   }
 
   Stream<QuerySnapshot> getFlatList() {
-    return Firestore.instance.collection(globals.joinFlatLandlordTenant).where('ownerIdList', arrayContains: this.user.getOwnerId())
+    return Firestore.instance.collection(globals.joinFlatLandlordTenant).where('owner_id_list', arrayContains: this.user.getOwnerId())
     .where('status', isEqualTo: globals.RequestStatus.Pending.index)
     .where('request_from_tenant', isEqualTo: true).snapshots();
 

@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
 import 'package:simpliflat_landlord/screens/tasks/create_task.dart';
 import 'package:simpliflat_landlord/screens/tasks/view_task.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
@@ -125,15 +126,15 @@ class TaskItem<T> {
 }
 
 class TaskList extends StatefulWidget {
-  final flatId;
+  final OwnerFlat _flat;
 
   final Owner owner;
 
-  TaskList(this.flatId, this.owner);
+  TaskList(this._flat, this.owner);
 
   @override
   State<StatefulWidget> createState() {
-    return TaskListState(this.flatId, this.owner);
+    return TaskListState(this._flat, this.owner);
   }
 }
 
@@ -173,10 +174,10 @@ class TaskListState extends State<TaskList> {
   };
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
-  final flatId;
+  final OwnerFlat _flat;
 
-  TaskListState(this.flatId, this.owner) {
-    collectionname = 'tasks';
+  TaskListState(this._flat, this.owner) {
+    collectionname = 'tasks_landlord';
   }
 
   Future<void> onSelectNotification(String payload) async {
@@ -275,14 +276,14 @@ class TaskListState extends State<TaskList> {
     return StreamBuilder<QuerySnapshot>(
         stream: Firestore.instance
             .collection("user")
-            .where('flat_id', isEqualTo: flatId)
+            .where('flat_id', isEqualTo: this._flat.getTenantFlatId())
             .snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot1) {
           if (!snapshot1.hasData) return LoadingContainerVertical(7);
           return StreamBuilder<QuerySnapshot>(
               stream: Firestore.instance
                   .collection(globals.ownerTenantFlat)
-                  .document(flatId)
+                  .document(this._flat.getApartmentTenantId())
                   .collection(collectionname)
                   .where("completed", isEqualTo: isCompleted)
                   .where("landlord_id", isEqualTo: this.owner.getOwnerId())
@@ -432,7 +433,7 @@ class TaskListState extends State<TaskList> {
                               onDismissed: (actionType) {
                                 Firestore.instance
                                     .collection(globals.ownerTenantFlat)
-                                    .document(flatId)
+                                    .document(this._flat.getApartmentTenantId())
                                     .collection(collectionname)
                                     .document(taskSnapshot
                                         .data.documents[position].documentID)
@@ -469,7 +470,7 @@ class TaskListState extends State<TaskList> {
 
                                     Firestore.instance
                                         .collection(globals.ownerTenantFlat)
-                                        .document(flatId)
+                                        .document(this._flat.getApartmentTenantId())
                                         .collection(collectionname)
                                         .document(taskSnapshot.data
                                             .documents[position].documentID)
@@ -483,7 +484,7 @@ class TaskListState extends State<TaskList> {
                                     };
                                     Firestore.instance
                                         .collection(globals.ownerTenantFlat)
-                                        .document(flatId)
+                                        .document(this._flat.getApartmentTenantId())
                                         .collection(collectionname)
                                         .document(taskSnapshot.data
                                             .documents[position].documentID)
@@ -492,7 +493,7 @@ class TaskListState extends State<TaskList> {
                                   } else {
                                     Firestore.instance
                                         .collection(globals.ownerTenantFlat)
-                                        .document(flatId)
+                                        .document(this._flat.getApartmentTenantId())
                                         .collection(collectionname)
                                         .document(taskSnapshot.data
                                             .documents[position].documentID)
@@ -505,7 +506,7 @@ class TaskListState extends State<TaskList> {
                                     };
                                     Firestore.instance
                                         .collection(globals.ownerTenantFlat)
-                                        .document(flatId)
+                                        .document(this._flat.getApartmentTenantId())
                                         .collection(collectionname)
                                         .document(taskSnapshot.data
                                             .documents[position].documentID)
@@ -550,7 +551,7 @@ class TaskListState extends State<TaskList> {
                                   if (dismiss) {
                                     Firestore.instance
                                         .collection(globals.ownerTenantFlat)
-                                        .document(flatId)
+                                        .document(this._flat.getApartmentTenantId())
                                         .collection(collectionname)
                                         .document(taskSnapshot.data
                                             .documents[position].documentID)
@@ -684,7 +685,7 @@ class TaskListState extends State<TaskList> {
 
   void updateTasksLastSeen() async {
     Utility.updateReadTasksLastSeen(
-        flatId, Timestamp.now().millisecondsSinceEpoch);
+        this._flat.getApartmentTenantId(), Timestamp.now().millisecondsSinceEpoch);
   }
 
   String _getDateTimeString(DateTime nextDueDate) {
@@ -989,7 +990,7 @@ class TaskListState extends State<TaskList> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return CreateTask(taskId, flatId, typeOfTask, this.owner);
+        return CreateTask(taskId, this._flat, typeOfTask, this.owner);
       }),
     );
   }
@@ -1145,7 +1146,7 @@ class TaskListState extends State<TaskList> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return ViewTask(taskId, flatId, this.owner);
+        return ViewTask(taskId, this._flat, this.owner);
       }),
     );
   }

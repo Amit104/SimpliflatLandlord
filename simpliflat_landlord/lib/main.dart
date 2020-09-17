@@ -125,10 +125,26 @@ class MyApp extends StatelessWidget {
         if (userId == null)
           _navigate(_navigatorContext, 1);
         else {
-          _navigate(_navigatorContext, 2, userId: userId);
+          
+          bool propertyRegistered = sp.get(globals.propertyRegistered);
+
+          if(propertyRegistered == null ) {
+            propertyRegistered = await getAndSetIfPropertyRegistred(userId);
+          }
+          if(propertyRegistered) {
+            _navigate(_navigatorContext, 2, userId: userId);  //2 is when signed in and property registered
+          }
+          else {
+              _navigate(_navigatorContext, 3, userId: userId);  //3 is when signed in but property not registeredd
+          }
         }
       });
     });
+  }
+
+  Future<bool> getAndSetIfPropertyRegistred(String userId) async {
+    QuerySnapshot docs = await Firestore.instance.collection(globals.ownerFlat).where('ownerIdList', arrayContains: userId).limit(1).getDocuments();
+    return docs.documents != null && docs.documents.length > 0;
   }
 
   // flag indicate -
@@ -140,7 +156,7 @@ class MyApp extends StatelessWidget {
       List<String> incomingRequests,
       userId}) async {
     Owner user = new Owner();
-    if (flag == 2) {
+    if (flag == 2 || flag == 3) {
       String _userPhone = await Utility.getUserPhone();
       String _userName = await Utility.getUserName();
       if (_userName == null ||

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:simpliflat_landlord/screens/createOrJoin/FlatList.dart';
+import 'package:simpliflat_landlord/screens/home/Home.dart';
 import 'package:simpliflat_landlord/screens/models/LandlordRequest.dart';
 import 'package:simpliflat_landlord/screens/models/Owner.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
 import 'package:simpliflat_landlord/screens/widgets/loading_container.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
+import 'package:simpliflat_landlord/service/OwnerRequestsService.dart';
 
 
 
@@ -30,6 +32,8 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
 
   final Owner user;
 
+  bool loadingState = false;
+
   CreateOrJoinHomeState(this.user);
 
   @override
@@ -41,7 +45,7 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
         centerTitle: true,
       ),
       body: Builder(builder: (BuildContext scaffoldC) {
-        return getBody(scaffoldC);
+        return loadingState?Container(child: CircularProgressIndicator(), alignment: Alignment.center,):getBody(scaffoldC);
       }),
     );
   }
@@ -219,7 +223,10 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
                       child: IconButton(
                         icon: Icon(Icons.check, color: Colors.green,
                         size: 25.0,),
-                        onPressed: () {},
+                        onPressed: () {
+                          acceptRequest(req, scaffoldC);
+                          Utility.addToSharedPref(propertyRegistered: true);
+                        },
                       )),
                   Expanded(
                     child: Column(children: [
@@ -277,42 +284,35 @@ class CreateOrJoinHomeState extends State<CreateOrJoinHome> {
     
   }
 
-  /*void acceptRequest(LandlordRequest request, BuildContext scaffoldC) async {
+  void acceptRequest(LandlordRequest request, BuildContext scaffoldC) async {
+    setState(() {
+              this.loadingState = true;
+            });
     Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
-    Map reqUpdateData = {'status': globals.RequestStatus.Accepted.index};
-
-    WriteBatch batch = Firestore.instance.batch();
-
-    DocumentReference reqDoc = Firestore.instance.collection(globals.ownerOwnerJoin).document(request.getRequestId());
-    batch.updateData(reqDoc, reqUpdateData);
-
-    DocumentReference propDoc = Firestore.instance.collection(globals.building).document(request.getBuildingId());
-    if(request.getFlatId() != null) {
-      propDoc = propDoc.collection(globals.block).document(request.getBlockId()).collection(globals.ownerFlat).document(request.getFlatId());
-    }
     
-    Map propUpdateData = {'ownerIdList': FieldValue.arrayUnion([request.getRequesterId()]), 'ownerRoleList': FieldValue.arrayUnion([request.getRequesterId() + ':' + globals.OwnerRoles.Manager.index.toString()])};
-    batch.updateData(propDoc, propUpdateData);
-    await batch.commit().then((ret){
+    bool ifSuccess = await OwnerRequestsService.acceptRequestFromOwner(request);
+
+    if(ifSuccess) {
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Request accepted successfully');
-
-      Map<String, dynamic> data = {'buildingId': request.getBuildingId(), 'buildingName': request.getBuildingName(), 'blockId': request.getBlockId(), 'blockName': request.getBlockName(), 'flatId': request.getFlatId(), 'flatName': request.getFlatNumber()};
-      OwnershipDetailsDBHelper.instance.insert(data);
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) {
-          return Home(this.userId);
-        }),
-      );
-    }).catchError((){
+      setState(() {
+              this.loadingState = false;
+            });
+      navigateToHome(user);
+    } else {
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC, error: 'Error while accepting request');
-    });
+      setState(() {
+              this.loadingState = false;
+            });
+    }
 
     
+  }
 
-    
-  }*/
+  navigateToHome(Owner user) {
+    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
+      return Home(user);
+    }), ModalRoute.withName('/'));
+  }
 }

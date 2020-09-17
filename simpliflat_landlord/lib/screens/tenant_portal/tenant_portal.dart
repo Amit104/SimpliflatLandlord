@@ -128,9 +128,9 @@ class _LandlordPortal extends State<LandlordPortal> {
                 : (_selectedIndex == 1
                     ? getTasksListScreen()
                     : (_selectedIndex == 2
-                        ? MessageBoard(this.flat.getFlatId())
+                        ? MessageBoard(this.flat.getApartmentTenantId())
                         : (_selectedIndex == 3
-                        ? DocumentManager(this.flat.getFlatId())
+                        ? DocumentManager(this.flat.getApartmentTenantId())
                         : ProfileOptions(this.owner, this.flat))))
           ),
           bottomNavigationBar: new BottomNavigationBar(
@@ -158,7 +158,7 @@ class _LandlordPortal extends State<LandlordPortal> {
   }
 
   Widget getTasksListScreen() {
-    return TaskList(this.flat.getFlatId(), this.owner);
+    return TaskList(this.flat, this.owner);
   }
 
   void openActionMenu() {
@@ -211,7 +211,7 @@ class _LandlordPortal extends State<LandlordPortal> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return CreateTask(taskId, this.flat.getFlatId(), typeOfTask, this.owner);
+        return CreateTask(taskId, this.flat, typeOfTask, this.owner);
       }),
     );
   }

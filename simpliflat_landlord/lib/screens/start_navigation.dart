@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:simpliflat_landlord/screens/createOrJoin/createOrJoinHome.dart';
 import 'package:simpliflat_landlord/screens/signup/signupPhoneNumber.dart';
 import 'package:simpliflat_landlord/screens/home/Home.dart';
 import 'package:simpliflat_landlord/screens/models/Owner.dart';
@@ -25,7 +26,7 @@ class StartNavigation extends StatelessWidget {
       },
       child: flag == 1
           ? SignUpPhone()
-          : Home(this.user)
+          : flag == 2? Home(this.user) : CreateOrJoinHome(this.user)
     );
   }
 

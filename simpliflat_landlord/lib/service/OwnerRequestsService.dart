@@ -105,7 +105,7 @@ class OwnerRequestsService {
     propDoc = Firestore.instance.collection(globals.ownerFlat).document(request.getFlatId());
     
     
-    Map<String, dynamic> propUpdateData = {'ownerIdList': FieldValue.arrayUnion([request.getToUserId()]), 'ownerRoleList': FieldValue.arrayUnion([request.getToUserId() + ':' + globals.OwnerRoles.Manager.index.toString()])};
+    Map<String, dynamic> propUpdateData = {'ownerIdList': FieldValue.arrayUnion([request.getToUserId()]), 'ownerRoleList': FieldValue.arrayUnion([request.getToUserId() + ':' + request.getToUsername() + ':' + globals.OwnerRoles.Manager.index.toString()])};
     batch.updateData(propDoc, propUpdateData);
 
 
@@ -181,7 +181,7 @@ class OwnerRequestsService {
     propDoc = Firestore.instance.collection(globals.ownerFlat).document(request.getFlatId());
     
     
-    Map<String, dynamic> propUpdateData = {'ownerIdList': FieldValue.arrayUnion([request.getRequesterId()]), 'ownerRoleList': FieldValue.arrayUnion([request.getRequesterId() + ':' + globals.OwnerRoles.Manager.index.toString()])};
+    Map<String, dynamic> propUpdateData = {'ownerIdList': FieldValue.arrayUnion([request.getRequesterId()]), 'ownerRoleList': FieldValue.arrayUnion([request.getRequesterId() + ':' + request.getRequesterUserName() + ':' + globals.OwnerRoles.Manager.index.toString()])};
     batch.updateData(propDoc, propUpdateData);
 
     
@@ -248,6 +248,86 @@ class OwnerRequestsService {
       return true;
     }).catchError((){
       return false;
+    });
+
+    return ifSuccess;
+
+  }
+
+  static Future<bool> removeOwnerFromFlat(Owner owner, OwnerFlat flat) async {
+
+    WriteBatch batch = Firestore.instance.batch();
+
+    /** remove ownerId from owner flat */
+
+    DocumentReference propDoc;
+    propDoc = Firestore.instance.collection(globals.ownerFlat).document(flat.getFlatId());
+    
+    
+    Map<String, dynamic> propUpdateData = {'ownerIdList': FieldValue.arrayRemove([owner.getOwnerId()]), 'ownerRoleList': FieldValue.arrayRemove([owner.getOwnerId() + ':' + owner.getName() + ':' + globals.OwnerRoles.Manager.index.toString()])};
+    batch.updateData(propDoc, propUpdateData);
+
+    /** Remove ownerId in all incoming requests to flat */
+
+    QuerySnapshot s = await Firestore.instance.collection(globals.ownerOwnerJoin)
+    .where('status', isEqualTo: globals.RequestStatus.Pending.index)
+    .where('flatId', isEqualTo: flat.getFlatId())
+    .where('requestToOwner', isEqualTo: true).getDocuments();
+
+    Map<String, dynamic> updateReqData = {'ownerIdList': FieldValue.arrayRemove([owner.getOwnerId()])};
+
+    for(int i = 0; i < s.documents.length; i++) {
+        DocumentReference d = Firestore.instance.collection(globals.ownerOwnerJoin).document(s.documents[i].documentID);
+        batch.updateData(d, updateReqData);
+    }
+
+    /** delete requests sent by that owner for that flat */
+
+    QuerySnapshot qs = await Firestore.instance.collection(globals.ownerOwnerJoin)
+    .where('status', isEqualTo: globals.RequestStatus.Pending.index)
+    .where('flatId', isEqualTo: flat.getFlatId())
+    .where('requestToOwner', isEqualTo: false)
+    .where('requesterId', isEqualTo: owner.getOwnerId()).getDocuments();
+
+
+    for(int i = 0; i < qs.documents.length; i++) {
+        DocumentReference d = Firestore.instance.collection(globals.ownerOwnerJoin).document(qs.documents[i].documentID);
+        batch.delete(d);
+    }
+
+    /** remove ownerId from incoming requests for flat from tenant */
+
+    QuerySnapshot ts = await Firestore.instance.collection(globals.ownerTenantFlat)
+    .where('status', isEqualTo: globals.RequestStatus.Pending.index)
+    .where('owner_flat_id', isEqualTo: flat.getFlatId())
+    .where('request_from_tenant', isEqualTo: true)
+    .getDocuments();
+
+    Map<String, dynamic> updateTenReqData = {'ownerIdList': FieldValue.arrayRemove([owner.getOwnerId()])};
+
+    for(int i = 0; i < ts.documents.length; i++) {
+        DocumentReference d = Firestore.instance.collection(globals.joinFlatLandlordTenant).document(ts.documents[i].documentID);
+        batch.updateData(d, updateTenReqData);
+    }
+
+    /** delete requests sent to tenant by this owner */
+
+    QuerySnapshot tss = await Firestore.instance.collection(globals.ownerTenantFlat)
+    .where('status', isEqualTo: globals.RequestStatus.Pending.index)
+    .where('owner_flat_id', isEqualTo: flat.getFlatId())
+    .where('request_from_tenant', isEqualTo: false)
+    .where('created_by.user_id', isEqualTo: owner.getOwnerId())
+    .getDocuments();
+
+    for(int i = 0; i < tss.documents.length; i++) {
+        DocumentReference d = Firestore.instance.collection(globals.joinFlatLandlordTenant).document(tss.documents[i].documentID);
+        batch.delete(d);
+    }
+
+    bool ifSuccess = await batch.commit().then((ret){
+      return true;
+    }).catchError((e){
+     return false;
     });
 
     return ifSuccess;

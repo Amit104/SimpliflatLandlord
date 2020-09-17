@@ -238,7 +238,7 @@ class HomeState extends State<Home> {
     if (q != null && q.documents.length > 0) {
       flat.setBuildingAddress(q.documents[0].data['buildingAddress']);
       flat.setZipcode(q.documents[0].data['zipcode']);
-      flat.setTenantFlatId(q.documents[0].documentID);
+      flat.setTenantFlatId(q.documents[0].data['tenantFlatId']);
       flat.setTenantFlatName(q.documents[0].data['tenantFlatName']);
       flat.setApartmentTenantId(q.documents[0].documentID);
       Navigator.push(

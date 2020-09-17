@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:simpliflat_landlord/screens/globals.dart' as globals;
 import 'package:simpliflat_landlord/screens/models/Owner.dart';
+import 'package:simpliflat_landlord/screens/models/OwnerFlat.dart';
 import 'package:simpliflat_landlord/screens/models/models.dart';
 import 'package:simpliflat_landlord/screens/utility.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,24 +12,24 @@ import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 
 class CreateTask extends StatefulWidget {
-  final taskId;
-  final _flatId;
+  final String taskId;
+  OwnerFlat _flat;
   final typeOfTask;
 
   final Owner owner;
 
-  CreateTask(this.taskId, this._flatId, this.typeOfTask, this.owner);
+  CreateTask(this.taskId, this._flat, this.typeOfTask, this.owner);
 
   @override
   State<StatefulWidget> createState() {
     return _CreateTask(
-        taskId, _flatId, typeOfTask, this.owner);
+        taskId, _flat, typeOfTask, this.owner);
   }
 }
 
 class _CreateTask extends State<CreateTask> {
-  final taskId;
-  final _flatId;
+  final String taskId;
+  final OwnerFlat _flat;
   String typeOfTask;
   List existingUsers;
 
@@ -94,9 +95,9 @@ class _CreateTask extends State<CreateTask> {
 
   String collectionname;
 
-  _CreateTask(this.taskId, this._flatId, this.typeOfTask, this.owner) {
+  _CreateTask(this.taskId, this._flat, this.typeOfTask, this.owner) {
     _isRemindMeOfIssueSelected = false;
-    collectionname = 'tasks';
+    collectionname = 'tasks_landlord';
   }
 
   void initUsers() {
@@ -132,7 +133,7 @@ class _CreateTask extends State<CreateTask> {
                       : StreamBuilder(
                           stream: Firestore.instance
                               .collection(globals.ownerTenantFlat)
-                              .document(_flatId)
+                              .document(_flat.getApartmentTenantId())
                               .collection(collectionname)
                               .document(taskId)
                               .snapshots(),
@@ -439,7 +440,7 @@ class _CreateTask extends State<CreateTask> {
                     } else {
                       Firestore.instance
                           .collection(globals.ownerTenantFlat)
-                          .document(_flatId)
+                          .document(_flat.getApartmentTenantId())
                           .collection(collectionname)
                           .add(data);
                     }
@@ -485,7 +486,7 @@ class _CreateTask extends State<CreateTask> {
 
                     Firestore.instance
                         .collection(globals.ownerTenantFlat)
-                        .document(_flatId)
+                        .document(_flat.getApartmentTenantId())
                         .collection(collectionname)
                         .document(taskId)
                         .updateData(data);
@@ -799,7 +800,7 @@ class _CreateTask extends State<CreateTask> {
                     child: StreamBuilder(
                         stream: Firestore.instance
                             .collection("user")
-                            .where('flat_id', isEqualTo: _flatId)
+                            .where('flat_id', isEqualTo: _flat.getTenantFlatId())
                             .snapshots(),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData)
@@ -1604,7 +1605,7 @@ class _CreateTask extends State<CreateTask> {
   void _updateUsersView() async {
     Firestore.instance
         .collection("user")
-        .where("flat_id", isEqualTo: _flatId)
+        .where("flat_id", isEqualTo: _flat.getTenantFlatId())
         .getDocuments()
         .then((snapshot) {
       if (snapshot == null || snapshot.documents.length == 0) {
@@ -1644,7 +1645,7 @@ class _CreateTask extends State<CreateTask> {
   Future<List<DocumentSnapshot>> _getAllTasks() async {
     QuerySnapshot tasks = await Firestore.instance
         .collection(globals.ownerTenantFlat)
-        .document(_flatId)
+        .document(_flat.getApartmentTenantId())
         .collection(collectionname)
         .where("completed", isEqualTo: false)
         .where("landlord_id", isEqualTo: this.owner.getOwnerId())
