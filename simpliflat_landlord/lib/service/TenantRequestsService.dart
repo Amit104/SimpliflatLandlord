@@ -43,6 +43,28 @@ class TenantRequestsService {
     
     
     Map<String, dynamic> reqData = {'ownerFlatId': request['owner_flat_id'].toString(), 'tenantFlatId': request['tenant_flat_id'].toString(), 'status': 0, 'tenantFlatName': request['tenant_flat_name'], 'building_name': request['building_details']['building_name'], 'building_address': request['building_details']['building_address'], 'zipcode': request['building_details']['building_zipcode']};
+    
+      /** add all owners and tenants */
+    DocumentSnapshot ofd = await Firestore.instance.collection('ownerFlat').document(request['owner_flat_id'].toString()).get();
+    if(ofd.exists) {
+        OwnerFlat ownerFlatTemp = OwnerFlat.fromJson(ofd.data,ofd.documentID);
+        if(ownerFlatTemp.getOwnerIdList() != null) {
+          for (String ownerId in ownerFlatTemp.getOwnerIdList()) {
+              DocumentSnapshot landlordSnapshot = await Firestore.instance.collection('landlord').document(ownerId).get();
+              if (landlordSnapshot.exists) {
+                reqData['o_' + landlordSnapshot.documentID] = landlordSnapshot.data['name'] + '::' + landlordSnapshot.data['notification_token'];
+              }
+          }
+        }
+    }
+
+    QuerySnapshot tenants = await Firestore.instance.collection('user').where('flatId', isEqualTo: request['tenant_flat_id'].toString()).getDocuments();
+    if(tenants.documents != null && tenants.documents.length > 0) {
+      for(DocumentSnapshot tenant in tenants.documents) {
+        reqData['t_' + tenant.documentID] = tenant.data['name'] + '::' + tenant.data['notification_token'];
+      }
+    }
+    
     batch.setData(propDoc, reqData);
 
 

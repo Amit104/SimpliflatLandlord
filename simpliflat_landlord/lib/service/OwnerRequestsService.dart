@@ -127,7 +127,7 @@ class OwnerRequestsService {
 
     /** Add ownerId in ownerId List of all requests received for that flat */
 
-    QuerySnapshot ts = await Firestore.instance.collection(globals.ownerTenantFlat)
+    QuerySnapshot ts = await Firestore.instance.collection(globals.joinFlatLandlordTenant)
     .where('status', isEqualTo: globals.RequestStatus.Pending.index)
     .where('owner_flat_id', isEqualTo: request.getFlatId())
     .where('request_to_tenant', isEqualTo: false).getDocuments();
@@ -135,7 +135,7 @@ class OwnerRequestsService {
     Map<String, dynamic> updateTenReqData = {'ownerIdList': FieldValue.arrayUnion([request.getToUserId()])};
 
     for(int i = 0; i < ts.documents.length; i++) {
-      DocumentReference d = Firestore.instance.collection(globals.ownerTenantFlat).document(ts.documents[i].documentID);
+      DocumentReference d = Firestore.instance.collection(globals.joinFlatLandlordTenant).document(ts.documents[i].documentID);
       batch.updateData(d, updateTenReqData);
     }
 
@@ -153,6 +153,20 @@ class OwnerRequestsService {
         DocumentReference d = Firestore.instance.collection(globals.ownerOwnerJoin).document(rs.documents[i].documentID);
         batch.updateData(d, updateReqData);
       }
+    }
+
+    /** add owner in apartment tenant list if document present */
+    QuerySnapshot otf = await Firestore.instance.collection(globals.ownerTenantFlat)
+    .where('status', isEqualTo: 0)
+    .where('ownerFlatId', isEqualTo: request.getFlatId())
+    .getDocuments();
+
+    if(otf.documents != null && otf.documents.isNotEmpty) {
+      DocumentSnapshot ld = await Firestore.instance.collection(globals.landlord).document(request.getToUserId()).get();
+      String otfId = otf.documents[0].documentID;
+      DocumentReference otfdoc = Firestore.instance.collection(globals.ownerTenantFlat).document(otfId);
+      Map data = {'o_' + ld.documentID: ld.data['name'] + '::' + ld.data['notification_token']};
+      otfdoc.updateData(data);
     }
 
     bool ifSuccess = await batch.commit().then((ret){
@@ -204,7 +218,7 @@ class OwnerRequestsService {
 
     /** Add requesterId in all tenant requests for this flat */
 
-    QuerySnapshot ts = await Firestore.instance.collection(globals.ownerTenantFlat)
+    QuerySnapshot ts = await Firestore.instance.collection(globals.joinFlatLandlordTenant)
     .where('status', isEqualTo: globals.RequestStatus.Pending.index)
     .where('owner_flat_id', isEqualTo: request.getFlatId())
     .where('request_to_tenant', isEqualTo: false).getDocuments();
@@ -212,7 +226,7 @@ class OwnerRequestsService {
     Map<String, dynamic> updateTenReqData = {'ownerIdList': FieldValue.arrayUnion([request.getRequesterId()])};
 
     for(int i = 0; i < ts.documents.length; i++) {
-      DocumentReference d = Firestore.instance.collection(globals.ownerTenantFlat).document(ts.documents[i].documentID);
+      DocumentReference d = Firestore.instance.collection(globals.joinFlatLandlordTenant).document(ts.documents[i].documentID);
       batch.updateData(d, updateTenReqData);
     }
 
@@ -230,6 +244,20 @@ class OwnerRequestsService {
         DocumentReference d = Firestore.instance.collection(globals.ownerOwnerJoin).document(qs.documents[i].documentID);
         batch.delete(d);
       }
+    }
+
+    /** add owner in apartment tenant list if document present */
+    QuerySnapshot otf = await Firestore.instance.collection(globals.ownerTenantFlat)
+    .where('status', isEqualTo: 0)
+    .where('ownerFlatId', isEqualTo: request.getFlatId())
+    .getDocuments();
+
+    if(otf.documents != null && otf.documents.isNotEmpty) {
+      DocumentSnapshot ld = await Firestore.instance.collection(globals.landlord).document(request.getRequesterId()).get();
+      String otfId = otf.documents[0].documentID;
+      DocumentReference otfdoc = Firestore.instance.collection(globals.ownerTenantFlat).document(otfId);
+      Map data = {'o_' + ld.documentID: ld.data['name'] + '::' + ld.data['notification_token']};
+      otfdoc.updateData(data);
     }
 
     bool ifSuccess = await batch.commit().then((ret){
@@ -297,7 +325,7 @@ class OwnerRequestsService {
 
     /** remove ownerId from incoming requests for flat from tenant */
 
-    QuerySnapshot ts = await Firestore.instance.collection(globals.ownerTenantFlat)
+    QuerySnapshot ts = await Firestore.instance.collection(globals.joinFlatLandlordTenant)
     .where('status', isEqualTo: globals.RequestStatus.Pending.index)
     .where('owner_flat_id', isEqualTo: flat.getFlatId())
     .where('request_from_tenant', isEqualTo: true)
@@ -312,7 +340,7 @@ class OwnerRequestsService {
 
     /** delete requests sent to tenant by this owner */
 
-    QuerySnapshot tss = await Firestore.instance.collection(globals.ownerTenantFlat)
+    QuerySnapshot tss = await Firestore.instance.collection(globals.joinFlatLandlordTenant)
     .where('status', isEqualTo: globals.RequestStatus.Pending.index)
     .where('owner_flat_id', isEqualTo: flat.getFlatId())
     .where('request_from_tenant', isEqualTo: false)
@@ -322,6 +350,19 @@ class OwnerRequestsService {
     for(int i = 0; i < tss.documents.length; i++) {
         DocumentReference d = Firestore.instance.collection(globals.joinFlatLandlordTenant).document(tss.documents[i].documentID);
         batch.delete(d);
+    }
+
+    /** remove owner in apartment tenant list if document present */
+    QuerySnapshot otf = await Firestore.instance.collection(globals.ownerTenantFlat)
+    .where('status', isEqualTo: 0)
+    .where('ownerFlatId', isEqualTo: flat.getFlatId())
+    .getDocuments();
+
+    if(otf.documents != null && otf.documents.isNotEmpty) {
+      String otfId = otf.documents[0].documentID;
+      DocumentReference otfdoc = Firestore.instance.collection(globals.ownerTenantFlat).document(otfId);
+      Map data = {'o_' + owner.getOwnerId(): FieldValue.delete()};
+      otfdoc.updateData(data);
     }
 
     bool ifSuccess = await batch.commit().then((ret){
