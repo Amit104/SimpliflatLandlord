@@ -173,6 +173,7 @@ class Home extends StatelessWidget {
   }
 
   void navigateToLandlordPortal(OwnerFlat flat, BuildContext context) async {
+    debugPrint("navigate to landlord portal");
     User user = Provider.of<User>(context, listen: false);
     flat.setZipcode(flat.getBuildingDetails());
     QuerySnapshot q = await OwnerTenantDao.getByOwnerFlatId(flat.getFlatId());

@@ -82,11 +82,12 @@ class _ViewTask extends State<ViewTask> {
                   ? Container()
                   : StreamBuilder(
                       stream: TaskDao.getTask(_flat.getApartmentTenantId(), taskId),
-                      builder: (context, snapshot) {
+                      builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
                         if (!snapshot.hasData)
                           return LoadingContainerVertical(1);
-                        
-                        Task task = Task.fromJson(snapshot.data, taskId);
+                        debugPrint(taskId);
+                        Task task = Task.fromJson(snapshot.data.data, taskId);
+                        debugPrint(task.getAssignees().toString());
                         tc.text = taskId == null ? "" : task.getTitle();
                         return Column(
                           children: <Widget>[
@@ -637,11 +638,12 @@ class _ViewTask extends State<ViewTask> {
   }
 
   Widget _getAssigneesLayout(String title, List<String >assignees) {
+    debugPrint('tenant flat id - ' + _flat.getTenantFlatId());
     return FutureBuilder(
       future: TenantDao.getTenantsUsingTenantFlatId(_flat.getTenantFlatId()),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData) return LoadingContainerVertical(1);
-
+        debugPrint('length of assignees - ' + snapshot.data.documents.length.toString());
         return Container(
             padding: EdgeInsets.all(5.0),
             child: Column(
@@ -671,8 +673,9 @@ class _ViewTask extends State<ViewTask> {
   List<Widget> getAssignees(List<DocumentSnapshot> documents, assignees) {
     List<Widget> chips = new List();
     List<String> assigneesList = new List();
-    if (assignees != null && assignees != '') {
-      assigneesList = assignees.split(',').toList();
+    debugPrint(assignees.toString());
+    if (assignees != null) {
+      assigneesList = assignees;
     }
     if (assigneesList.contains(this.user.getUserId())) {
       chips.add(Container(

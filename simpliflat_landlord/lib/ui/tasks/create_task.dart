@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
+import 'package:simpliflat_landlord/dao/task_dao.dart';
 import 'package:simpliflat_landlord/model/models.dart';
 import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/model/task.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -94,11 +96,8 @@ class _CreateTask extends State<CreateTask> {
 
   bool showConflictsWarningSign = false;
 
-  String collectionname;
-
   _CreateTask(this.taskId, this._flat, this.typeOfTask, this.user) {
     _isRemindMeOfIssueSelected = false;
-    collectionname = 'tasks_landlord';
   }
 
   void initUsers() {
@@ -130,20 +129,17 @@ class _CreateTask extends State<CreateTask> {
                 child: Container(
                   padding: EdgeInsets.only(top: 0.0),
                   child: taskId == null
-                      ? buildForm(null)
+                      ? buildForm()
                       : StreamBuilder(
-                          stream: Firestore.instance
-                              .collection(globals.ownerTenantFlat)
-                              .document(_flat.getApartmentTenantId())
-                              .collection(collectionname)
-                              .document(taskId)
-                              .snapshots(),
-                          builder: (context, snapshot) {
+                          stream: TaskDao.getTask(_flat.getApartmentTenantId(), taskId),
+                          builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
                             if (!snapshot.hasData)
                               return LoadingContainerVertical(1);
                             if (taskId != null && !initialized) {
                               /** if edit task */
                               /** process data receieved from database and assign */
+                              
+                              Task task = Task.fromJson(snapshot.data.data, taskId);
                               debugPrint(snapshot.data['title'] +
                                   ' ' +
                                   snapshot.data['priority'].toString() +
@@ -160,22 +156,18 @@ class _CreateTask extends State<CreateTask> {
                                   ' ' +
                                   snapshot.data['notes']);
                               /** get task name */
-                              tc.text = snapshot.data['title'];
+                              tc.text = task.getTitle();
                               /** get task name ends */
 
                               /** get priority */
-                              _selectedPriority = snapshot.data['priority'] == 0
+                              _selectedPriority = task.getPriority() == 0
                                   ? "Low"
                                   : "High";
                               /** get priority ends */
 
                               /**  get duration */
-                              if (snapshot.data['duration'] != '') {
-                                var durationElements =
-                                    snapshot.data['duration'].split(":");
-                                _duration = new Duration(
-                                    hours: int.parse(durationElements[0]),
-                                    minutes: int.parse(durationElements[1]));
+                              _duration = task.getDuration();
+                              if(_duration != null) {
                                 _durationStr = getFormattedDurationString();
                               } else {
                                 _durationStr = '';
@@ -183,15 +175,10 @@ class _CreateTask extends State<CreateTask> {
                               /** get duration ends */
 
                               /** get repeat */
-                              _repeat = snapshot.data['repeat'];
+                              _repeat = task.getRepeat();
                               repeatbefore = _repeat;
-                              if (snapshot.data['frequency'] != '')
-                                _selectedFrequencies = snapshot
-                                    .data['frequency']
-                                    .toString()
-                                    .split(',')
-                                    .map(int.parse)
-                                    .toSet();
+                              if (task.getFrequency() != null)
+                                _selectedFrequencies = task.getFrequency().toSet();
                               else
                                 _selectedFrequencies = new Set();
                               if (_repeat == -1)
@@ -201,60 +188,59 @@ class _CreateTask extends State<CreateTask> {
                               /** get repeat ends */
 
                               /** get assigned users */
-                              _selectedUser = snapshot.data['assignee'];
-                              if (_selectedUser != '')
+                              if (task.getAssignees() != null)
                                 selectedUsers
-                                    .addAll(_selectedUser.split(',').toList());
+                                    .addAll(task.getAssignees());
                               /** get assigned users ends */
 
-                              _selectedType = snapshot.data['type'];
-                              typeOfTask = snapshot.data['type'];
+                              _selectedType = task.getType();
+                              typeOfTask = task.getType();
 
                               /** get due date time starts */
                               _selectedDate =
-                                  (snapshot.data['due'] as Timestamp).toDate();
+                                  task.getDue().toDate();
                               duebefore =
-                                  (snapshot.data['due'] as Timestamp).toDate();
+                                  task.getDue().toDate();
                               _selectedTime = new TimeOfDay(
                                   hour: _selectedDate.hour,
                                   minute: _selectedDate.minute);
                               /** get due date time ends */
 
                               /** get notes */
-                              _notes = snapshot.data['notes'];
+                              _notes = task.getNotes();
                               notescontroller.text = _notes;
                               /** get notes ends */
 
                               /** get remindIssue */
                               _isRemindMeOfIssueSelected =
-                                  snapshot.data['remindIssue'];
+                                  task.isRemindIssue();
                               /** get remindIssue ends */
 
                               /** get payment amount */
                               paymentAmountController.text =
-                                  snapshot.data['paymentAmount'].toString();
+                                  task.getPaymentAmount().toString();
                               /** get payment amount ends */
 
                               /** get payee */
-                              _payee = snapshot.data['payee'];
+                              _payee = task.getPayee();
                               payeecontroller.text =
                                   _payee == null ? '' : _payee;
                               /** get payee ends */
 
                               /** get next due date starts */
-                              if (snapshot.data['nextDueDate'] != null)
+                              if (task.getNextDueDate() != null)
                                 _nextDueDate =
-                                    (snapshot.data['nextDueDate'] as Timestamp)
+                                    task.getNextDueDate()
                                         .toDate();
                               else
                                 _nextDueDate =
-                                    (snapshot.data['due'] as Timestamp)
+                                    task.getNextDueDate()
                                         .toDate();
                               ;
                               /** get next due date ends */
 
                               _remind =
-                                  snapshot.data['shouldRemindDaily'] ?? false;
+                                  task.isShouldRemindDaily();
 
                               initialized = true;
 
@@ -266,7 +252,7 @@ class _CreateTask extends State<CreateTask> {
                               payeecontroller.text = "";
                             }
 
-                            return buildForm(snapshot.data); /** build screen */
+                            return buildForm(); /** build screen */
                           },
                         ),
                 ),
@@ -301,21 +287,17 @@ class _CreateTask extends State<CreateTask> {
                     fontSize: 18.0,
                     fontFamily: 'Montserrat'),
               ),
-              onPressed: () {
-                Firestore.instance.runTransaction((transaction) async {
-                  DocumentSnapshot freshSnap = await transaction.get(Firestore
-                      .instance
-                      .collection(collectionname)
-                      .document(taskId));
-                  await transaction.delete(freshSnap.reference).then((result) {
-                    Utility.createErrorSnackBar(_navigatorContext,
-                        error: "Success!");
-                    Navigator.of(_navigatorContext).pop();
-                  });
-                });
-              }),
+              onPressed: () async {
+                bool ifSuccess = await TaskDao.delete(_flat.getApartmentTenantId(), taskId);
+                if(ifSuccess) {
+                  Utility.createErrorSnackBar(_navigatorContext, error: "Success!");
+                  Navigator.of(_navigatorContext).pop();
+                }
+              }
+                ),
+              ),
         ),
-      ),
+      
     );
   }
 
@@ -433,7 +415,7 @@ class _CreateTask extends State<CreateTask> {
                         var docRef = Firestore.instance
                             .collection(globals.ownerTenantFlat)
                             .document(doc)
-                            .collection(collectionname)
+                            .collection(globals.tasksLandlord)
                             .document(); //automatically generate unique id
                         batch.setData(docRef, data);
                       });
@@ -442,7 +424,7 @@ class _CreateTask extends State<CreateTask> {
                       Firestore.instance
                           .collection(globals.ownerTenantFlat)
                           .document(_flat.getApartmentTenantId())
-                          .collection(collectionname)
+                          .collection(globals.tasksLandlord)
                           .add(data);
                     }
                     if (_selectedFrequencies != null)
@@ -488,7 +470,7 @@ class _CreateTask extends State<CreateTask> {
                     Firestore.instance
                         .collection(globals.ownerTenantFlat)
                         .document(_flat.getApartmentTenantId())
-                        .collection(collectionname)
+                        .collection(globals.tasksLandlord)
                         .document(taskId)
                         .updateData(data);
 
@@ -1294,7 +1276,7 @@ class _CreateTask extends State<CreateTask> {
     );
   }
 
-  Widget buildForm(data) {
+  Widget buildForm() {
     return Container(
       padding: EdgeInsets.only(left: 15.0, right: 15.0),
       child: Form(
@@ -1647,7 +1629,7 @@ class _CreateTask extends State<CreateTask> {
     QuerySnapshot tasks = await Firestore.instance
         .collection(globals.ownerTenantFlat)
         .document(_flat.getApartmentTenantId())
-        .collection(collectionname)
+        .collection(globals.tasksLandlord)
         .where("completed", isEqualTo: false)
         .where("landlord_id", isEqualTo: this.user.getUserId())
         .getDocuments();

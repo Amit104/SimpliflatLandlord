@@ -1,8 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 import 'dart:async';
+import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 
 class AssignToFlat extends StatefulWidget {
   final List<String> assignedToList;
@@ -56,54 +60,57 @@ class AssignToFlatState extends State<AssignToFlat> {
     Navigator.of(context).pop(null);
   }
 
-  Future<dynamic> getFlatIdAndNamesList() async {
-    if (flatIdNameList != null && flatIdNameList.isNotEmpty) {
-      return flatIdNameList;
-    }
-    debugPrint("here = ");
-    List<Map> flatIdNameListTemp = new List();
-    flatIdNameListTemp.add({'id': 'ALL', 'name': 'ALL'});
-    List flatIdList = await Utility.getFlatIdList();
-    for (int i = 0; i < flatIdList.length; i++) {
-      var id = flatIdList[i];
-      if (id.contains("Name=")) {
-        flatIdNameListTemp
-            .add({'id': id.split("Name=")[0], 'name': id.split("Name=")[1]});
-      }
-    }
-    return flatIdNameListTemp;
+  Future<QuerySnapshot> getFlatIdAndNamesList(String userId) async {
+    //TODO: get these values from local db or shared pref instead of firestore 
+    return Firestore.instance.collection(globals.ownerFlat).where('ownerIdList', arrayContains: userId).getDocuments();
+    // if (flatIdNameList != null && flatIdNameList.isNotEmpty) {
+    //   return flatIdNameList;
+    // }
+    // debugPrint("here = ");
+    // List<Map> flatIdNameListTemp = new List();
+    // flatIdNameListTemp.add({'id': 'ALL', 'name': 'ALL'});
+    // List flatIdList = await Utility.getFlatIdList();
+    // for (int i = 0; i < flatIdList.length; i++) {
+    //   var id = flatIdList[i];
+    //   if (id.contains("Name=")) {
+    //     flatIdNameListTemp
+    //         .add({'id': id.split("Name=")[0], 'name': id.split("Name=")[1]});
+    //   }
+    // }
+    // return flatIdNameListTemp;
   }
 
   Widget getFlatNamesListWidget() {
+    User user = Provider.of<User>(context, listen: false);
     return FutureBuilder(
-      future: getFlatIdAndNamesList(),
-      builder: (context, AsyncSnapshot<dynamic> snapshot) {
+      future: getFlatIdAndNamesList(user.getUserId()),
+      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData) {
           return LoadingContainerVertical(1);
         }
         return ListView.builder(
           shrinkWrap: true,
-          itemCount: snapshot.data.length,
+          itemCount: snapshot.data.documents.length,
           itemBuilder: (context, position) {
             return CheckboxListTile(
-              title: Text((snapshot.data as List)[position]['name']),
+              title: Text(snapshot.data.documents[position]['flatName']),
               value: assignedFlatIds
-                  .contains((snapshot.data as List)[position]['id']),
+                  .contains(snapshot.data.documents[position].documentID),
               onChanged: (value) {
                 if (position == 0 && assignedFlatIds.contains('ALL')) {
                   assignedFlatIds = new List();
                 } else if (position == 0 && !assignedFlatIds.contains('ALL')) {
                   assignedFlatIds = new List();
-                  for (int i = 0; i < snapshot.data.length; i++) {
-                    assignedFlatIds.add(snapshot.data[i]['id']);
+                  for (int i = 0; i < snapshot.data.documents.length; i++) {
+                    assignedFlatIds.add(snapshot.data.documents[i].documentID);
                   }
                 } else if (assignedFlatIds
-                    .contains((snapshot.data as List)[position]['id'])) {
+                    .contains(snapshot.data.documents[position].documentID)) {
                   assignedFlatIds
-                      .remove((snapshot.data as List)[position]['id']);
+                      .remove(snapshot.data.documents[position].documentID);
                   assignedFlatIds.remove("ALL");
                 } else {
-                  assignedFlatIds.add((snapshot.data as List)[position]['id']);
+                  assignedFlatIds.add(snapshot.data.documents[position].documentID);
                 }
                 setState(() {
                   assignedFlatIds = assignedFlatIds;

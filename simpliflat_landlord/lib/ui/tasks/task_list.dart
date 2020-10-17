@@ -278,14 +278,14 @@ class TaskListState extends State<TaskList> {
   }
 
   Widget getTaskListView(bool isCompleted) {
-    StreamBuilder<QuerySnapshot>(
+    return StreamBuilder<QuerySnapshot>(
         stream: Firestore.instance
             .collection("user")
             .where('flat_id', isEqualTo: this._flat.getTenantFlatId())
             .snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot1) {
           if (!snapshot1.hasData) return LoadingContainerVertical(7);
-          return StreamBuilder<QuerySnapshot>(
+          return StreamBuilder(
               stream: TaskDao.getAllByFlat(this._flat.getApartmentTenantId(), isCompleted),
               builder: (context, AsyncSnapshot<QuerySnapshot> taskSnapshot) {
                 if (!taskSnapshot.hasData) return LoadingContainerVertical(7);
@@ -293,7 +293,7 @@ class TaskListState extends State<TaskList> {
                   handleNotifications(taskSnapshot.data.documents);
                 updateTasksLastSeen();
 
-                List<Task> tasks = taskSnapshot.data.documents.map((DocumentSnapshot doc) => Task.fromJson(doc.data, doc.documentID));
+                List<Task> tasks = taskSnapshot.data.documents.map((DocumentSnapshot doc) => Task.fromJson(doc.data, doc.documentID)).toList();
                 var sortField = getSortField();
                 if (sortAscending) {
                   if(sortField == 'nextDueDate') {
