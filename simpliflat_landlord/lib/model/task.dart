@@ -169,12 +169,11 @@ class Task extends BaseModel {
     Task task = new Task();
     task.setAssignedToFlat(data['assigned_to_flat']);
     if(data['assignee'] != null && data['assignee'] != '')
-      task.setAssignees(data['assignees'].toString().split(',').toList());
+      task.setAssignees(data['assignee'].toString().split(',').toList());
 
     task.setCompleted(data['completed']);
     task.setCreatedByUserId(data['user_id']);
     task.setDue(data['due']);
-    task.setDuration(data['duration']);
 
     if(data['duration'] != null && data['duration'] != '') {
       List<String> durationElements = data['duration'].split(":").toList();
