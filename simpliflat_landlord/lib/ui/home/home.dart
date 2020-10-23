@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/owner_flat_dao.dart';
 import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
 import 'package:simpliflat_landlord/model/user.dart';
@@ -9,6 +10,7 @@ import 'package:simpliflat_landlord/model/building.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
+import 'package:simpliflat_landlord/ui/common_screens/my_building_list.dart';
 import 'package:simpliflat_landlord/ui/create_or_join/flat_list.dart';
 import 'package:simpliflat_landlord/ui/flat_setup/add_tenant.dart';
 import 'package:simpliflat_landlord/ui/home/all_incoming_requests.dart';
@@ -29,7 +31,8 @@ class Home extends StatelessWidget {
           return Scaffold(
         drawer: getDrawer(context),
         appBar: AppBar(
-          title: Text('Home'),
+          title: Text('Home', style: CommonWidgets.getAppBarTitleStyle(),),
+          elevation: 0,
           centerTitle: true,
           backgroundColor: Colors.white,
         ),
@@ -42,7 +45,8 @@ class Home extends StatelessWidget {
   }
 
   Widget getBody(BuildContext context) {
-    return Column(children: [
+    return Container();
+    /*return Column(children: [
       Container(
         margin: EdgeInsets.only(top: 20.0),
         child: Text('Your buildings'),
@@ -74,7 +78,7 @@ class Home extends StatelessWidget {
       )),
       getNewRequestsWidget(context),
     ],
-    );
+    );*/
   }
 
   Widget getNewRequestsWidget(BuildContext context) {
@@ -259,66 +263,115 @@ class Home extends StatelessWidget {
   }
 
   Widget getDrawer(BuildContext context) {
-    return Drawer(
-        child: ListView(
-      padding: EdgeInsets.zero,
-      children: <Widget>[
-        DrawerHeader(
-          child: Container(),
-          decoration: BoxDecoration(
-            color: Colors.blue[100],
+    return Container(
+          width: 300,
+          child: Drawer(
+        elevation: 0,
+          child: ListView(
+        children: <Widget>[
+          Container(
+            color: Colors.blue,
+            child: DrawerHeader(
+              margin: EdgeInsets.all(0),
+              child: CircleAvatar(
+                            backgroundColor: Colors.indigo[900],
+                            radius: 30.0,
+                            child: Icon(Icons.home,
+                                color: Colors.white, size: 50.0)),
+            ),
           ),
-        ),
-        ListTile(
-          title: Text('Add Owner'),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) {
-                return SearchOwner(null);
-              }),
-            );
-          },
-        ),
-        ListTile(
-          title: Text('Create property'),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) {
-                return FlatList(false);
-              }),
-            );
-          },
-        ),
-        ListTile(
-          title: Text('Join property'),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) {
-                return FlatList(true);
-              }),
-            );
-          },
-        ),
-        ListTile(
-          title: Text('Add Tenant'),
-          onTap: () async {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) {
-                return SearchTenant(null);
-              }),
-            );
-          },
-        ),
-      ],
-    ));
+          Container(
+              decoration: BoxDecoration(color: Colors.white),
+                    child: ListTile(
+            title: Text('Add Owner'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) {
+                  return SearchOwner(null);
+                }),
+              );
+            },
+          )),
+          Container(
+              decoration: BoxDecoration(color: Colors.white),
+                    child: 
+          ListTile(
+            title: Text('Create property'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) {
+                  return FlatList(false);
+                }),
+              );
+            },
+          )),
+          Container(
+              decoration: BoxDecoration(color: Colors.white),
+                    child: 
+          ListTile(
+            title: Text('Join property'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) {
+                  return FlatList(true);
+                }),
+              );
+            },
+          )),
+          Container(
+              decoration: BoxDecoration(color: Colors.white),
+                    child: ListTile(
+              title: Text('Add Tenant'),
+              onTap: () async {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) {
+                    return SearchTenant(null);
+                  }),
+                );
+              },
+            ),
+          ),
+          Container(
+              decoration: BoxDecoration(color: Colors.white),
+                    child: ListTile(
+              title: Text('Incoming Requests'),
+              onTap: () async {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) {
+                    return AllIncomingRequests();
+                  }),
+                );
+              },
+            ),
+          ),
+          Container(
+              decoration: BoxDecoration(color: Colors.white),
+                    child: ListTile(
+              title: Text('My flats'),
+              onTap: () async {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) {
+                    return MyBuildingList(null, null, true);
+                  }),
+                );
+              },
+            ),
+          ),
+        ],
+      )),
+    );
   }
 
   Future<bool> checkIfNewRequests(BuildContext context) async {

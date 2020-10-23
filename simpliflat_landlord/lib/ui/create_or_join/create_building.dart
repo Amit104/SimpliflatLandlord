@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/model/building.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/utility/utility.dart';
@@ -47,12 +48,15 @@ class CreateBuildingState extends State<CreateBuilding> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Create Building'), centerTitle: true, backgroundColor: Colors.white,),
-      backgroundColor: Colors.white,
-      body: Builder(builder: (BuildContext scaffoldC) {
-        return getBody();
-      }),
+    return WillPopScope(
+      onWillPop: ()  {Navigator.of(context).pop(this.building);},
+          child: Scaffold(
+        appBar: AppBar(title: Text('Create Building', style: CommonWidgets.getAppBarTitleStyle()), elevation: 0, centerTitle: true, backgroundColor: Colors.white,),
+        backgroundColor: Colors.white,
+        body: Builder(builder: (BuildContext scaffoldC) {
+          return getBody();
+        }),
+      ),
     );
   }
 
@@ -116,7 +120,8 @@ class CreateBuildingState extends State<CreateBuilding> {
                   child: const Text('Done'),  
                    onPressed: () {  
                     if (_formKey.currentState.validate()) {  
-                      createBuilding(building, addressCtlr.text, nameCtlr.text, zipcodeCtlr.text, isPG);                 
+                      createBuilding(addressCtlr.text, nameCtlr.text, zipcodeCtlr.text, isPG);                 
+                      debugPrint(this.building.getBuildingName());
                       Navigator.of(context).pop(this.building);
                     }  
                   },    
@@ -134,21 +139,21 @@ class CreateBuildingState extends State<CreateBuilding> {
     super.dispose();
   }
 
-  createBuilding(Building building, String address, String name,
+  createBuilding(String address, String name,
       String zipcode, bool isPG) {
-    if (building == null) {
-      building = new Building();
+    if (this.building == null) {
+      this.building = new Building();
     }
-    building.setBuildingAddress(address);
-    building.setBuildingName(name);
-    building.setZipcode(zipcode);
+    this.building.setBuildingAddress(address);
+    this.building.setBuildingName(name);
+    this.building.setZipcode(zipcode);
     if (isPG) {
-      building.setType(globals.BuildingType.PG.index);
+      this.building.setType(globals.BuildingType.PG.index);
     } else {
-      building.setType(globals.BuildingType.Residential.index);
+      this.building.setType(globals.BuildingType.Residential.index);
     }
-    if (building.getBuildingDisplayId() == null) {
-      building.setBuildingDisplayId(Utility.getRandomString(globals.displayIdLength));
+    if (this.building.getBuildingDisplayId() == null) {
+      this.building.setBuildingDisplayId(Utility.getRandomString(globals.displayIdLength));
     }
   }
 

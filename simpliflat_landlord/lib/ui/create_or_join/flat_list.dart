@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/building_dao.dart';
 import 'package:simpliflat_landlord/dao/owner_flat_dao.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -25,14 +26,12 @@ class FlatList extends StatelessWidget {
           create: (_) => LoadingModel(),
           child: Scaffold(
       appBar: AppBar(
-        title: Text('All Flats'),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        actions: <Widget>[Builder(builder: (BuildContext abContext){
+          title: Text('Select Buildings', style: CommonWidgets.getAppBarTitleStyle()),
+          elevation: 0,
+          centerTitle: true,
+          actions: <Widget>[Builder(builder: (BuildContext abContext){
                   return this.join?SizedBox():Container(padding: EdgeInsets.all(10.0),child:IconButton(icon:Icon(Icons.add), onPressed: () {navigateToCreateProperty(abContext, null);},));
-
-        },),
-      ],
+          })],
       ),
       backgroundColor: Colors.white,
       body: Builder(builder: (BuildContext scaffoldC) {
@@ -59,13 +58,11 @@ class FlatList extends StatelessWidget {
             itemCount: snaphot.data.documents.length,
             itemBuilder: (BuildContext context, int position) {
               Map<String, dynamic> buildingData = snaphot.data.documents[position].data;
-              return Card(
-                child: ListTile(
-                  onTap: () {createDataObjectAndNavigate(buildingData, snaphot.data.documents[position].documentID, scaffoldC);},
-                  title: Text(buildingData['buildingName']),
-                  subtitle: Text(buildingData['buildingAddress'] + ' ' + buildingData['zipcode']),
-                  isThreeLine: true,
-                ),
+              return ListTile(
+                onTap: () {createDataObjectAndNavigate(buildingData, snaphot.data.documents[position].documentID, scaffoldC);},
+                title: Text(buildingData['buildingName'], style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 17.0),),
+                subtitle: Text(buildingData['buildingAddress'] + ' ' + buildingData['zipcode'],  style: TextStyle(fontFamily: 'Roboto'),),
+                trailing: Icon(Icons.keyboard_arrow_right, color: Color(0xff2079FF),),
               );
             },
           );

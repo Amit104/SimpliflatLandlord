@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
 import 'package:simpliflat_landlord/dao/tenant_requests_dao.dart';
 import 'package:simpliflat_landlord/model/user.dart';
@@ -35,7 +36,8 @@ class CreateTenantRequest extends StatelessWidget {
                             child:  Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text('Add Tenant'),
+          title: Text('Select Flat', style: CommonWidgets.getAppBarTitleStyle()),
+          elevation: 0,
           centerTitle: true,
         ),
         body: Builder(builder: (BuildContext scaffoldC) {
@@ -74,52 +76,41 @@ class CreateTenantRequest extends StatelessWidget {
 
   Widget getMainExpansionPanelList(
       BuildContext scaffoldC, List<TenantRequest> tenantRequests, JoinPropertyModel joinPropertyModel) {
-    return ExpansionPanelList(
-      expansionCallback: (int index, bool isExpanded) {
-        Provider.of<JoinPropertyModel>(scaffoldC, listen: false).expandBuilding();
-      },
-      children: [
-        ExpansionPanel(
-          headerBuilder: (BuildContext context, bool isExpanded) {
-            return ListTile(
-              title: Text(this.building.getBuildingName()),
-            );
-          },
-          body: getBlocksListWidget(scaffoldC, tenantRequests, joinPropertyModel),
-          isExpanded: joinPropertyModel.isBuildingExpanded(),
-        ),
-      ],
-    );
+    return Column(
+        
+        children: [
+    Container(
+        color: Color(0xff2079FF),
+          child: ListTile(
+        title: Text(this.building.getBuildingName(), style: TextStyle(color: Colors.white),),
+      ),
+    ),
+    getBlocksListWidget(scaffoldC, tenantRequests, joinPropertyModel),
+        ],
+      );
   }
 
 
   Widget getBlocksListWidget(
       BuildContext scaffoldC, List<TenantRequest> tenantRequests, JoinPropertyModel joinPropertyModel) {
-    List<ExpansionPanel> blocksWidget = new List();
     List<Block> blocks = this.building.getBlocks();
     debugPrint('blocks is empty');
 
     if (blocks == null || blocks.isEmpty) {
       return Container();
     }
-    debugPrint('blocks is not empty');
-    for (int i = 0; i < blocks.length; i++) {
-      blocksWidget.add(new ExpansionPanel(
-        headerBuilder: (BuildContext context, bool isExpanded) {
-          return ListTile(
-            title: Text(blocks[i].blockName),
-          );
-        },
-        body: getFlatNamesWidget(blocks[i], scaffoldC, tenantRequests, joinPropertyModel),
-        isExpanded: joinPropertyModel.isBlockExpanded(blocks[i].getBlockName()),
-      ));
-    }
-    return new ExpansionPanelList(
-      expansionCallback: (int index, bool isExpanded) async {
-        Provider.of<JoinPropertyModel>(scaffoldC, listen: false).expandBlock(blocks[index].getBlockName());
+    return ListView.separated(
+      separatorBuilder: (BuildContext context, int pos) {
+        return Divider(height: 1.0);
       },
-      children: blocksWidget,
-    );
+      physics: NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+        itemCount: blocks.length,
+        scrollDirection: Axis.vertical,
+        itemBuilder: (BuildContext context, int pos) {
+    return getFlatNamesWidget(blocks[pos], context, tenantRequests, joinPropertyModel);
+        },
+      );
   }
 
   bool ifRequestToFlatAlreadySent(List<TenantRequest> data, String flatId) {
@@ -145,26 +136,42 @@ class CreateTenantRequest extends StatelessWidget {
       return Container();
     }
 
-    return ListView.separated(
-      shrinkWrap: true,
-      separatorBuilder: (BuildContext context, int position) {
-        return Divider(height: 1.0);
-      },
+    return Container(
+        color: Colors.blue[100],
+        child: Column(
+          children: [
+            Container(
+              alignment: Alignment.centerLeft,
+              padding: EdgeInsets.only(left:20.0, top: 15.0, bottom: 10.0),
+              child: Text(block.getBlockName(), style: TextStyle(
+          fontFamily: 'Roboto',
+          fontWeight: FontWeight.w600,
+          fontSize: 17.0),),
+            ),
+            Container(
+              height:50.0,
+              margin: EdgeInsets.only(bottom: 10.0),
+                              child: ListView.builder(
+      scrollDirection: Axis.horizontal,
       itemCount: flats.length,
       itemBuilder: (BuildContext context, int index) {
-        return ListTile(
-          title: Text(flats[index].getFlatName()),
-          trailing: ifRequestToFlatAlreadySent(tenantRequests, flats[index].getFlatId())
-              ? SizedBox(): IconButton(
-                  icon: Icon(Icons.link),
-                  onPressed: () {
-                    sendRequestToTenant(ctx,
+        return ifRequestToFlatAlreadySent(tenantRequests, flats[index].getFlatId())? SizedBox(): Container(
+          padding: EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
+          margin: EdgeInsets.all(5.0),
+          child: GestureDetector(
+              onTap: () {
+                sendRequestToTenant(ctx,
                         forFlat: true, block: block, flat: flats[index]);
-                  },
-                ),
+              },
+              child: Text(flats[index].getFlatName(), style: TextStyle(color: Color(0xff2079FF),))
+          ),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(20.0)), border: Border.all(color: Color(0xff2079FF),)),
         );
       },
-    );
+          ),
+            ),
+          ]),
+      );
   }
 
   void sendRequestToTenant(BuildContext ctx,

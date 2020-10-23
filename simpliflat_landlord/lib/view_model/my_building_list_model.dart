@@ -6,4 +6,8 @@ class MyBuildingListModel {
   Map<String, List<OwnerFlat>> getOwnedFlatIds() {
     return ownedFlatIds;
   }
+
+  void setOwnedFlatIds(Map<String, List<OwnerFlat>> ownedFlats) {
+    this.ownedFlatIds = ownedFlats;
+  }
 }

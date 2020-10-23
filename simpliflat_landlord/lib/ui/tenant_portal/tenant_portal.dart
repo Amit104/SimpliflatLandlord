@@ -127,33 +127,55 @@ class _LandlordPortal extends State<LandlordPortal> {
                 : (_selectedIndex == 1
                     ? TaskList(this.flat, user)
                     : (_selectedIndex == 2
-                        ? MessageBoard(this.flat.getApartmentTenantId())
-                        : (_selectedIndex == 3
                         ? DocumentManager(this.flat.getApartmentTenantId())
-                        : ProfileOptions(user, this.flat))))
+                        : ProfileOptions(user, this.flat)))
           ),
           bottomNavigationBar: new BottomNavigationBar(
             items: <BottomNavigationBarItem>[
               BottomNavigationBarItem(
-                  icon: Icon(Icons.dashboard), title: Text('Dashboard')),
+                  icon: Icon(Icons.dashboard), title: Text('Dashboard', style: TextStyle(fontFamily: 'Roboto',fontWeight: FontWeight.w700,),)),
               BottomNavigationBarItem(
-                  icon: Icon(IconsCustom.tasks_1), title: Text('Tasks')),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.message), title: Text('Messages')),
+                  icon: Icon(IconsCustom.date), title: Text('Tasks', style: TextStyle(fontFamily: 'Roboto',fontWeight: FontWeight.w700,),)),
               BottomNavigationBarItem(
                   icon: Icon(Icons.insert_drive_file),
-                  title: Text('Documents')),
+                  title: Text('Documents', style: TextStyle(fontFamily: 'Roboto',fontWeight: FontWeight.w700,),)),
               BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  title: Text('Profile')),
+                  icon: Icon(IconsCustom.group_people),
+                  title: Text('Profile', style: TextStyle(fontFamily: 'Roboto',fontWeight: FontWeight.w700,),)),
             ],
             currentIndex: _selectedIndex,
-            unselectedItemColor: Colors.indigo[900],
-            fixedColor: Colors.red[900],
+            unselectedItemColor: Color(0xff373D4C),
+            backgroundColor: Colors.white,
+            fixedColor: Color(0xff2079FF),
             onTap: _onItemTapped,
             type: BottomNavigationBarType.fixed,
           ),
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
+          floatingActionButton: new FloatingActionButton(
+            heroTag: "announce",
+            onPressed: () async {
+              
+              navigateToNotice();
+            },
+            tooltip: 'Noticeboard',
+            backgroundColor: Color(0xff2079FF),
+            shape: RoundedRectangleBorder(
+               borderRadius: BorderRadius.circular(8),
+            ),
+            child: new Icon(IconsCustom.announcement),
+          ),
         ));
+  }
+
+  navigateToNotice() {
+     User user = Provider.of<User>(context, listen: false);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) {
+        return MessageBoard(this.flat.getApartmentTenantId());
+      }),
+    );
   }
 
   void openActionMenu() {

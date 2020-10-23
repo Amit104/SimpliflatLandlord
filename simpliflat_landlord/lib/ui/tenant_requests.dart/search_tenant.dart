@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/tenant_flat_dao.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
@@ -48,9 +49,10 @@ class SearchTenantState extends State<SearchTenant> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Search Owner'),
+        title: Text('Search Tenant', style: CommonWidgets.getAppBarTitleStyle()),
         centerTitle: true,
         backgroundColor: Colors.white,
+        elevation: 0,
       ),
       backgroundColor: Colors.white,
       body: Builder(builder: (BuildContext scaffoldC) {
@@ -80,25 +82,37 @@ class SearchTenantState extends State<SearchTenant> {
       return Container();
     }
     return ListTile(
-      onTap: () {navigateToMyBuildingList(scaffoldC);},
-      title: Text(this.flat.getFlatName()),
-    );
+        trailing: Icon(Icons.keyboard_arrow_right, color: Color(0xff2079FF),),
+        contentPadding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 35.0),
+        onTap: () {navigateToMyBuildingList(scaffoldC);},
+        title: Text(this.flat.getFlatName(), style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 20.0),),
+      );
   }
 
   Widget getSearchBox() {
-    return Row(
-      children: <Widget>[
-        Expanded(child: TextField(controller: tenantFlatDisplayIdCtlr, onChanged: (String val) { if(this.flat != null)  {setState(() {
-                   this.flat = null;
-                });}
-                setState(() {
-                                            this.searched = false;
-                                            this.mandatoryWarning = false;  
-                                }); } , decoration: InputDecoration(labelText: 'Display Id', hintText: 'Enter Display Id', labelStyle: TextStyle(color: mandatoryWarning?Colors.red:Colors.grey)),)),
-        Container(
-          child:IconButton(icon: Icon(Icons.search), onPressed: () {getTenantFlatFromId();},)
-        ),
-      ],
+    return Container(
+          margin: EdgeInsets.symmetric(vertical: 15.0, horizontal:  10.0),
+          decoration: BoxDecoration(color: Colors.blue[100], borderRadius: BorderRadius.all(Radius.circular(10.0))),
+          child: Row(
+        children: <Widget>[
+          Expanded(child: TextField(controller: tenantFlatDisplayIdCtlr, onChanged: (String val) { if(this.flat != null)  {setState(() {
+                     this.flat = null;
+                  });}
+                  setState(() {
+                                              this.searched = false;
+                                              this.mandatoryWarning = false;  
+                                  }); } , decoration: InputDecoration(border: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        errorBorder: InputBorder.none,
+        disabledBorder: InputBorder.none,
+        contentPadding:
+            EdgeInsets.only(left: 15, bottom: 11, top: 11, right: 15),labelText: 'Display Id', hintText: 'Enter Display Id', labelStyle: TextStyle(color: mandatoryWarning?Colors.red:Color(0xff2079FF))),)),
+          Container(
+            child:IconButton(icon: Icon(Icons.search), onPressed: () {getTenantFlatFromId();},)
+          ),
+        ],
+      ),
     );
   }
 
@@ -151,7 +165,7 @@ class SearchTenantState extends State<SearchTenant> {
         Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return MyBuildingList(this.flat, null);
+        return MyBuildingList(this.flat, null, false);
       }),
     );
       }

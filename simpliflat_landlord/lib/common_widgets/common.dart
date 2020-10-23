@@ -111,4 +111,8 @@ class CommonWidgets {
     );
   }
 
+  static TextStyle getAppBarTitleStyle() {
+    return TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600);
+  }
+
 }

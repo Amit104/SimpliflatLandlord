@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/landlord_requests_dao.dart';
 import 'package:simpliflat_landlord/local_db/ownership_details_dbhandler.dart';
 import 'package:simpliflat_landlord/model/user.dart';
@@ -69,6 +70,7 @@ class CreatePropertyState extends State<CreateProperty> {
     return Scaffold(
         backgroundColor: Colors.white,
         floatingActionButton: this.building != null? FloatingActionButton.extended(
+          backgroundColor: Color(0xff2079FF),
           onPressed: () {
             saveProperty();
           },
@@ -78,8 +80,9 @@ class CreatePropertyState extends State<CreateProperty> {
           label: Text('Save'),
         ):null,
         appBar: AppBar(
-          title: Text('Create Property'),
+          title: Text('Create Property', style: CommonWidgets.getAppBarTitleStyle()),
           centerTitle: true,
+          elevation: 0,
           actions: <Widget>[
             this.building != null && this.building.getBuildingId()!=null?SizedBox(): Container(
                 padding: EdgeInsets.all(10.0),
@@ -113,35 +116,24 @@ class CreatePropertyState extends State<CreateProperty> {
   }
 
   Widget getMainExpansionPanelList(BuildContext scaffoldC, List<DocumentSnapshot> data) {
-    return ExpansionPanelList(
-                            expansionCallback: (int index, bool isExpanded) {
-                              setState(() {
-                                buildingsExpanded = !buildingsExpanded;
-                              });
-                            },
-                            children: [
-                              ExpansionPanel(
-                                headerBuilder:
-                                    (BuildContext context, bool isExpanded) {
-                                  return ListTile(
-                                    onTap: () {
-                                      if(isAdd)
-                                        navigateToCreateBuilding();
-                                    },
-                                    title: Text(building.getBuildingName()),
-                                    trailing: IconButton(
-                                      icon: Icon(Icons.add),
-                                      onPressed: () {
-                                        acceptBlockName(null);
+   return Column(
+                                  children:[ Container(
+                                    color: Color(0xff2079FF),
+                                                                      child: ListTile(
+                                                                        contentPadding: EdgeInsets.only(top: 15, bottom: 15, left: 15, right: 15.0),
+                                      onTap: () {
+                                        if(isAdd)
+                                          navigateToCreateBuilding();
                                       },
+                                      title: Text(building.getBuildingName(), style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 20.0, color: Colors.white)),
+                                      trailing: IconButton(
+                                        icon: Icon(Icons.add, color: Colors.white,),
+                                        onPressed: () {
+                                          acceptBlockName(null);
+                                        },
+                                      ),
                                     ),
-                                  );
-                                },
-                                body: getBlocksListWidget(scaffoldC, data),
-                                isExpanded: buildingsExpanded,
-                              ),
-                            ],
-                          );
+                                  ), getBlocksListWidget(scaffoldC, data)]);
   }
 
   bool ifRequestToBuilding(List<DocumentSnapshot> data) {
@@ -197,7 +189,7 @@ class CreatePropertyState extends State<CreateProperty> {
               if(isAdd || blocks[i].getBlockName() == null)
                 acceptBlockName(blocks[i]);
             },
-            title: Text(blocks[i].blockName),
+            title: Text(blocks[i].blockName, style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 18.0)),
             trailing: IconButton(
               icon: Icon(Icons.add),
               onPressed: () {
@@ -232,7 +224,8 @@ class CreatePropertyState extends State<CreateProperty> {
       List<Widget> flatsWidget = new List();
       for (int i = 0; i < flats.length; i++) {
         flatsWidget.add(new Chip(
-          label: Text(flats[i].getFlatName()),
+          backgroundColor: Colors.white,
+          label: Text(flats[i].getFlatName(), style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 17.0, color: Color(0xff2079FF))),
           deleteIcon: IconButton(
             icon: Icon(Icons.close),
             onPressed: () {},
@@ -276,6 +269,9 @@ class CreatePropertyState extends State<CreateProperty> {
   //TODO: check if block is updated and populate isUpdated field correspondingly. If not updated then no need to set in batch
   void setBlockDetails(Block block, bool isEdit) {
     debugPrint("in set block details");
+    if(block == null){
+      return;
+    }
     List<Block> blocks = this.building.getBlocks();
     if (blocks == null) {
       blocks = new List();

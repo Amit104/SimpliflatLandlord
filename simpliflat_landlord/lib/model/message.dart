@@ -2,17 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/model/base_model.dart';
 
 class Message extends BaseModel {
-  bool createdByTenant;
+  int createdByTenant;
   String message;
   String createdByUserId;
   String createdByUserName;
   String messageId;
 
-	bool isCreatedByTenant() {
+	int isCreatedByTenant() {
 		return this.createdByTenant;
 	}
 
-	void setCreatedByTenant(bool createdByTenant) {
+	void setCreatedByTenant(int createdByTenant) {
 		this.createdByTenant = createdByTenant;
 	}
 

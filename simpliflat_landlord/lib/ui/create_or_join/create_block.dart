@@ -49,10 +49,11 @@ class CreateBlockState extends State<CreateBlock> {
     return Dialog (
           child: Container(
         margin: EdgeInsets.all(10.0),
+        height: 150,
             child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children:<Widget>[
             
             TextFormField(
@@ -82,8 +83,9 @@ class CreateBlockState extends State<CreateBlock> {
                       // It returns true if the form is valid, otherwise returns false  
                       if (_formKey.currentState.validate()) {  
                         // If the form is valid, display a Snackbar.
-                        setBlock(this.block, nameCtlr.text);
                         bool isEdit = (this.block != null); 
+                        setBlock(nameCtlr.text);
+                        debugPrint(this.block.getBlockName());
                         widget.callBack(this.block, isEdit);
                         Navigator.of(context, rootNavigator: true).pop();
                       }  
@@ -113,11 +115,11 @@ class CreateBlockState extends State<CreateBlock> {
     return true;
   }
 
-  void setBlock(Block block, String value) {
-    if(block == null) {
-      block = new Block();
+  void setBlock(String value) {
+    if(this.block == null) {
+      this.block = new Block();
     }
-    block.setBlockName(value);
+    this.block.setBlockName(value);
   }
 
 }

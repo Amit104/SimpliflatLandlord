@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/ui/owner_requests/coowner_requests.dart';
 import 'package:simpliflat_landlord/ui/owner_requests/landlord_requests.dart';
@@ -13,7 +14,8 @@ class AllIncomingRequests extends StatelessWidget {
     return DefaultTabController(
       length: 3,
           child: Scaffold(
-        appBar: AppBar(title: Text('Received requests'), 
+        appBar: AppBar(title: Text('Received requests', style: CommonWidgets.getAppBarTitleStyle()),
+        elevation: 0, 
         centerTitle: true, 
         backgroundColor: Colors.white,
         bottom: TabBar(

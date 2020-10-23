@@ -62,10 +62,8 @@ class AddTenantState extends State<AddTenant> {
       children: [
         getAddTenantTile(),
         SizedBox(height:20.0),
-        Container(alignment: Alignment.center, child: Text('Requests by you')),
         getRequestsSentListWidget(scaffoldC),
         SizedBox(height:20.0),
-        Container(alignment: Alignment.center, child: Text('Requests for you')),
         getRequestsReceivedListWidget(scaffoldC),
       ],
     );
@@ -78,9 +76,16 @@ class AddTenantState extends State<AddTenant> {
         if (!snaphot.hasData) {
           return LoadingContainerVertical(2);
         }
+
+        if(snaphot.data.documents.length == 0) {
+          return Container();
+        }
         return Consumer<LoadingModel>(
           builder: (BuildContext context, LoadingModel loadingModel, Widget child) {
             return loadingModel.load? LoadingContainerVertical(3):
+            Column(children: [
+                Container(alignment: Alignment.center, child: Text('Requests by you')),
+
                   ListView.separated(
             shrinkWrap: true,
             separatorBuilder: (BuildContext ctx, int pos) {
@@ -100,7 +105,7 @@ class AddTenantState extends State<AddTenant> {
                 child: Card(
                   child: ListTile(
                     title: Text(request['created_by']['name'] +
-                        ' - ' + '+916722626266'+
+                        ' - ' + 
                         request['created_by']['phone']),
                     subtitle: Text('Request by ' + request['tenant_flat_name']),
                     trailing: IconButton(
@@ -114,7 +119,7 @@ class AddTenantState extends State<AddTenant> {
                 ),
               );
             },
-          );
+          )]);
           });
       },
     );
@@ -122,11 +127,11 @@ class AddTenantState extends State<AddTenant> {
 
   Widget getAddTenantTile() {
     return Container(
-      decoration: getGradientBackground(),
+      color: Color(0xff2079FF),
       width: MediaQuery.of(context).size.width,
       padding: EdgeInsets.all(40.0),
       child: GestureDetector(
-        child: Text('Add Tenant'),
+        child: Text('Add Tenant', style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 20.0, color: Colors.white)),
         onTap: () {
           Navigator.push(
             context,
@@ -146,11 +151,21 @@ class AddTenantState extends State<AddTenant> {
         if(!snapshot.hasData) {
           return LoadingContainerVertical(2);
         }
+        if(snapshot.data.documents.length == 0) {
+          return Container();
+        }
 
         return Consumer<LoadingModel>(
           builder: (BuildContext context, LoadingModel loadingModel, Widget child) {
             return loadingModel.load? LoadingContainerVertical(3):
-        ListView.builder(
+
+        Column(children: [
+                Container(alignment: Alignment.center, child: Text('Requests by you')),
+
+        ListView.separated(
+          separatorBuilder: (BuildContext ctx, int pos) {
+              return Divider(height: 1.0);
+            },
           shrinkWrap: true,
           itemCount: snapshot.data.documents.length,
           itemBuilder: (BuildContext context, int pos) {
@@ -168,7 +183,7 @@ class AddTenantState extends State<AddTenant> {
               ),
             );
           },
-        );
+        )]);
           });
       },
     );

@@ -82,13 +82,13 @@ class _MessageBoard extends State<MessageBoard> {
                           child: Container(
                             child: new Text(getDateValue(value),
                                 style: new TextStyle(
-                                    color: Colors.red[900],
+                                    color: Colors.indigo[900],
                                     fontSize: 14.0,
                                     fontFamily: 'Robato')),
                             decoration: new BoxDecoration(
                                 borderRadius: new BorderRadius.all(
                                     new Radius.circular(6.0)),
-                                color: Colors.red[100]),
+                                color: Colors.indigo[100]),
                             padding:
                                 new EdgeInsets.fromLTRB(8.0, 6.0, 8.0, 6.0),
                           ),

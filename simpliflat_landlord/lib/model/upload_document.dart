@@ -5,7 +5,7 @@ class UploadDocument extends BaseModel {
   String fileName;
   int fileSize;
   String fileUrl;
-  bool createdByTenant;
+  int createdByTenant;
   String createdByUserId;
   String createdByUserName;
   String documentId;
@@ -34,11 +34,11 @@ class UploadDocument extends BaseModel {
 		this.fileUrl = fileUrl;
 	}
 
-	bool isCreatedByTenant() {
+	int isCreatedByTenant() {
 		return this.createdByTenant;
 	}
 
-	void setCreatedByTenant(bool createdByTenant) {
+	void setCreatedByTenant(int createdByTenant) {
 		this.createdByTenant = createdByTenant;
 	}
 

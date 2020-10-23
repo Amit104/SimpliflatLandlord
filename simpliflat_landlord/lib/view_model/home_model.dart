@@ -6,23 +6,23 @@ class HomeModelBuildingList extends ChangeNotifier {
   Map<String, bool> blocksExpanded = new Map();
 
   void expandBuilding(String buildingId) {
-    buildingExpanded[buildingId] = buildingExpanded[buildingId] == null? true: !buildingExpanded[buildingId];
+    buildingExpanded[buildingId] = buildingExpanded[buildingId] == null? false: !buildingExpanded[buildingId];
     notifyListeners();
   }
 
   void expandBlock(String buildingId, String blockName) {
     String key = buildingId + '-' + blockName;
-    blocksExpanded[key] = blocksExpanded[key] == null? true: !blocksExpanded[key];
+    blocksExpanded[key] = blocksExpanded[key] == null? false: !blocksExpanded[key];
     notifyListeners();
   }
 
   bool isBlockExpanded(String buildingId, String blockName) {
     String key = buildingId + '-' + blockName;
-    return blocksExpanded[key] == null? false: blocksExpanded[key];
+    return blocksExpanded[key] == null? true: blocksExpanded[key];
   }
 
   bool isBuildingExpanded(String buildingId) {
-    return buildingExpanded[buildingId] == null? false: buildingExpanded[buildingId];
+    return buildingExpanded[buildingId] == null? true: buildingExpanded[buildingId];
   }
 
   @override

@@ -3,23 +3,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/landlord_requests_dao.dart';
+import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/model/block.dart';
 import 'package:simpliflat_landlord/model/building.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/ui/flat_setup/add_tenant.dart';
+import 'package:simpliflat_landlord/ui/tenant_portal/tenant_portal.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 import 'package:simpliflat_landlord/services/owner_requests_service.dart';
 import 'package:simpliflat_landlord/view_model/join_property_model.dart';
 import 'package:simpliflat_landlord/view_model/loading_model.dart';
 
-/// page for owner to join an existing property
-class JoinProperty extends StatelessWidget {
+class MyFlats extends StatelessWidget {
   
   final Building building;
 
-  JoinProperty(this.building);
+  MyFlats(this.building);
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +32,7 @@ class JoinProperty extends StatelessWidget {
      child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text('Join Property', style: CommonWidgets.getAppBarTitleStyle()),
+          title: Text('My flats', style: CommonWidgets.getAppBarTitleStyle()),
           centerTitle: true,
           elevation: 0,
         ),
@@ -73,20 +75,6 @@ class JoinProperty extends StatelessWidget {
     return false;
   }
 
-  bool ifRequestToFlatAlreadySent(List<DocumentSnapshot> data, String flatId) {
-    if (data == null || data.isEmpty || flatId == null) {
-      return false;
-    }
-
-    DocumentSnapshot d = data.firstWhere((request) {
-     
-        return request['flatId'] == flatId;
-      
-    }, orElse: () {
-      return null;
-    });
-    return d != null;
-  }
 
   Widget getMainExpansionPanelListForJoin(BuildContext scaffoldC) {
     User user = Provider.of<User>(scaffoldC, listen: false);
@@ -142,55 +130,65 @@ class JoinProperty extends StatelessWidget {
       Block block, List<DocumentSnapshot> documents, BuildContext ctx) {
     User user = Provider.of<User>(ctx, listen: false);
 
+
     List<OwnerFlat> flats = block.getOwnerFlats();
     if (flats == null || flats.isEmpty) {
       return Container();
     }
 
-    return ListView.separated(
-      physics: NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      separatorBuilder: (BuildContext context, int position) {
-        return Divider(height: 1.0);
-      },
-      itemCount: flats.length,
-      itemBuilder: (BuildContext context, int index) {
-        return ListTile(
-          title: Text(flats[index].getFlatName(), style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 17.0, color: Color(0xff2079FF))),
-          trailing: isOwnerOfFlat(flats[index], user.getUserId()) ||
-                  ifRequestToFlatAlreadySent(documents, flats[index].getFlatId())
-              ? SizedBox()
-              : IconButton(
-                  icon: Icon(Icons.link),
-                  onPressed: () {
-                    sendRequestToOwner(ctx,
-                        block: block, flat: flats[index]);
-                  },
-                ),
-        );
-      },
-    );
+
+    
+      List<Widget> flatsWidget = new List();
+      for (int i = 0; i < flats.length; i++) {
+        flatsWidget.add(GestureDetector(
+          onTap: () => navigateToLandlordPortal(flats[i], ctx),
+                  child: new Chip(
+            backgroundColor: Colors.white,
+            label: Text(flats[i].getFlatName(), style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 17.0, color: Color(0xff2079FF))),
+            deleteIcon: IconButton(
+              icon: Icon(Icons.close),
+              onPressed: () {},
+            ),
+          ),
+        ));
+      }
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: 15.0),
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: Wrap(
+            spacing: 5.0,
+            children: flatsWidget,
+          ),
+        ),
+      );
   }
 
-  void sendRequestToOwner(BuildContext ctx,
-      {Block block, OwnerFlat flat}) async {
- 
-    User user = Provider.of<User>(ctx, listen: false);
-
-    Provider.of<LoadingModel>(ctx, listen: false).startLoading();
-
-
-    bool ifSuccess = await OwnerRequestsService.sendRequestToOwner(this.building, block, flat, user);
-
-    if(ifSuccess) {
-      
-      Utility.createErrorSnackBar(ctx, error: 'Request created successfully');
-      //TODO: add document to existing requests list
+  void navigateToLandlordPortal(OwnerFlat flat, BuildContext context) async {
+    debugPrint("navigate to landlord portal");
+    flat.setZipcode(flat.getBuildingDetails());
+    QuerySnapshot q = await OwnerTenantDao.getByOwnerFlatId(flat.getFlatId());
+    //TODO: building address and zipcode are set only in case if owner and tenant apartment are linked. Need to set in other case too
+    //Instead add building Address in flat
+    if (q != null && q.documents.length > 0) {
+      flat.setBuildingAddress(q.documents[0].data['buildingAddress']);
+      flat.setZipcode(q.documents[0].data['zipcode']);
+      flat.setTenantFlatId(q.documents[0].data['tenantFlatId']);
+      flat.setTenantFlatName(q.documents[0].data['tenantFlatName']);
+      flat.setApartmentTenantId(q.documents[0].documentID);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) {
+          return LandlordPortal(flat);
+        }),
+      );
     } else {
-      
-      Utility.createErrorSnackBar(ctx, error: 'Error while creating request');
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) {
+          return AddTenant(flat);
+        }),
+      );
     }
-    Provider.of<LoadingModel>(ctx, listen: false).stopLoading();
-
   }
 }
