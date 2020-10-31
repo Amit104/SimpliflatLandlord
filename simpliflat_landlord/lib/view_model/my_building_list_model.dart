@@ -1,6 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
 
-class MyBuildingListModel {
+class MyBuildingListModel extends ChangeNotifier{
   Map<String, List<OwnerFlat>> ownedFlatIds = new Map();
 
   Map<String, List<OwnerFlat>> getOwnedFlatIds() {

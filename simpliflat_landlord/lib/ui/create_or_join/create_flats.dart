@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
@@ -61,8 +62,9 @@ class CreateFlatsState extends State<CreateFlats> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Create Flats'),
+          title: Text('Create Flats', style: CommonWidgets.getAppBarTitleStyle(),),
           centerTitle: true,
+          elevation: 0,
           backgroundColor: Colors.white,
         ),
         backgroundColor: Colors.white,
@@ -89,8 +91,8 @@ class CreateFlatsState extends State<CreateFlats> {
             height: 40.0,
             child: RaisedButton(
               padding: EdgeInsets.all(1.0),
-              color: !withRange ? Colors.grey[300] : Colors.white,
-              child: Text('Name', style: TextStyle(fontSize: 12.0)),
+              color: !withRange ? Color(0xff2079FF) : Colors.white,
+              child: Text('Name', style: TextStyle(fontSize: 12.0, color: !withRange?Colors.white: Color(0xff2079FF))),
               onPressed: () {
                 setState(() {
                   withRange = false;
@@ -107,8 +109,8 @@ class CreateFlatsState extends State<CreateFlats> {
             height: 40.0,
             child: RaisedButton(
               padding: EdgeInsets.all(1.0),
-              color: withRange ? Colors.grey[300] : Colors.white,
-              child: Text('Range', style: TextStyle(fontSize: 12.0)),
+              color: withRange ? Color(0xff2079FF) : Colors.white,
+              child: Text('Range', style: TextStyle(fontSize: 12.0, color: withRange?Colors.white:Color(0xff2079FF))),
               onPressed: () {
                 setState(() {
                   withRange = true;
@@ -150,7 +152,8 @@ class CreateFlatsState extends State<CreateFlats> {
                   }),
             ),
             RaisedButton(
-              child: Text('Add'),
+              color: Color(0xff2079FF),
+              child: Text('Add', style: TextStyle(color: Colors.white),),
               onPressed: () => addFlat(),
             )
           ]),
@@ -201,7 +204,8 @@ class CreateFlatsState extends State<CreateFlats> {
                     }),
               ),
               RaisedButton(
-                child: Text('Add'),
+                color: Color(0xff2079FF),
+                child: Text('Add', style: TextStyle(color: Colors.white),),
                 onPressed: () => addFlatsWithRange(),
               )
             ],
@@ -226,7 +230,8 @@ class CreateFlatsState extends State<CreateFlats> {
         this.join
             ? Container()
             : RaisedButton(
-                child: Text('Done'),
+              color: Color(0xff2079FF),
+                child: Text('Done', style: TextStyle(color: Colors.white),),
                 onPressed: () {
                   Navigator.of(context).pop(this.ownerFlatsTemp);
                 },
@@ -239,7 +244,10 @@ class CreateFlatsState extends State<CreateFlats> {
   Widget getFlatsListWidget() {
     User user = Provider.of<User>(context, listen: false);
 
-    return ListView.builder(
+    return ListView.separated(
+      separatorBuilder: (_, int pos) {
+        return Divider(height: 1);
+      },
       scrollDirection: Axis.vertical,
       itemCount: this.ownerFlatsTemp.length,
       itemBuilder: (BuildContext context, int index) {
@@ -297,6 +305,7 @@ class CreateFlatsState extends State<CreateFlats> {
       }
       for (int i = from; i <= to; i++) {
         OwnerFlat flat = new OwnerFlat();
+        flat.setModified(true);
         flat.setFlatName(i.toString());
         flat.setFlatDisplayId(Utility.getRandomString(globals.displayIdLength));
         List<String> owners = new List();
@@ -329,6 +338,7 @@ class CreateFlatsState extends State<CreateFlats> {
     User user = Provider.of<User>(context, listen: false);
     if (_nameFormKey.currentState.validate()) {
                   OwnerFlat flat = new OwnerFlat();
+                  flat.setModified(true);
                   flat.setFlatName(nameCtlr.text);
                   flat.setFlatDisplayId(
                       Utility.getRandomString(globals.displayIdLength));

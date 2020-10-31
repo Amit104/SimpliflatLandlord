@@ -7,7 +7,6 @@ import 'package:simpliflat_landlord/ui/create_or_join/flat_list.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/services/owner_requests_service.dart';
 import 'package:simpliflat_landlord/ui/home/home.dart';
 import 'package:simpliflat_landlord/view_model/loading_model.dart';
@@ -35,7 +34,9 @@ class CreateOrJoinHome extends StatelessWidget {
           getInfoWidget(context),
           ChangeNotifierProvider(
             create: (_) => LoadingModel(),
-            child: getIncomingRequestsWidget(scaffoldC)),
+            builder: (BuildContext context1, Widget child) {
+              return getIncomingRequestsWidget(context1, scaffoldC);
+            }),
         ],
       ),
     );
@@ -154,7 +155,7 @@ class CreateOrJoinHome extends StatelessWidget {
     );
   }
 
-  Widget getIncomingRequestsWidget(BuildContext scaffoldC) {
+  Widget getIncomingRequestsWidget(BuildContext provCxt, BuildContext scaffoldC) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 30.0),
       child: Column(
@@ -166,13 +167,13 @@ class CreateOrJoinHome extends StatelessWidget {
             style: TextStyle(fontSize: 16.0),
           ),
           SizedBox(height: 10.0),
-          //getIncomingRequestsDataWidget(scaffoldC),
+          getIncomingRequestsDataWidget(provCxt, scaffoldC),
         ],
       ),
     );
   }
 
-  Widget getIncomingRequestsDataWidget(BuildContext scaffoldC) {
+  Widget getIncomingRequestsDataWidget(BuildContext provCxt, BuildContext scaffoldC) {
     User user = Provider.of<User>(scaffoldC, listen: false);
     return StreamBuilder(
         stream: LandlordRequestsDao.getRequestsSentToMeByOwner(user.getUserId()),
@@ -215,7 +216,7 @@ class CreateOrJoinHome extends StatelessWidget {
                                           size: 25.0,
                                         ),
                                         onPressed: () {
-                                          acceptRequest(req, scaffoldC);
+                                          acceptRequest(req, scaffoldC, provCxt);
                                           Utility.addToSharedPref(
                                               propertyRegistered: true);
                                         },
@@ -243,7 +244,7 @@ class CreateOrJoinHome extends StatelessWidget {
                                         icon: Icon(Icons.close,
                                             color: Colors.red, size: 25.0),
                                         onPressed: () {
-                                          rejectRequest(req, scaffoldC);
+                                          rejectRequest(req, scaffoldC, provCxt);
                                         },
                                       )),
                                 ],
@@ -265,8 +266,8 @@ class CreateOrJoinHome extends StatelessWidget {
   }
 
   Future<bool> rejectRequest(
-      LandlordRequest request, BuildContext scaffoldC) async {
-    Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
+      LandlordRequest request, BuildContext scaffoldC, BuildContext provCxt) async {
+    Provider.of<LoadingModel>(provCxt, listen: false).startLoading();
     Utility.createErrorSnackBar(scaffoldC, error: 'Rejecting request');
     bool ifSuccess = await OwnerRequestsService.rejectRequest(request);
     if(ifSuccess) {
@@ -279,12 +280,12 @@ class CreateOrJoinHome extends StatelessWidget {
           error: 'Error while rejecting request');
     };
 
-    Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
+    Provider.of<LoadingModel>(provCxt, listen: false).stopLoading();
     return ifSuccess;
   }
 
-  void acceptRequest(LandlordRequest request, BuildContext scaffoldC) async {
-    Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
+  void acceptRequest(LandlordRequest request, BuildContext scaffoldC, BuildContext provCxt) async {
+    Provider.of<LoadingModel>(provCxt, listen: false).startLoading();
 
     Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
 
@@ -303,7 +304,7 @@ class CreateOrJoinHome extends StatelessWidget {
           error: 'Error while accepting request');
     }
 
-    Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
+    Provider.of<LoadingModel>(provCxt, listen: false).stopLoading();
   }
 
   navigateToHome(BuildContext context) {

@@ -89,14 +89,13 @@ class PropertyRequests extends StatelessWidget {
     return Column(
       children: [
         Container(
-          color: Color(0xff2079FF),
-          child: ListTile(
-            title: Text(
-              this.building.getBuildingName(),
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ),
+                                    color: Color(0xff2079FF),
+                                                                      child: ListTile(
+                                                                        contentPadding: EdgeInsets.only(top: 15, bottom: 15, left: 15, right: 15.0),
+                                      
+                                      title: Text(building.getBuildingName(), style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 20.0, color: Colors.white)),
+                                    ),
+                                  ),
         getBlocksListWidget(scaffoldC, landlordRequests, joinPropertyModel),
       ],
     );
@@ -158,7 +157,6 @@ class PropertyRequests extends StatelessWidget {
     }
 
     return Container(
-      color: Colors.blue[100],
       child: Column(children: [
         Container(
           alignment: Alignment.centerLeft,
@@ -173,7 +171,7 @@ class PropertyRequests extends StatelessWidget {
         ),
         Container(
           height: 50.0,
-          margin: EdgeInsets.only(bottom: 10.0),
+          margin: EdgeInsets.only(bottom: 10.0, left: 10),
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: flats.length,
@@ -194,10 +192,7 @@ class PropertyRequests extends StatelessWidget {
                                 flat: flats[index],
                                 existingRequests: existingLandlordRequests);
                           },
-                          child: Text(flats[index].getFlatName(),
-                              style: TextStyle(
-                                color: Color(0xff2079FF),
-                              ))),
+                          child: Text(flats[index].getFlatName(), style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 17.0, color: Color(0xff2079FF)))),
                       decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.all(Radius.circular(20.0)),

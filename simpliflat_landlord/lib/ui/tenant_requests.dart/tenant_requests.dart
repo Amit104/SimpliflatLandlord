@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/dao/tenant_requests_dao.dart';
+import 'package:simpliflat_landlord/model/tenant_request.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/utility/utility.dart';
@@ -49,25 +50,25 @@ class TenantRequests extends StatelessWidget {
         }
         return Consumer<LoadingModel>(
             builder: (BuildContext context, LoadingModel loadingModel, Widget child) {
-              return loadingModel.load? LoadingContainerVertical(3):
-                  ListView.separated(
+              if(loadingModel.load) return LoadingContainerVertical(3);
+
+              List<TenantRequest> tenantRequests = snaphot.data.documents.map((DocumentSnapshot doc) => TenantRequest.fromJson(doc.data, doc.documentID)).toList();
+                return  ListView.separated(
             separatorBuilder: (BuildContext ctx, int pos){
               return Divider(height: 1.0);
             },
-            itemCount: snaphot.data.documents.length,
+            itemCount: tenantRequests.length,
             itemBuilder: (BuildContext context, int position) {
-              Map<String, dynamic> request = snaphot.data.documents[position].data;
               
             
-              request['documentID'] = snaphot.data.documents[position].documentID;
               return Dismissible(
-                key: Key(snaphot.data.documents[position].documentID),
-                confirmDismiss: (direction) { return rejectRequest(request, scaffoldC);},
+                key: Key(tenantRequests[position].getRequestId()),
+                confirmDismiss: (direction) { return rejectRequest(tenantRequests[position], scaffoldC);},
                             child: Card(
                   child: ListTile(
-                    title: Text(request['created_by']['name'] + '-' + request['created_by']['phone']),
-                    subtitle: Text('Request for ' +  request['owner_flat_id']),
-                    trailing: IconButton(icon:Icon(Icons.check), onPressed: () {acceptRequest(request, scaffoldC);},),
+                    title: Text(tenantRequests[position].getCreatedByUserName() + '-' + tenantRequests[position].getCreatedByUserPhone()),
+                    subtitle: Text('Request for ' +  tenantRequests[position].getOwnerFlatName()),
+                    trailing: IconButton(icon:Icon(Icons.check), onPressed: () {acceptRequest(tenantRequests[position], scaffoldC);},),
                     isThreeLine: true,
                   ),
                 ),
@@ -79,7 +80,7 @@ class TenantRequests extends StatelessWidget {
     );
   }
 
-  Future<bool> rejectRequest(Map<String, dynamic> request, BuildContext scaffoldC) async {
+  Future<bool> rejectRequest(TenantRequest request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Rejecting request');
     Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
     bool ifSuccess = await TenantRequestsService.rejectTenantRequest(request);
@@ -97,7 +98,7 @@ class TenantRequests extends StatelessWidget {
     
   }
 
-  void acceptRequest(Map<String, dynamic> request, BuildContext scaffoldC) async {
+  void acceptRequest(TenantRequest request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
     Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
 

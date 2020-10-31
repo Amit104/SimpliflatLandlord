@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
+import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
 import 'package:simpliflat_landlord/dao/tenant_flat_dao.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
@@ -130,7 +131,6 @@ class SearchTenantState extends State<SearchTenant> {
     setState(() {
           this.loadingState = true;
         });
-    //TODO: in below query check if tenant flat is already assigned to some ownerflat, if yes, then dont show it or show that it is already linked
     QuerySnapshot document = await TenantFlatDao.getByDisplayId(displayId);
   
     setState(() {
@@ -138,8 +138,13 @@ class SearchTenantState extends State<SearchTenant> {
         });
 
     TenantFlat flatTemp;
-    if(document.documents.length > 0 && document.documents[0].documentID != user.getUserId()) {
+    if(document.documents.length > 0) {
       flatTemp = TenantFlat.fromJson(document.documents[0].data, document.documents[0].documentID);
+    }
+
+    QuerySnapshot s = await OwnerTenantDao.getByTenantFlatId(flatTemp.getFlatId());
+    if(s.documents.length > 0) {
+      flatTemp = null;
     }
     
     setState(() {

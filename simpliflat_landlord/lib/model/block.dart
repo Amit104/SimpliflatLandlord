@@ -8,6 +8,17 @@ class Block extends BaseModel {
 
   List<OwnerFlat> ownerFlats;
 
+  bool modified;
+
+
+  bool isModified() {
+		return this.modified;
+	}
+
+	void setModified(bool modified) {
+		this.modified = modified;
+	}
+
 	String getBlockName() {
 		return this.blockName;
 	}

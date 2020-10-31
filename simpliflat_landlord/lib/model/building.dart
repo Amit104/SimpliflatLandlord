@@ -11,6 +11,16 @@ class Building extends BaseModel {
   String buildingDisplayId;
   String buildingId;
   List<Block> blocks;
+  bool modified;
+
+
+	bool isModified() {
+		return this.modified;
+	}
+
+	void setModified(bool modified) {
+		this.modified = modified;
+	}
 
 	String getBuildingName() {
 		return this.buildingName;
@@ -111,6 +121,15 @@ class Building extends BaseModel {
     b.setUpdatedAt(json['updatedAt']);
 
     return b;
+  }
+
+  static Map<String, dynamic> toUpdateJson({dynamic blockList}) {
+    Map<String, dynamic> updateJson = new Map();
+    if(blockList != null) {
+      updateJson['blocks'] = blockList;
+    }
+    updateJson['updatedAt'] = Timestamp.now();
+    return updateJson;
   }
 
 }

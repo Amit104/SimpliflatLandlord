@@ -188,4 +188,10 @@ class Utility {
     length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
   }
 
+  static void assertThis(bool value) {
+    if(!value) {
+      throw Exception;
+    }
+  }
+
 }

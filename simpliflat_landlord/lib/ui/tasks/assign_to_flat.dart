@@ -63,21 +63,6 @@ class AssignToFlatState extends State<AssignToFlat> {
   Future<QuerySnapshot> getFlatIdAndNamesList(String userId) async {
     //TODO: get these values from local db or shared pref instead of firestore 
     return Firestore.instance.collection(globals.ownerFlat).where('ownerIdList', arrayContains: userId).getDocuments();
-    // if (flatIdNameList != null && flatIdNameList.isNotEmpty) {
-    //   return flatIdNameList;
-    // }
-    // debugPrint("here = ");
-    // List<Map> flatIdNameListTemp = new List();
-    // flatIdNameListTemp.add({'id': 'ALL', 'name': 'ALL'});
-    // List flatIdList = await Utility.getFlatIdList();
-    // for (int i = 0; i < flatIdList.length; i++) {
-    //   var id = flatIdList[i];
-    //   if (id.contains("Name=")) {
-    //     flatIdNameListTemp
-    //         .add({'id': id.split("Name=")[0], 'name': id.split("Name=")[1]});
-    //   }
-    // }
-    // return flatIdNameListTemp;
   }
 
   Widget getFlatNamesListWidget() {

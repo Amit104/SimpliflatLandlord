@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
+import 'package:simpliflat_landlord/services/authentication_service.dart';
 import 'package:simpliflat_landlord/ui/signup/signup_name.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 
@@ -248,7 +249,7 @@ class _SignUpOTPUser extends State<SignUpOTP> {
     }
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState.validate() && _isButtonDisabled == false) {
       setState(() {
         _progressCircleState =
@@ -265,33 +266,23 @@ class _SignUpOTPUser extends State<SignUpOTP> {
         signIn();
       }
 
-      FirebaseAuth.instance
-          .currentUser()
-          .then((user) {
-        if (user != null) {
-          Navigator.of(context)
-              .pop();
-          navigateToSignUpName();
-        } else {
-          Navigator.of(context)
-              .pop();
-          signIn();
-        }
-      });
+      FirebaseUser user = await AuthenticationService.getCurrentSignedInUser();
+      //Navigator.of(context).pop();
+      if(user != null) {
+        navigateToSignUpName();
+      }
+      else {
+        signIn();
+      }
     }
   }
 
   Future<void> verifyPhone() async {
-    final PhoneCodeAutoRetrievalTimeout autoRetrieve = (String verId) {
-      this.verificationId = verId;
-    };
+    final PhoneCodeAutoRetrievalTimeout autoRetrieve = (String verId) => this.verificationId = verId;
 
-    final PhoneCodeSent smsCodeSent = (String verId, [int forceCodeResend]) {
-      this.verificationId = verId;
-    };
+    final PhoneCodeSent smsCodeSent = (String verId, [int forceCodeResend]) => this.verificationId = verId;
 
     final PhoneVerificationCompleted verifiedSuccess = (AuthCredential cred) {
-      debugPrint('verified');
       if(!(widget.navigateToName)) {
         Navigator.pop(context,{'success':true});
       }
@@ -306,45 +297,25 @@ class _SignUpOTPUser extends State<SignUpOTP> {
         _isButtonDisabled = false;
         _progressCircleState = 0;
       });
-      Utility.createErrorSnackBar(_scaffoldContext,
-          error: "Phone verification failed");
+      Utility.createErrorSnackBar(_scaffoldContext, error: "Phone verification failed");
     };
 
-    await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: phone,
-        codeAutoRetrievalTimeout: autoRetrieve,
-        codeSent: smsCodeSent,
-        timeout: const Duration(seconds: 5),
-        verificationCompleted: verifiedSuccess,
-        verificationFailed: veriFailed);
+    AuthenticationService.sendOTP(phone, autoRetrieve, smsCodeSent, verifiedSuccess, veriFailed);
   }
 
   Future<void> signIn() async {
-    final AuthCredential credential = PhoneAuthProvider.getCredential(
-      verificationId: verificationId,
-      smsCode: smsCode,
-    );
-    FirebaseAuth.instance.signInWithCredential(credential).then((user) {
-      if (user != null)
-        navigateToSignUpName();
-      else {
-        Utility.createErrorSnackBar(_scaffoldContext,
-            error: "Phone verification failed");
-        setState(() {
-          _isButtonDisabled = false;
-          _progressCircleState = 0;
-          debugPrint("CALL FAILED");
-        });
-      }
-    }).catchError((e) {
+    FirebaseUser user = await AuthenticationService.signinWithCredentials(verificationId, smsCode);
+
+    if (user != null) {
+      navigateToSignUpName();
+    } else {
       Utility.createErrorSnackBar(_scaffoldContext,
           error: "Phone verification failed");
       setState(() {
         _isButtonDisabled = false;
         _progressCircleState = 0;
-        debugPrint("CALL FAILED LAST");
       });
-    });
+    }
   }
 
   void navigateToSignUpName() {

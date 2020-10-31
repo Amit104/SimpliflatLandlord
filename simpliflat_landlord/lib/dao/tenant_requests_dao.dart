@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
+import 'package:simpliflat_landlord/model/tenant_request.dart';
 
 class TenantRequestsDao {
   static Stream<QuerySnapshot> getReceivedRequestsForFlat(String flatId) {
@@ -73,16 +74,28 @@ class TenantRequestsDao {
         .getDocuments();
   }
 
-  static Future<bool> update(String documentId, Map<String, dynamic> data) {
-    return Firestore.instance
+  static Future<bool> update(String documentId, Map<String, dynamic> data) async{ //method not used
+    return Firestore.instance.runTransaction((Transaction transaction) async {
+      DocumentReference ref = Firestore.instance.collection(globals.joinFlatLandlordTenant).document(documentId);
+      DocumentSnapshot doc = await transaction.get(ref);
+      TenantRequest req = TenantRequest.fromJson(doc.data, documentId);
+      if(req.getStatus() == globals.RequestStatus.Pending.index) {
+        return Firestore.instance
         .collection(globals.joinFlatLandlordTenant)
         .document(documentId)
         .updateData(data)
         .then((ret) {
+        return;
+      }).catchError(() {
+        throw Exception;
+      });
+      }
+      else {
+        throw Exception;
+      }
+    }).then((ret) {
       return true;
-    }).catchError(() {
-      return false;
-    });
+    }).catchError((e) {return false;});
   }
 
   static Future<bool> add(Map<String, dynamic> data) async {

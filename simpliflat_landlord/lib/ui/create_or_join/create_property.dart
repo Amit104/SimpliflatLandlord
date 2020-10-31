@@ -266,8 +266,8 @@ class CreatePropertyState extends State<CreateProperty> {
         });
   }
 
-  //TODO: check if block is updated and populate isUpdated field correspondingly. If not updated then no need to set in batch
   void setBlockDetails(Block block, bool isEdit) {
+    block.setModified(true);
     debugPrint("in set block details");
     if(block == null){
       return;
@@ -321,8 +321,11 @@ class CreatePropertyState extends State<CreateProperty> {
 
     var batch = db.batch();
     DocumentReference dr;
-    if(this.building.getBuildingId() != null) {
-      //dr = Firestore.instance.collection(globals.building).document(this.building.getBuildingId());
+    Block modifiedBlock = this.building.getBlocks().firstWhere((Block block) { return block.isModified();}, orElse: (){ return null; });
+    if(this.building.getBuildingId() != null && modifiedBlock != null) {
+      /** block added */
+      dr = Firestore.instance.collection(globals.building).document(this.building.getBuildingId());
+      batch.updateData(dr, Building.toUpdateJson(blockList: FieldValue.arrayUnion(this.building.getBlocks().where((Block b) {return b.isModified();}).toList())));
     }
     else {
       dr = Firestore.instance.collection(globals.building).document();
@@ -348,13 +351,13 @@ class CreatePropertyState extends State<CreateProperty> {
       for (int j = 0; j < flats.length; j++) {
         DocumentReference flatDocRef;
         if(flats[j].getFlatId() != null) {
-          //flatDocRef = flatColRef.document(flats[j].getFlatId());
+          /** flat already present */
         }
         else {
           flatDocRef = flatColRef.document();
           localData.add({'buildingId': dr.documentID, 'buildingName': this.building.getBuildingName(), 'blockName': blocks[i].getBlockName(), 'flatId': flatDocRef.documentID, 'flatName': flats[j].getFlatName()});
         
-        flats[j].setBuildingDetails(this.building.getZipcode());
+        flats[j].setZipcode(this.building.getZipcode());
         flats[j].setBuildingName(this.building.getBuildingName());
         flats[j].setBuildingId(dr.documentID);
         Map<String, dynamic> flatData = flats[j].toJson();

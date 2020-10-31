@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/dao/tenant_requests_dao.dart';
 import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/model/tenant_request.dart';
 import 'package:simpliflat_landlord/ui/tenant_portal/tenant_portal.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/ui/tenant_requests.dart/search_tenant.dart';
@@ -82,8 +83,10 @@ class AddTenantState extends State<AddTenant> {
         }
         return Consumer<LoadingModel>(
           builder: (BuildContext context, LoadingModel loadingModel, Widget child) {
-            return loadingModel.load? LoadingContainerVertical(3):
-            Column(children: [
+            if(loadingModel.load) return LoadingContainerVertical(3);
+
+            List<TenantRequest> tenantRequests = snaphot.data.documents.map((DocumentSnapshot doc) => TenantRequest.fromJson(doc.data, doc.documentID)).toList();
+            return Column(children: [
                 Container(alignment: Alignment.center, child: Text('Requests by you')),
 
                   ListView.separated(
@@ -91,27 +94,24 @@ class AddTenantState extends State<AddTenant> {
             separatorBuilder: (BuildContext ctx, int pos) {
               return Divider(height: 1.0);
             },
-            itemCount: snaphot.data.documents.length,
+            itemCount: tenantRequests.length,
             itemBuilder: (BuildContext context, int position) {
-              Map<String, dynamic> request =
-                  snaphot.data.documents[position].data;
-
-              request['documentID'] = snaphot.data.documents[position].documentID;
+              
               return Dismissible(
-                key: Key(snaphot.data.documents[position].documentID),
+                key: Key(tenantRequests[position].getRequestId()),
                 confirmDismiss: (direction) {
-                  return rejectRequest(request, scaffoldC);
+                  return rejectRequest(tenantRequests[position], scaffoldC);
                 },
                 child: Card(
                   child: ListTile(
-                    title: Text(request['created_by']['name'] +
+                    title: Text(tenantRequests[position].getCreatedByUserName() +
                         ' - ' + 
-                        request['created_by']['phone']),
-                    subtitle: Text('Request by ' + request['tenant_flat_name']),
+                        tenantRequests[position].getCreatedByUserPhone()),
+                    subtitle: Text('Request by ' + tenantRequests[position].getTenantFlatName()),
                     trailing: IconButton(
                       icon: Icon(Icons.check),
                       onPressed: () {
-                        acceptRequest(request, scaffoldC);
+                        acceptRequest(tenantRequests[position], scaffoldC);
                       },
                     ),
                     isThreeLine: true,
@@ -220,7 +220,7 @@ class AddTenantState extends State<AddTenant> {
   }
 
   Future<bool> rejectRequest(
-      Map<String, dynamic> request, BuildContext scaffoldC) async {
+      TenantRequest request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Rejecting request');
     Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
     
@@ -241,16 +241,16 @@ class AddTenantState extends State<AddTenant> {
   }
 
   void acceptRequest(
-      Map<String, dynamic> request, BuildContext scaffoldC) async {
+      TenantRequest request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
     Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
 
     String docId = await TenantRequestsService.acceptTenantRequest(request);
 
     if (docId != null) {
-      flat.setBuildingAddress(request['building_details']['building_address']);
-      flat.setTenantFlatId(request['tenant_flat_id']);
-      flat.setTenantFlatName(request['tenant_flat_name']);
+      flat.setBuildingAddress(request.getBuildingAddress());
+      flat.setTenantFlatId(request.getTenantFlatId());
+      flat.setTenantFlatName(request.getTenantFlatName());
       flat.setApartmentTenantId(docId);
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC,

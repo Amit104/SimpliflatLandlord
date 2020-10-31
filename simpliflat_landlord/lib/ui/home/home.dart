@@ -179,13 +179,8 @@ class Home extends StatelessWidget {
   void navigateToLandlordPortal(OwnerFlat flat, BuildContext context) async {
     debugPrint("navigate to landlord portal");
     User user = Provider.of<User>(context, listen: false);
-    flat.setZipcode(flat.getBuildingDetails());
     QuerySnapshot q = await OwnerTenantDao.getByOwnerFlatId(flat.getFlatId());
-    //TODO: building address and zipcode are set only in case if owner and tenant apartment are linked. Need to set in other case too
-    //Instead add building Address in flat
     if (q != null && q.documents.length > 0) {
-      flat.setBuildingAddress(q.documents[0].data['buildingAddress']);
-      flat.setZipcode(q.documents[0].data['zipcode']);
       flat.setTenantFlatId(q.documents[0].data['tenantFlatId']);
       flat.setTenantFlatName(q.documents[0].data['tenantFlatName']);
       flat.setApartmentTenantId(q.documents[0].documentID);
@@ -220,7 +215,7 @@ class Home extends StatelessWidget {
       if (b == null) {
         b = new Building();
         myBuildings[flat.getBuildingId()] = b;
-        b.setZipcode(flat.getBuildingDetails());
+        b.setZipcode(flat.getZipcode());
         b.setBuildingName(flat.getBuildingName());
         b.setBuildingId(flat.getBuildingId());
       }

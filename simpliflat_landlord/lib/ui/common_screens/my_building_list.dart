@@ -14,6 +14,7 @@ import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/ui/home/my_flats.dart';
 import 'package:simpliflat_landlord/ui/owner_requests/property_requests.dart';
 import 'package:simpliflat_landlord/ui/tenant_requests.dart/create_tenant_request.dart';
+import 'package:simpliflat_landlord/view_model/loading_model.dart';
 import 'package:simpliflat_landlord/view_model/my_building_list_model.dart';
 
 /// list to show the owners buildings
@@ -34,7 +35,6 @@ class MyBuildingList extends StatefulWidget {
 }
 
 class MyBuildingListState extends State<MyBuildingList> {
-  //TODO: add loading state
   final TenantFlat tenantFlat;
 
   final Owner owner;
@@ -45,19 +45,22 @@ class MyBuildingListState extends State<MyBuildingList> {
 
   @override
   Widget build(BuildContext context) {
-    return Provider(
+    return ChangeNotifierProvider(
             create: (_) => MyBuildingListModel(),
-    child: Scaffold(
-      appBar: AppBar(
-        title: Text('Your buildings', style: CommonWidgets.getAppBarTitleStyle(),),
-        elevation: 0,
-        centerTitle: true,
+    child: ChangeNotifierProvider(
+          create: (_) => LoadingModel(),
+          child: Scaffold(
+        appBar: AppBar(
+          title: Text('Your buildings', style: CommonWidgets.getAppBarTitleStyle(),),
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: Colors.white,
+        ),
         backgroundColor: Colors.white,
-      ),
-      backgroundColor: Colors.white,
-      body: Builder(builder: (BuildContext scaffoldC) {
-         return getBody(scaffoldC);
-      })),
+        body: Builder(builder: (BuildContext scaffoldC) {
+           return getBody(scaffoldC);
+        })),
+    ),
     );
   }
 
@@ -71,27 +74,34 @@ class MyBuildingListState extends State<MyBuildingList> {
         if (!buildings.hasData) {
           return LoadingContainerVertical(2);
         }
-        return ListView.separated(
-          separatorBuilder: (BuildContext ctx, int pos) {
-            return Divider(height: 1.0);
-          },
-          itemCount: buildings.data.length,
-          itemBuilder: (BuildContext context, int position) {
-            return ListTile(
-              onTap: () {
-                navigate(buildings.data[position], scaffoldC);
-              },
-              title: Text(buildings.data[position].getBuildingName(), style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 17.0),),
-              subtitle: Text(buildings.data[position].getBuildingDetails(), style: TextStyle(fontFamily: 'Roboto'),),
-              trailing: Icon(Icons.keyboard_arrow_right, color: Color(0xff2079FF),),
-            );
-          },
-        );
+        return Consumer<LoadingModel>(
+            builder: (BuildContext context, LoadingModel loadingModel, Widget child) {
+                if(loadingModel.load) return LoadingContainerVertical(3);
+
+                  return ListView.separated(
+            separatorBuilder: (BuildContext ctx, int pos) {
+              return Divider(height: 1.0);
+            },
+            itemCount: buildings.data.length,
+            itemBuilder: (BuildContext context, int position) {
+              return ListTile(
+                onTap: () {
+                  navigate(buildings.data[position], scaffoldC);
+                },
+                title: Text(buildings.data[position].getBuildingName(), style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 17.0),),
+                subtitle: Text(buildings.data[position].getZipcode(), style: TextStyle(fontFamily: 'Roboto'),),
+                trailing: Icon(Icons.keyboard_arrow_right, color: Color(0xff2079FF),),
+              );
+            },
+          );
+            });
       },
     );
   }
 
   void navigate(OwnerFlat flat, BuildContext scaffoldC) async {
+
+    Provider.of<LoadingModel>(scaffoldC).startLoading();
     Map<String, List<OwnerFlat>> ownedFlats =
         Provider.of<MyBuildingListModel>(scaffoldC, listen: false)
             .getOwnedFlatIds();
@@ -100,6 +110,8 @@ class MyBuildingListState extends State<MyBuildingList> {
 
     Building b =
         await createBuildingObject(flat, ownedFlats);
+
+    Provider.of<LoadingModel>(scaffoldC).stopLoading();
     if(toTenantPortal) {
       Navigator.push(
         context,

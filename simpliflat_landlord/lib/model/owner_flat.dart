@@ -4,7 +4,6 @@ import 'package:simpliflat_landlord/model/base_model.dart';
 import 'package:simpliflat_landlord/model/owner.dart';
 
 class OwnerFlat extends BaseModel {
-  String buildingDetails;
   String buildingId;
   String blockName;
   String flatName;
@@ -21,6 +20,15 @@ class OwnerFlat extends BaseModel {
   String buildingDisplayId;
   bool verified;
   List<Owner> owners;
+  bool modified;
+
+	bool isModified() {
+		return this.modified;
+	}
+
+	void setModified(bool modified) {
+		this.modified = modified;
+	}
 
 	bool isVerified() {
 		return this.verified;
@@ -77,14 +85,6 @@ class OwnerFlat extends BaseModel {
 
 	void setApartmentTenantId(String apartmentTenantId) {
 		this.apartmentTenantId = apartmentTenantId;
-	}
-
-	String getBuildingDetails() {
-		return this.buildingDetails;
-	}
-
-	void setBuildingDetails(String buildingDetails) {
-		this.buildingDetails = buildingDetails;
 	}
 
 	String getBuildingId() {
@@ -165,13 +165,14 @@ class OwnerFlat extends BaseModel {
       'flatDisplayId': this.flatDisplayId,
       'ownerIdList': this.ownerIdList,
       'ownerRoleList': this.ownerRoleList,
-      'buildingDetails': this.buildingDetails,
       'buildingId': this.buildingId,
       'blockName': this.blockName,
       'buildingName': this.buildingName,
       'verified': this.verified,
       'createdAt': this.createdAt,
-      'updatedAt': this.updatedAt
+      'updatedAt': this.updatedAt,
+      'buildingAddress': this.buildingAddress,
+      'zipcode': this.zipcode
 
     };
   }
@@ -184,7 +185,6 @@ class OwnerFlat extends BaseModel {
     flat.setOwnerIdList(ownerIdList);
     List<String> ownerRoleList = new List<String>.from(json['ownerRoleList']);
     flat.setOwners(new List());
-    //TODO: added try catch since name is not stored in ownerRoleList right now
     try {
     if(ownerRoleList != null) {
       ownerRoleList.forEach((String e) {
@@ -202,12 +202,12 @@ class OwnerFlat extends BaseModel {
     }
     flat.setOwnerRoleList(ownerRoleList);
     flat.setFlatId(documentId);
-    flat.setBuildingDetails(json['buildingDetails']);
+    flat.setBuildingAddress(json['buildingAddress']);
     flat.setBlockName(json['blockName']);
     flat.setBuildingId(json['buildingId']);
     flat.setBuildingName(json['buildingName']);
     flat.setVerified(json['verified']);
-    flat.setZipcode(json['buildingDetails']);
+    flat.setZipcode(json['zipcode']);
     flat.setCreatedAt(json['createdAt']);
     flat.setUpdatedAt(json['updatedAt']);
     return flat;

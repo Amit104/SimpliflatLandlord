@@ -15,6 +15,7 @@ import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
 import 'package:simpliflat_landlord/model/models.dart';
 import 'package:simpliflat_landlord/ui/owner_requests/search_owner.dart';
+import 'package:simpliflat_landlord/ui/signup/signup_otp.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 import 'package:simpliflat_landlord/services/owner_requests_service.dart';
@@ -203,46 +204,6 @@ class _ProfileOptions extends State<ProfileOptions> {
                             context: context,
                             builder: (context) {
                               return new AlertDialog(
-                                title: new Text('Leave Flat'),
-                                content: new Text(
-                                    'Are you sure you want to leave this flat?'),
-                                actions: <Widget>[
-                                  new FlatButton(
-                                    child: new Text('Cancel'),
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(false),
-                                  ),
-                                  new FlatButton(
-                                      child: new Text('Yes'),
-                                      onPressed: () {
-                                        Navigator.of(context).pop(true);
-                                        _exitFlat();
-                                      }),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                        child: Text('Exit Flat'),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 5.0, right: 5.0),
-                      child: RaisedButton(
-                        shape: new RoundedRectangleBorder(
-                          borderRadius: new BorderRadius.circular(40.0),
-                          side: BorderSide(
-                            width: 0.5,
-                            color: Colors.indigo[900],
-                          ),
-                        ),
-                        color: Colors.white,
-                        textColor: Colors.indigo[900],
-                        onPressed: () {
-                          showDialog<bool>(
-                            context: context,
-                            builder: (context) {
-                              return new AlertDialog(
                                 title: new Text('Evacuate Flat'),
                                 content: new Text(
                                     'Are you sure you want to evacuate this flat?'),
@@ -338,7 +299,6 @@ class _ProfileOptions extends State<ProfileOptions> {
                 padding: const EdgeInsets.only(top: 15.0),
                 child: Column(
                   children: <Widget>[
-                    //TODO: on tapping this give an option to remove the owner
                     GestureDetector(
                       onLongPress: () {
                         debugPrint("on long press");
@@ -432,36 +392,6 @@ class _ProfileOptions extends State<ProfileOptions> {
       Utility.createErrorSnackBar(scaffoldC, error: 'Error while removoing owner');
     }
 
-  }
-
-  void _exitFlat() async {
-    //TODO: add this to service
-    var batch = Firestore.instance.batch();
-    
-
-      DocumentReference apartmentTenantDoc = OwnerTenantDao.getDocumentReference(this.flat.getApartmentTenantId());
-        
-        batch.updateData(apartmentTenantDoc, OwnerTenant.toUpdateJson(status: 1));
-
-        batch.commit().then((res) async {
-          debugPrint("Exit flat");
-          //remove sharedPreferences
-          _backHome();
-        }, onError: (e) {
-          _setErrorState(_scaffoldContext, "CALL ERROR");
-        }).catchError((e) {
-          _setErrorState(_scaffoldContext, "SERVER ERROR");
-        });
-      }
-
-  void _setErrorState(scaffoldContext, error, {textToSend}) {
-    setState(() {
-      debugPrint(error);
-      if (textToSend != null && textToSend != "")
-        Utility.createErrorSnackBar(scaffoldContext, error: textToSend);
-      else
-        Utility.createErrorSnackBar(scaffoldContext);
-    });
   }
 
   void _backHome() async {
@@ -579,9 +509,8 @@ class _ProfileOptions extends State<ProfileOptions> {
   }
 
   void _evacuateFlat(BuildContext scaffoldC) async {
-    //add this to service. Create a new service for apartment tenant flat
-    DocumentReference doc = OwnerTenantDao.getDocumentReference(this.flat.getApartmentTenantId());
-    doc.updateData(OwnerTenant.toUpdateJson(status: 1)).then((ret) {
+    bool ifSuccess = await OwnerTenantDao.update(this.flat.getApartmentTenantId(), OwnerTenant.toUpdateJson(status: 1));
+    if(ifSuccess) {
       flat.setApartmentTenantId(null);
       flat.setTenantFlatId(null);
       flat.setTenantFlatName(null);
@@ -593,9 +522,10 @@ class _ProfileOptions extends State<ProfileOptions> {
           }
         )
       );
-    }).catchError((e) {
+    }
+    else {
       Utility.createErrorSnackBar(scaffoldC, error: 'Error while evacuating flat');
-    });
+    }
   }
 
   String _userNameValidator(String name) {
@@ -698,22 +628,7 @@ class _ProfileOptions extends State<ProfileOptions> {
         });
   }
 
-/*zString _phoneNumberValidator(String number) {
-    if (number.isEmpty) {
-      return "Cannot be empty";
-    } else if ("+91" + number == widget.userPhone) {
-      return "Cannot be the same number";
-    } else if (number.length != 10) {
-      return "Please enter a valid 10 digit number";
-    }
-    /*TODO: handle existing account with same number
-      1. disallow number change
-      2.  ask to choose between accounts
-     */
-    return null;
-  }
-
-  _changePhoneNumber(textField) async {
+  /*_changePhoneNumber(textField) async {
     String phoneNumber = "+91" + textField.text.trim();
     Map results = await Navigator.push(
       context,

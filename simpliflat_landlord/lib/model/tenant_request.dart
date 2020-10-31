@@ -17,6 +17,7 @@ class TenantRequest extends BaseModel {
   String buildingZipcode;
   String buildingAddress;
   String requestId;
+  String ownerFlatName;
 
 	String getBuildingId() {
 		return this.buildingId;
@@ -130,6 +131,14 @@ class TenantRequest extends BaseModel {
 		this.requestId = requestId;
 	}
 
+  String getOwnerFlatName() {
+		return this.ownerFlatName;
+	}
+
+	void setOwnerFlatName(String ownerFlatName) {
+		this.ownerFlatName = ownerFlatName;
+	}
+
   Map<String, dynamic> toJson() {
     return {'building_id' : this.buildingId,
           'block_id' : this.blockName,
@@ -139,6 +148,7 @@ class TenantRequest extends BaseModel {
           'status': this.status,
           'created_at': Timestamp.now(),
           'updated_at': Timestamp.now(),
+          'owner_flat_name': this.ownerFlatName,
           'created_by' : { "user_id" : this.createdByUserId, 'name' : this.createdByUserName, 'phone' : this.createdByUserPhone },
           'tenant_flat_name' : this.tenantFlatName,
           'building_details' : {'building_name' : this.buildingName, 'building_zipcode' : this.buildingZipcode, 'building_address' : this.buildingAddress}};
@@ -161,6 +171,7 @@ class TenantRequest extends BaseModel {
     tenantRequest.setTenantFlatName(data['tenant_flat_name']);
     tenantRequest.setCreatedAt(data['created_at']);
     tenantRequest.setUpdatedAt(data['updated_at']);
+    tenantRequest.setOwnerFlatName(data['owner_flat_name']);
     tenantRequest.setRequestId(documentId);
 
     return tenantRequest;

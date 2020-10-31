@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/landlord_requests_dao.dart';
+import 'package:simpliflat_landlord/model/landlord_request.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/model/block.dart';
@@ -49,7 +50,7 @@ class JoinProperty extends StatelessWidget {
   }
 
   Widget getMainExpansionPanelList(
-      BuildContext scaffoldC, List<DocumentSnapshot> data, JoinPropertyModel joinPropertyModel) {
+      BuildContext scaffoldC, List<LandlordRequest> data, JoinPropertyModel joinPropertyModel) {
 
     return Column(
                                   children:[ Container(
@@ -73,14 +74,14 @@ class JoinProperty extends StatelessWidget {
     return false;
   }
 
-  bool ifRequestToFlatAlreadySent(List<DocumentSnapshot> data, String flatId) {
+  bool ifRequestToFlatAlreadySent(List<LandlordRequest> data, String flatId) {
     if (data == null || data.isEmpty || flatId == null) {
       return false;
     }
 
-    DocumentSnapshot d = data.firstWhere((request) {
+    LandlordRequest d = data.firstWhere((LandlordRequest request) {
      
-        return request['flatId'] == flatId;
+        return request.getFlatId() == flatId;
       
     }, orElse: () {
       return null;
@@ -88,18 +89,33 @@ class JoinProperty extends StatelessWidget {
     return d != null;
   }
 
+  Future<List<LandlordRequest>> getExistingRequests(String userId, String buildingId) async {
+    List<LandlordRequest> list = new List();
+
+    QuerySnapshot qs =
+        await LandlordRequestsDao.getRequestsSentByMeToOwnerForBuilding(userId, buildingId);
+    qs.documents.forEach((DocumentSnapshot ds) {
+      LandlordRequest req = LandlordRequest.fromJson(ds.data, ds.documentID);
+      list.add(req);
+    });
+
+    debugPrint("fetched data again");
+
+    return list;
+  }
+
   Widget getMainExpansionPanelListForJoin(BuildContext scaffoldC) {
     User user = Provider.of<User>(scaffoldC, listen: false);
     return FutureBuilder(
-      future: LandlordRequestsDao.getRequestsSentByMeToOwnerForBuilding(user.getUserId(), this.building.getBuildingId()),
-      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> documents) {
+      future: getExistingRequests(user.getUserId(), this.building.getBuildingId()),
+      builder: (BuildContext context, AsyncSnapshot<List<LandlordRequest>> documents) {
         if (!documents.hasData) {
           return LoadingContainerVertical(2);
         }
         return Consumer2<JoinPropertyModel, LoadingModel>(
           builder: (BuildContext context, JoinPropertyModel joinPropertyModel, LoadingModel loadingModel,  Widget child) {
             return loadingModel.load? LoadingContainerVertical(5):
-            getMainExpansionPanelList(scaffoldC, documents.data.documents, joinPropertyModel);
+            getMainExpansionPanelList(scaffoldC, documents.data, joinPropertyModel);
           },
         ); 
        
@@ -108,15 +124,13 @@ class JoinProperty extends StatelessWidget {
   }
 
   Widget getBlocksListWidget(
-      BuildContext scaffoldC, List<DocumentSnapshot> documents, JoinPropertyModel joinPropertyModel) {
+      BuildContext scaffoldC, List<LandlordRequest> documents, JoinPropertyModel joinPropertyModel) {
     List<ExpansionPanel> blocksWidget = new List();
     List<Block> blocks = this.building.getBlocks();
-    debugPrint('blocks is empty');
 
     if (blocks == null || blocks.isEmpty) {
       return Container();
     }
-    debugPrint('blocks is not empty');
     for (int i = 0; i < blocks.length; i++) {
       blocksWidget.add(new ExpansionPanel(
         headerBuilder: (BuildContext context, bool isExpanded) {
@@ -139,7 +153,7 @@ class JoinProperty extends StatelessWidget {
 
   
   Widget getFlatNamesWidget(
-      Block block, List<DocumentSnapshot> documents, BuildContext ctx) {
+      Block block, List<LandlordRequest> documents, BuildContext ctx) {
     User user = Provider.of<User>(ctx, listen: false);
 
     List<OwnerFlat> flats = block.getOwnerFlats();
@@ -163,7 +177,7 @@ class JoinProperty extends StatelessWidget {
               : IconButton(
                   icon: Icon(Icons.link),
                   onPressed: () {
-                    sendRequestToOwner(ctx,
+                    sendRequestToOwner(ctx, documents,
                         block: block, flat: flats[index]);
                   },
                 ),
@@ -172,7 +186,7 @@ class JoinProperty extends StatelessWidget {
     );
   }
 
-  void sendRequestToOwner(BuildContext ctx,
+  void sendRequestToOwner(BuildContext ctx, List<LandlordRequest> existingRequests,
       {Block block, OwnerFlat flat}) async {
  
     User user = Provider.of<User>(ctx, listen: false);
@@ -185,7 +199,9 @@ class JoinProperty extends StatelessWidget {
     if(ifSuccess) {
       
       Utility.createErrorSnackBar(ctx, error: 'Request created successfully');
-      //TODO: add document to existing requests list
+      LandlordRequest req = new LandlordRequest();
+      req.setFlatId(flat.getFlatId());
+      existingRequests.add(req);
     } else {
       
       Utility.createErrorSnackBar(ctx, error: 'Error while creating request');
