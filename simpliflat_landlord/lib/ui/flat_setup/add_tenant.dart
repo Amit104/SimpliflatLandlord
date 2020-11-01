@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
 import 'package:simpliflat_landlord/dao/tenant_requests_dao.dart';
 import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/model/owner_tenant.dart';
+import 'package:simpliflat_landlord/model/tenant.dart';
+import 'package:simpliflat_landlord/model/tenant_flat.dart';
 import 'package:simpliflat_landlord/model/tenant_request.dart';
 import 'package:simpliflat_landlord/ui/tenant_portal/tenant_portal.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
@@ -248,17 +252,25 @@ class AddTenantState extends State<AddTenant> {
     String docId = await TenantRequestsService.acceptTenantRequest(request);
 
     if (docId != null) {
-      flat.setBuildingAddress(request.getBuildingAddress());
-      flat.setTenantFlatId(request.getTenantFlatId());
-      flat.setTenantFlatName(request.getTenantFlatName());
-      flat.setApartmentTenantId(docId);
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC,
           error: 'Request accepted successfully');
+
+      QuerySnapshot q = await OwnerTenantDao.getByOwnerFlatId(this.flat.getFlatId());
+    if (q != null && q.documents.length > 0) {
+      TenantFlat tenantFlat = new TenantFlat();
+      tenantFlat.setFlatId(q.documents[0].data['tenantFlatId']);
+      tenantFlat.setFlatName(q.documents[0].data['tenantFlatName']);
+      tenantFlat.setTenants(getTenants(q));
+      OwnerTenant ownerTenantFlat = new OwnerTenant();
+      ownerTenantFlat.setOwnerFlat(this.flat);
+      ownerTenantFlat.setStatus(0);
+      ownerTenantFlat.setTenantFlat(tenantFlat);
+      ownerTenantFlat.setOwnerTenantId(q.documents[0].documentID);      
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {
-          return LandlordPortal(this.flat);
+          return LandlordPortal(ownerTenantFlat);
         }),
       );
     } else {
@@ -268,6 +280,23 @@ class AddTenantState extends State<AddTenant> {
     }
 
     Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
+
+  }
+      }
+
+  List<Tenant> getTenants(QuerySnapshot snapshot) {
+    Map<String, dynamic> doc = snapshot.documents[0].data;
+    List<Tenant> tenants = new List();
+    doc.forEach((String key, dynamic value) {
+      if(key.startsWith("o_")) {
+        String tenantId = key.substring(2);
+        Tenant tenant = new Tenant();
+        tenant.setTenantId(tenantId);
+        tenant.setName(value.toString().split("::")[0]);
+        tenants.add(tenant);
+      }
+    });
+    return tenants;
 
   }
 }

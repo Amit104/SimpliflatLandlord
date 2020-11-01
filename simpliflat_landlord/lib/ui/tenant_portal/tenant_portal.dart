@@ -6,6 +6,7 @@ import 'package:simpliflat_landlord/dao/owner_dao.dart';
 import 'package:simpliflat_landlord/icons/icons_custom_icons.dart';
 import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/model/owner_tenant.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/ui/profile/profile_options.dart';
 import 'package:simpliflat_landlord/ui/tasks/task_list.dart';
@@ -18,7 +19,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:simpliflat_landlord/ui/tasks/create_task.dart';
 
 class LandlordPortal extends StatefulWidget {
-  OwnerFlat flat;
+  OwnerTenant flat;
 
 
   LandlordPortal(this.flat);
@@ -33,7 +34,7 @@ class _LandlordPortal extends State<LandlordPortal> {
   int _selectedIndex = 0;
 
   //profile details
-  OwnerFlat flat;
+  OwnerTenant flat;
 
 
   String flatName = "Hey!";
@@ -127,7 +128,7 @@ class _LandlordPortal extends State<LandlordPortal> {
                 : (_selectedIndex == 1
                     ? TaskList(this.flat, user)
                     : (_selectedIndex == 2
-                        ? DocumentManager(this.flat.getApartmentTenantId())
+                        ? DocumentManager(this.flat.getOwnerTenantId())
                         : ProfileOptions(user, this.flat)))
           ),
           bottomNavigationBar: new BottomNavigationBar(
@@ -173,7 +174,7 @@ class _LandlordPortal extends State<LandlordPortal> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return MessageBoard(this.flat.getApartmentTenantId());
+        return MessageBoard(this.flat.getOwnerTenantId());
       }),
     );
   }

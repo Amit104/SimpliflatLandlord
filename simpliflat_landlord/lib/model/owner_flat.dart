@@ -12,9 +12,6 @@ class OwnerFlat extends BaseModel {
   String flatDisplayId;
   String flatId;
   String buildingName;
-  String tenantFlatId;
-  String tenantFlatName;
-  String apartmentTenantId;
   String buildingAddress;
   String zipcode;
   String buildingDisplayId;
@@ -63,7 +60,7 @@ class OwnerFlat extends BaseModel {
 	}
 
 
-	String getTenantFlatId() {
+	/*String getTenantFlatId() {
 		return this.tenantFlatId;
 	}
 
@@ -85,7 +82,7 @@ class OwnerFlat extends BaseModel {
 
 	void setApartmentTenantId(String apartmentTenantId) {
 		this.apartmentTenantId = apartmentTenantId;
-	}
+	}*/
 
 	String getBuildingId() {
 		return this.buildingId;

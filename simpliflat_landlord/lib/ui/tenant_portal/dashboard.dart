@@ -6,13 +6,14 @@ import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/model/owner_tenant.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/ui/tasks/view_task.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 
 class Dashboard extends StatefulWidget {
-  final OwnerFlat flat;
+  final OwnerTenant flat;
   final User user;
 
   Dashboard(this.flat, this.user);
@@ -25,7 +26,7 @@ class Dashboard extends StatefulWidget {
 
 class DashboardState extends State<Dashboard> {
   var _navigatorContext;
-  final OwnerFlat flat;
+  final OwnerTenant flat;
   //bool noticesExist = false;
   bool tasksExist = false;
   List existingUsers;
@@ -125,7 +126,7 @@ class DashboardState extends State<Dashboard> {
         width: MediaQuery.of(context).size.width,
         padding: EdgeInsets.all(15.0),
         child: Text(
-          this.flat.getFlatName(),
+          this.flat.getOwnerFlat().getFlatName(),
           style: TextStyle(
             color: Colors.white,
             fontSize: 25.0,
@@ -150,7 +151,7 @@ class DashboardState extends State<Dashboard> {
            StreamBuilder<QuerySnapshot>(
               stream: Firestore.instance
                   .collection(globals.ownerTenantFlat)
-                  .document(this.flat.getApartmentTenantId())
+                  .document(this.flat.getOwnerTenantId())
                   .collection('tasks_landlord')
                   .where('nextDueDate', isGreaterThan: start)
                   .where('nextDueDate', isLessThan: end)
@@ -260,7 +261,7 @@ class DashboardState extends State<Dashboard> {
     return StreamBuilder<QuerySnapshot>(
       stream: Firestore.instance
           .collection(globals.ownerTenantFlat)
-          .document(this.flat.getApartmentTenantId())
+          .document(this.flat.getOwnerTenantId())
           .collection(globals.messageBoard)
           .where('updated_at', isGreaterThan: start)
           .where('updated_at', isLessThan: end)

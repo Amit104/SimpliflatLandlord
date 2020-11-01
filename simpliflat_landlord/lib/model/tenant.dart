@@ -5,6 +5,7 @@ class Tenant extends BaseModel {
   String name;
   String phone;
   String flatId;
+  String tenantId;
 
 	String getName() {
 		return this.name;
@@ -29,4 +30,12 @@ class Tenant extends BaseModel {
 	void setFlatId(String flatId) {
 		this.flatId = flatId;
 	}
+
+  String getTenantId() {
+    return this.tenantId;
+  }
+
+  void setTenantId(String tenantId) {
+    this.tenantId = tenantId;
+  }
 }

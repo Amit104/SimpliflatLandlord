@@ -6,8 +6,10 @@ import 'package:simpliflat_landlord/dao/task_dao.dart';
 import 'package:simpliflat_landlord/dao/task_history_dao.dart';
 import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/model/owner_tenant.dart';
 import 'package:simpliflat_landlord/model/task.dart';
 import 'package:simpliflat_landlord/model/task_history.dart';
+import 'package:simpliflat_landlord/model/tenant.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/ui/tasks/create_task.dart';
 import 'package:simpliflat_landlord/ui/tasks/view_task.dart';
@@ -131,7 +133,7 @@ class TaskItem<T> {
 }
 
 class TaskList extends StatefulWidget {
-  final OwnerFlat _flat;
+  final OwnerTenant _flat;
 
   final User user;
 
@@ -179,7 +181,7 @@ class TaskListState extends State<TaskList> {
   };
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
-  final OwnerFlat _flat;
+  final OwnerTenant _flat;
 
   TaskListState(this._flat, this.user) {
     collectionname = 'tasks_landlord';
@@ -278,15 +280,8 @@ class TaskListState extends State<TaskList> {
   }
 
   Widget getTaskListView(bool isCompleted) {
-    return StreamBuilder<QuerySnapshot>(
-        stream: Firestore.instance
-            .collection("user")
-            .where('flat_id', isEqualTo: this._flat.getTenantFlatId())
-            .snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot1) {
-          if (!snapshot1.hasData) return LoadingContainerVertical(7);
           return StreamBuilder(
-              stream: TaskDao.getAllByFlat(this._flat.getApartmentTenantId(), isCompleted),
+              stream: TaskDao.getAllByFlat(this._flat.getOwnerTenantId(), isCompleted),
               builder: (context, AsyncSnapshot<QuerySnapshot> taskSnapshot) {
                 if (!taskSnapshot.hasData) return LoadingContainerVertical(7);
                 if (isCompleted == false)
@@ -385,7 +380,7 @@ class TaskListState extends State<TaskList> {
                                 );
                               },
                               onDismissed: (actionType) async {
-                                bool ifSuccess = await TaskDao.delete(this._flat.getApartmentTenantId(), task.getTaskId());
+                                bool ifSuccess = await TaskDao.delete(this._flat.getOwnerTenantId(), task.getTaskId());
                               },
                             ),
                             actionExtentRatio: 0.25,
@@ -401,12 +396,12 @@ class TaskListState extends State<TaskList> {
                                     
                                     Timestamp nextDueDate = Timestamp.fromDate(getNextDueDateTime(datetime, task.getDue().toDate(), task.getRepeat(), task.getFrequency()));
 
-                                    bool ifSuccess = await TaskDao.update(this._flat.getApartmentTenantId(), task.getTaskId(), Task.toUpdateJson(nextDueDate: nextDueDate));
+                                    bool ifSuccess = await TaskDao.update(this._flat.getOwnerTenantId(), task.getTaskId(), Task.toUpdateJson(nextDueDate: nextDueDate));
 
                                   } else {
-                                    bool ifSuccess = await TaskDao.update(this._flat.getApartmentTenantId(), task.getTaskId(), Task.toUpdateJson(completed: true));
+                                    bool ifSuccess = await TaskDao.update(this._flat.getOwnerTenantId(), task.getTaskId(), Task.toUpdateJson(completed: true));
                                   }
-                                  bool ifSuccess = await TaskHistoryDao.add(this._flat.getApartmentTenantId(), task.getTaskId(), taskHistory.toJson());
+                                  bool ifSuccess = await TaskHistoryDao.add(this._flat.getOwnerTenantId(), task.getTaskId(), taskHistory.toJson());
                                   setState(() {});
                                 },
                               ),
@@ -443,7 +438,7 @@ class TaskListState extends State<TaskList> {
                                   );
 
                                   if (dismiss) {
-                                    bool ifSuccess = await TaskDao.delete(this._flat.getApartmentTenantId(), task.getTaskId());
+                                    bool ifSuccess = await TaskDao.delete(this._flat.getOwnerTenantId(), task.getTaskId());
                                     state.dismiss();
                                   }
                                 },
@@ -506,7 +501,7 @@ class TaskListState extends State<TaskList> {
                                       ],
                                     ),
                                     trailing: getUsersAssignedView(
-                                        task.getAssignees(), snapshot1),
+                                        task.getAssignees()),
                                     leading: Container(
                                       child: Tooltip(
                                         key: tooltipKey[position],
@@ -541,12 +536,11 @@ class TaskListState extends State<TaskList> {
                   },
                 );
               });
-        });
   }
 
   void updateTasksLastSeen() async {
     Utility.updateReadTasksLastSeen(
-        this._flat.getApartmentTenantId(), Timestamp.now().millisecondsSinceEpoch);
+        this._flat.getOwnerTenantId(), Timestamp.now().millisecondsSinceEpoch);
   }
 
   String _getDateTimeString(DateTime nextDueDate) {
@@ -874,20 +868,20 @@ class TaskListState extends State<TaskList> {
   }
 
   bool userDetailsObtained = false;
-  Widget getUsersAssignedView(List<String> users, AsyncSnapshot<QuerySnapshot> snapshot1) {
+  Widget getUsersAssignedView(List<String> users) {
     return new Container(
       margin: EdgeInsets.only(right: 5.0),
       child: Stack(
         alignment: Alignment.centerRight,
         overflow: Overflow.visible,
         children:
-            _getPositionedOverlappingUsers(users, snapshot1.data.documents),
+            _getPositionedOverlappingUsers(users),
       ),
     );
   }
 
   List<Widget> _getPositionedOverlappingUsers(
-      List<String> users, List<DocumentSnapshot> flatUsers) {
+      List<String> users) {
     List<String> userList = users;
 
     var overflowAddition = 0.0;
@@ -912,7 +906,7 @@ class TaskListState extends State<TaskList> {
 
     int availableUsers = 0;
     for (int i = 0; i < length; i++) {
-      String initial = getInitial(userList[i], flatUsers);
+      String initial = getInitial(userList[i]);
       if (initial == '') {
         continue;
       }
@@ -945,12 +939,19 @@ class TaskListState extends State<TaskList> {
     return overlappingUsers;
   }
 
-  String getInitial(documentId, flatUsers) {
-    debugPrint("documentId = " + documentId);
-    for (int i = 0; i < flatUsers.length; i++) {
-      debugPrint("flatusers documentId = " + flatUsers[i].documentID);
-      if (flatUsers[i].documentID == documentId) {
-        return flatUsers[i].data['name'][0];
+  String getInitial(String documentId) {
+    List<Tenant> tenants = this._flat.getTenantFlat().getTenants();
+    List<Owner> owners = this._flat.getOwnerFlat().getOwners();
+    for (int i = 0; i < tenants.length; i++) {
+      debugPrint("flatusers documentId = " + tenants[i].getTenantId());
+      if (tenants[i].getTenantId() == documentId) {
+        return tenants[i].getName()[0];
+      }
+    }
+    for (int i = 0; i < owners.length; i++) {
+      debugPrint("flatusers documentId = " + owners[i].getOwnerId());
+      if (owners[i].getOwnerId() == documentId) {
+        return owners[i].getName()[0];
       }
     }
     return '';

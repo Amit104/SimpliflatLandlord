@@ -4,8 +4,10 @@ import 'package:simpliflat_landlord/dao/task_dao.dart';
 import 'package:simpliflat_landlord/model/models.dart';
 import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/model/owner_tenant.dart';
 import 'package:simpliflat_landlord/model/task.dart';
 import 'package:simpliflat_landlord/model/user.dart';
+import 'package:simpliflat_landlord/services/task_service.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
@@ -16,7 +18,7 @@ import 'package:intl/intl.dart';
 
 class CreateTask extends StatefulWidget {
   final String taskId;
-  OwnerFlat _flat;
+  OwnerTenant _flat;
   final typeOfTask;
 
   final User user;
@@ -32,9 +34,8 @@ class CreateTask extends StatefulWidget {
 
 class _CreateTask extends State<CreateTask> {
   final String taskId;
-  final OwnerFlat _flat;
+  final OwnerTenant _flat;
   String typeOfTask;
-  List existingUsers;
 
   Set<String> selectedUsers = new Set();
 
@@ -44,7 +45,6 @@ class _CreateTask extends State<CreateTask> {
   String _selectedPriority = "Low";
   String _selectedUser = "";
   List<String> assignedTo = new List();
-  int _usersCount;
   static const _priorities = ["High", "Low"];
   static const _taskType = ["Responsibility", "Issue"];
   static const _days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -68,6 +68,8 @@ class _CreateTask extends State<CreateTask> {
   Duration _duration;
   String _repeatStr = '';
   final User user;
+
+  String createdBy;
 
   DateTime _nextDueDate;
 
@@ -97,14 +99,7 @@ class _CreateTask extends State<CreateTask> {
   bool showConflictsWarningSign = false;
 
   _CreateTask(this.taskId, this._flat, this.typeOfTask, this.user) {
-    _isRemindMeOfIssueSelected = false;
-  }
-
-  void initUsers() {
-    if (this.existingUsers == null) {
-      existingUsers = new List();
-      _updateUsersView();
-    }
+    this._isRemindMeOfIssueSelected = false;
   }
 
   @override
@@ -131,128 +126,12 @@ class _CreateTask extends State<CreateTask> {
                   child: taskId == null
                       ? buildForm()
                       : StreamBuilder(
-                          stream: TaskDao.getTask(_flat.getApartmentTenantId(), taskId),
+                          stream: TaskDao.getTask(_flat.getOwnerTenantId(), taskId),
                           builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
                             if (!snapshot.hasData)
                               return LoadingContainerVertical(1);
-                            if (taskId != null && !initialized) {
-                              /** if edit task */
-                              /** process data receieved from database and assign */
-                              
-                              Task task = Task.fromJson(snapshot.data.data, taskId);
-                              debugPrint(snapshot.data['title'] +
-                                  ' ' +
-                                  snapshot.data['priority'].toString() +
-                                  ' ' +
-                                  snapshot.data['duration'].toString() +
-                                  ' ' +
-                                  snapshot.data['repeat'].toString() +
-                                  ' ' +
-                                  snapshot.data['frequency'].toString() +
-                                  ' ' +
-                                  snapshot.data['assignee'].toString() +
-                                  ' ' +
-                                  snapshot.data['due'].toString() +
-                                  ' ' +
-                                  snapshot.data['notes']);
-                              /** get task name */
-                              tc.text = task.getTitle();
-                              /** get task name ends */
-
-                              /** get priority */
-                              _selectedPriority = task.getPriority() == 0
-                                  ? "Low"
-                                  : "High";
-                              /** get priority ends */
-
-                              /**  get duration */
-                              _duration = task.getDuration();
-                              if(_duration != null) {
-                                _durationStr = getFormattedDurationString();
-                              } else {
-                                _durationStr = '';
-                              }
-                              /** get duration ends */
-
-                              /** get repeat */
-                              _repeat = task.getRepeat();
-                              repeatbefore = _repeat;
-                              if (task.getFrequency() != null)
-                                _selectedFrequencies = task.getFrequency().toSet();
-                              else
-                                _selectedFrequencies = new Set();
-                              if (_repeat == -1)
-                                _repeatStr = 'Repeat';
-                              else
-                                _repeatStr = repeatMsgs[_repeat];
-                              /** get repeat ends */
-
-                              /** get assigned users */
-                              if (task.getAssignees() != null)
-                                selectedUsers
-                                    .addAll(task.getAssignees());
-                              /** get assigned users ends */
-
-                              _selectedType = task.getType();
-                              typeOfTask = task.getType();
-
-                              /** get due date time starts */
-                              _selectedDate =
-                                  task.getDue().toDate();
-                              duebefore =
-                                  task.getDue().toDate();
-                              _selectedTime = new TimeOfDay(
-                                  hour: _selectedDate.hour,
-                                  minute: _selectedDate.minute);
-                              /** get due date time ends */
-
-                              /** get notes */
-                              _notes = task.getNotes();
-                              notescontroller.text = _notes;
-                              /** get notes ends */
-
-                              /** get remindIssue */
-                              _isRemindMeOfIssueSelected =
-                                  task.isRemindIssue();
-                              /** get remindIssue ends */
-
-                              /** get payment amount */
-                              paymentAmountController.text =
-                                  task.getPaymentAmount().toString();
-                              /** get payment amount ends */
-
-                              /** get payee */
-                              _payee = task.getPayee();
-                              payeecontroller.text =
-                                  _payee == null ? '' : _payee;
-                              /** get payee ends */
-
-                              /** get next due date starts */
-                              if (task.getNextDueDate() != null)
-                                _nextDueDate =
-                                    task.getNextDueDate()
-                                        .toDate();
-                              else
-                                _nextDueDate =
-                                    task.getNextDueDate()
-                                        .toDate();
-                              ;
-                              /** get next due date ends */
-
-                              _remind =
-                                  task.isShouldRemindDaily();
-
-                              initialized = true;
-
-                              //return buildForm(snapshot.data);
-                              /** data processed and assigned */
-                            } else if (taskId == null) {
-                              tc.text = "";
-                              notescontroller.text = "";
-                              payeecontroller.text = "";
-                            }
-
-                            return buildForm(); /** build screen */
+                             /** build screen */
+                             return populateTaskDetails(snapshot);
                           },
                         ),
                 ),
@@ -287,13 +166,7 @@ class _CreateTask extends State<CreateTask> {
                     fontSize: 18.0,
                     fontFamily: 'Montserrat'),
               ),
-              onPressed: () async {
-                bool ifSuccess = await TaskDao.delete(_flat.getApartmentTenantId(), taskId);
-                if(ifSuccess) {
-                  Utility.createErrorSnackBar(_navigatorContext, error: "Success!");
-                  Navigator.of(_navigatorContext).pop();
-                }
-              }
+              onPressed: () => deleteTask(),
                 ),
               ),
         ),
@@ -320,188 +193,10 @@ class _CreateTask extends State<CreateTask> {
                     fontSize: 18.0,
                     fontFamily: 'Montserrat'),
               ),
-              onPressed: () async {
-                String errorMsg = _validateForm();
-                if (errorMsg == '') {
-                  debugPrint('Saved');
-                  var task = tc.text.trim();
-                  var timeNow = DateTime.now();
-
-                  var notestext = '';
-                  if (notescontroller.text != null)
-                    notestext = notescontroller.text.trim();
-
-                  var payeetext = '';
-                  if (payeecontroller.text != null)
-                    payeetext = payeecontroller.text.trim();
-
-                  String _time = "$_selectedTime".substring(10, 15);
-                  String _date = "$_selectedDate.toLocal()".substring(0, 11);
-                  _duedate = "$_date$_time" + ":00";
-                  debugPrint("Due date is: $_duedate");
-                  _due = DateTime.parse(_duedate);
-                  debugPrint("Due date is: $_due");
-                  var _userId = await Utility.getUserId();
-                  DateTime temp = new DateTime(
-                      _selectedDate.year,
-                      _selectedDate.month,
-                      _selectedDate.day,
-                      _selectedTime.hour,
-                      _selectedTime.minute);
-                  Timestamp duedatetime = Timestamp.fromDate(temp);
-                  String _frequencies = (_selectedFrequencies == null)
-                      ? ""
-                      : _selectedFrequencies.toList().join(",");
-
-                  double paymentAmount = (typeOfTask == 'Payment')
-                      ? double.parse(paymentAmountController.text)
-                      : 0.0;
-
-                  debugPrint(task +
-                      ' ' +
-                      duedatetime.toString() +
-                      ' ' +
-                      _selectedPriority +
-                      ' ' +
-                      selectedUsers.toList().join(",") +
-                      ' ' +
-                      _repeat.toString() +
-                      ' ' +
-                      _frequencies +
-                      ' ' +
-                      _durationStr +
-                      ' ' +
-                      notestext);
-
-                  Timestamp _nextNewDueDate;
-
-                  if (taskId == null) {
-                    _nextNewDueDate = Timestamp.fromDate(getNextDueDateTime(
-                        DateTime.now(),
-                        duedatetime.toDate(),
-                        _repeat,
-                        _frequencies));
-
-                    var data = {
-                      "title": task,
-                      "updated_at": timeNow,
-                      "created_at": timeNow,
-                      "due": duedatetime,
-                      "type": typeOfTask,
-                      "priority": _selectedPriority == "Low" ? 0 : 1,
-                      "assignee": selectedUsers.isEmpty
-                          ? ""
-                          : selectedUsers.toList().join(","),
-                      "user_id": _userId,
-                      "shouldRemindDaily":
-                          _selectedType == "Responsibility" ? false : _remind,
-                      "repeat": _repeat,
-                      "frequency": _frequencies,
-                      "duration": _duration == null ? "" : _duration.toString(),
-                      "notes": notestext,
-                      "remindIssue": _isRemindMeOfIssueSelected,
-                      "paymentAmount": paymentAmount,
-                      "payee": payeetext,
-                      "nextDueDate": _nextNewDueDate,
-                      "completed": false,
-                      "landlord_id": this.user.getUserId(),
-                      "assigned_to_flat": !ifAssignToUser
-                    };
-                    if (!ifAssignToUser) {
-                      assignedFlatIds.remove('ALL');
-                      WriteBatch batch = Firestore.instance.batch();
-                      assignedFlatIds.forEach((doc) {
-                        debugPrint("add to flat - " + doc.toString());
-                        var docRef = Firestore.instance
-                            .collection(globals.ownerTenantFlat)
-                            .document(doc)
-                            .collection(globals.tasksLandlord)
-                            .document(); //automatically generate unique id
-                        batch.setData(docRef, data);
-                      });
-                      await batch.commit();
-                    } else {
-                      Firestore.instance
-                          .collection(globals.ownerTenantFlat)
-                          .document(_flat.getApartmentTenantId())
-                          .collection(globals.tasksLandlord)
-                          .add(data);
-                    }
-                    if (_selectedFrequencies != null)
-                      _selectedFrequencies.clear();
-                    _repeat = -1;
-                    Navigator.of(_navigatorContext).pop();
-                  } else {
-                    if (duebefore.compareTo(duedatetime.toDate()) != 0 ||
-                        repeatbefore != _repeat) {
-                      debugPrint('not equal');
-                      _nextNewDueDate = Timestamp.fromDate(getNextDueDateTime(
-                          DateTime.now(),
-                          duedatetime.toDate(),
-                          _repeat,
-                          _frequencies));
-                    } else {
-                      debugPrint('--- ' + _nextDueDate.toIso8601String());
-                      _nextNewDueDate = Timestamp.fromDate(_nextDueDate);
-                    }
-
-                    var data = {
-                      "title": task,
-                      "updated_at": timeNow,
-                      "due": duedatetime,
-                      "type": typeOfTask,
-                      "priority": _selectedPriority == "Low" ? 0 : 1,
-                      "assignee": selectedUsers.isEmpty
-                          ? ""
-                          : selectedUsers.toList().join(','),
-                      "user_id": _userId,
-                      "shouldRemindDaily":
-                          _selectedType == "Responsibility" ? false : _remind,
-                      "repeat": _repeat,
-                      "frequency": _frequencies,
-                      "duration": _duration == null ? "" : _duration.toString(),
-                      "notes": notestext,
-                      "remindIssue": _isRemindMeOfIssueSelected,
-                      "paymentAmount": paymentAmount,
-                      "nextDueDate": _nextNewDueDate,
-                      "payee": payeetext,
-                    };
-
-                    Firestore.instance
-                        .collection(globals.ownerTenantFlat)
-                        .document(_flat.getApartmentTenantId())
-                        .collection(globals.tasksLandlord)
-                        .document(taskId)
-                        .updateData(data);
-
-                    if (_selectedFrequencies != null)
-                      _selectedFrequencies.clear();
-                    _repeat = -1;
-                    Navigator.of(_navigatorContext).pop();
-                  }
-                } else {
-                  return showDialog(
-                      context: context,
-                      barrierDismissible: true,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('Validation Error'),
-                          content: Text(errorMsg),
-                          actions: <Widget>[
-                            FlatButton(
-                              child: Text('OK'),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
-                        );
-                      });
-                }
-              }),
+              onPressed: () => saveTask(),
         ),
       ),
-    );
+    ));
   }
 
   Widget _getTaskNameWidget() {
@@ -596,11 +291,6 @@ class _CreateTask extends State<CreateTask> {
   }
 
   String getDateTimeFormattedString(duedate) {
-    // DateTime _selectedDate = (duedate as Timestamp).toDate();
-    // var _selectedTime = new TimeOfDay(hour: _selectedDate.hour, minute: _selectedDate.minute);
-    // String date = DateFormat('dd/MM/yyyy').format(_selectedDate);
-    // String time = _selectedTime.hour.toString().padLeft(2, '0') + ":" + _selectedTime.minute.toString().padLeft(2, '0');
-    // return date + ' ' + time;
     if (duedate == null) return '';
     var numToMonth = {
       1: 'Jan',
@@ -694,19 +384,6 @@ class _CreateTask extends State<CreateTask> {
     return msg;
   }
 
-  //String landlordId;
-  //String landlordName;
-
-  // Future<dynamic> getAssigneeData() async {
-  //   landlordId = await Utility.getLandlordId();
-  //   landlordName = await Utility.getLandlordName();
-  //   QuerySnapshot result = await Firestore.instance
-  //                 .collection(globals.user)
-  //                 .where('flat_id', isEqualTo: _flatId)
-  //                 .getDocuments();
-  //   return result;
-  // }
-
   Widget getFlatAssigneesList() {
     return Container(
       padding: EdgeInsets.only(top: 5.0),
@@ -780,35 +457,26 @@ class _CreateTask extends State<CreateTask> {
                 ? Container(
                     padding: EdgeInsets.only(left: 10.0),
                     height: 60.0,
-                    child: StreamBuilder(
-                        stream: Firestore.instance
-                            .collection("user")
-                            .where('flat_id', isEqualTo: _flat.getTenantFlatId())
-                            .snapshots(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData)
-                            return LoadingContainerVertical(1);
-                          return ListView.builder(
-                              itemCount: snapshot.data.documents.length + 1,
+
+                        
+                          child: ListView.builder(
+                              itemCount: this._flat.getOwnerFlat().getOwners().length + this._flat.getTenantFlat().getTenants().length,
                               scrollDirection: Axis.horizontal,
                               itemBuilder:
                                   (BuildContext context, int position) {
                                 debugPrint("position - " + position.toString());
                                 var documentID;
                                 var name;
-                                if (position == 0) {
-                                  documentID = this.user.getUserId();
-                                  name = this.user.getName();
+                                if(position >= this._flat.getOwnerFlat().getOwners().length) {
+                                  //tenants
+                                  documentID = this._flat.getTenantFlat().getTenants()[position].getTenantId();
+                                  name = this._flat.getTenantFlat().getTenants()[position].getName();
                                 } else {
-                                  documentID = snapshot
-                                      .data.documents[position - 1].documentID
-                                      .toString()
-                                      .trim();
-                                  name = snapshot
-                                      .data.documents[position - 1]['name']
-                                      .toString()
-                                      .trim();
+                                  //owners
+                                  documentID = this._flat.getOwnerFlat().getOwners()[position].getOwnerId();
+                                  name = this._flat.getOwnerFlat().getOwners()[position].getName();
                                 }
+                                
                                 return GestureDetector(
                                   onTap: () {
                                     setState(() {
@@ -835,77 +503,12 @@ class _CreateTask extends State<CreateTask> {
                                     ),
                                   ),
                                 );
-                              });
-                        }),
-                  )
+                              }))
+                        
+                  
                 : Container(child: Text('Assigned to all users'))
           ]),
     );
-
-    // return StreamBuilder(
-    //           stream: Firestore.instance
-    //               .collection(globals.user)
-    //               .where('flat_id', isEqualTo: _flatId)
-    //               .snapshots(),
-    //           builder: (context, snapshot) {
-    //             if (!snapshot.hasData) return LoadingContainerVertical(1);
-
-    //             return Container (
-    //               padding: EdgeInsets.only(top: 5.0),
-    //               child: Column (
-    //                 mainAxisAlignment: MainAxisAlignment.start,
-    //                 crossAxisAlignment: CrossAxisAlignment.start,
-    //                 children: [ListTile(dense: true, title: Text('ASSIGN TO', style: TextStyle(fontSize: 15.0),), trailing: Icon(Icons.people,color:Colors.lightGreen[400])),
-    //                 Container(
-    //                   padding: EdgeInsets.only(left: 10.0),
-    //                   height: 60.0,
-    //                   child: ListView.builder(
-    //                       itemCount: snapshot.data.documents.length + 1,
-    //                       scrollDirection: Axis.horizontal,
-    //                       itemBuilder: (BuildContext context, int position) {
-    //                         return GestureDetector(
-    //                           onTap: () {
-    //                             setState(() {
-    //                               if(position == 0) {
-    //                                 documentID = landlordId;
-
-    //                               }
-    //                               var documentID = snapshot
-    //                                   .data.documents[position].documentID
-    //                                   .toString()
-    //                                   .trim();
-    //                               debugPrint("docuemnt - " + documentID);
-    //                               if (selectedUsers.contains(documentID))
-    //                                 selectedUsers.remove(documentID);
-    //                               else
-    //                                 selectedUsers.add(documentID);
-    //                             });
-    //                           },
-
-    //                                 child: Container(
-    //                                   margin: EdgeInsets.only(right: 5.0),
-    //                                                                       child: Chip (
-    //                                     labelPadding: EdgeInsets.all(5.0),
-    //                                     avatar: CircleAvatar(
-    //                                           backgroundColor: selectedUsers.contains(snapshot
-    //                                           .data.documents[position].documentID
-    //                                           .toString()
-    //                                           .trim())
-    //                                       ? Colors.grey[400]
-    //                                       : Colors.purple,
-    //                                           child: Text(getInitials(snapshot.data.documents[position]['name'])),
-    //                                         ),
-    //                                     label: Text(snapshot.data.documents[position]['name']),
-
-    //                                     ),
-    //                                 ),
-    //                         );
-    //                       }),
-    //                 )
-    //                 ]),
-    //             );
-    //           },
-    //         );
   }
 
   Future<dynamic> getFlatIdAndNamesList() async {
@@ -1330,130 +933,6 @@ class _CreateTask extends State<CreateTask> {
     );
   }
 
-  DateTime getNextDueDateTime(
-      DateTime nowDueDate, DateTime due, int repeat, String frequency) {
-    int nowTime = nowDueDate.hour * 60 + nowDueDate.minute;
-    int dueTime = due.hour * 60 + due.minute;
-    DateTime now = nowDueDate;
-    switch (repeat) {
-      case -1:
-        {
-          return due;
-        }
-      case 0:
-        {
-          if (nowTime > dueTime) {
-            return due.add(new Duration(days: 1));
-          }
-
-          return new DateTime(
-              now.year, now.month, now.day, due.hour, due.minute);
-        }
-      case 1:
-        {
-          return DateTime.now().add(new Duration(minutes: 1));
-        }
-      case 2:
-        {
-          if (nowTime < dueTime) {
-            return new DateTime(
-                now.year, now.month, now.day, due.hour, due.minute);
-          }
-
-          return new DateTime(
-                  now.year, now.month, now.day, due.hour, due.minute)
-              .add(new Duration(days: 7));
-
-          //DateTime tempNow = new DateTime(nowDueDate.year, nowDueDate.month, nowDueDate.day, due.hour, due.minute);
-
-          // tempNow = tempNow.add(new Duration(days: 1));
-          // while(tempNow.weekday != nowDueDate.weekday) {
-          //   tempNow = tempNow.add(new Duration(days: 1));
-          // }
-
-          // return tempNow;
-        }
-      case 3:
-        {
-          List<int> taskFreq =
-              frequency.split(',').map(int.parse).toSet().toList();
-          taskFreq.sort();
-          int taskDay = -1;
-          for (int i = 0; i < taskFreq.length; i++) {
-            if ((taskFreq[i] == now.weekday && nowTime < dueTime) ||
-                taskFreq[i] > nowDueDate.weekday) {
-              taskDay = taskFreq[i];
-              break;
-            }
-          }
-
-          if (taskDay == -1) {
-            taskDay = taskFreq[0];
-          }
-
-          DateTime tempNow = new DateTime(nowDueDate.year, nowDueDate.month,
-              nowDueDate.day, due.hour, due.minute);
-          while (tempNow.weekday != taskDay) {
-            tempNow = tempNow.add(new Duration(days: 1));
-          }
-
-          return new DateTime(
-              tempNow.year, tempNow.month, tempNow.day, due.hour, due.minute);
-        }
-      case 4:
-        {
-          if (nowTime < dueTime) {
-            return new DateTime(
-                now.year, now.month, now.day, due.hour, due.minute);
-          }
-
-          int month = nowDueDate.month;
-          int year = nowDueDate.year;
-          if (month == 12) {
-            month = 1;
-            year++;
-          } else {
-            month++;
-          }
-
-          return new DateTime(
-              year, month, nowDueDate.day, due.hour, due.minute);
-        }
-      case 5:
-        {
-          List<int> taskFreq =
-              frequency.split(',').map(int.parse).toSet().toList();
-          taskFreq.sort();
-          int taskDay = -1;
-          for (int i = 0; i < taskFreq.length; i++) {
-            if ((taskFreq[i] == now.day && nowTime < dueTime) ||
-                taskFreq[i] > nowDueDate.day) {
-              taskDay = taskFreq[i];
-              break;
-            }
-          }
-
-          int month = nowDueDate.month;
-          int year = nowDueDate.year;
-
-          if (taskDay == -1) {
-            taskDay = taskFreq[0];
-            if (month == 12) {
-              month = 1;
-              year++;
-            } else {
-              month++;
-            }
-          }
-
-          return new DateTime(
-              year, month, taskDay, nowDueDate.hour, nowDueDate.minute);
-        }
-    }
-
-    return nowDueDate;
-  }
-
   /// validates form and returns error message or '' if no error
   String _validateForm() {
     /** validate title */
@@ -1565,8 +1044,7 @@ class _CreateTask extends State<CreateTask> {
             _selectedFrequencies == null ? '' : _selectedFrequencies.join(',');
         DateTime now = DateTime.now();
 
-        picked = getNextDueDateTime(
-            now,
+        picked = TaskService.getNextDueDateTime(
             new DateTime(now.year, now.month, now.day, timePicked.hour,
                 timePicked.minute),
             _repeat,
@@ -1585,31 +1063,6 @@ class _CreateTask extends State<CreateTask> {
     }
   }
 
-  void _updateUsersView() async {
-    Firestore.instance
-        .collection("user")
-        .where("flat_id", isEqualTo: _flat.getTenantFlatId())
-        .getDocuments()
-        .then((snapshot) {
-      if (snapshot == null || snapshot.documents.length == 0) {
-        //addContacts
-      } else {
-        setState(() {
-          snapshot.documents.sort(
-              (a, b) => b.data['updated_at'].compareTo(a.data['updated_at']));
-          var responseArray = snapshot.documents
-              .map((m) => new FlatUsersResponse.fromJson(m.data, m.documentID))
-              .toList();
-          this._usersCount = responseArray.length;
-          this.existingUsers = responseArray;
-        });
-      }
-    }, onError: (e) {
-      debugPrint("ERROR IN UPDATE USERS VIEW");
-      Utility.createErrorSnackBar(_navigatorContext);
-    });
-  }
-
   @override
   void dispose() {
     super.dispose();
@@ -1624,244 +1077,25 @@ class _CreateTask extends State<CreateTask> {
     Navigator.pop(_navigatorContext, true);
   }
 
-  ///get all tasks to check conflicts
-  Future<List<DocumentSnapshot>> _getAllTasks() async {
-    QuerySnapshot tasks = await Firestore.instance
-        .collection(globals.ownerTenantFlat)
-        .document(_flat.getApartmentTenantId())
-        .collection(globals.tasksLandlord)
-        .where("completed", isEqualTo: false)
-        .where("landlord_id", isEqualTo: this.user.getUserId())
-        .getDocuments();
 
-    if (tasks.documents.isNotEmpty)
-      return tasks.documents;
-    else
-      return null;
-  }
 
   List tasksWithConflicts = new List();
 
   ///check conflicts and add them in tasksWithConflicts variable
-  void _getTasksWithConflicts() {
+  void _getTasksWithConflicts() async {
     if (_selectedDate == null || _selectedTime == null) {
       debugPrint('returned');
       return;
     }
-    debugPrint('not returned');
 
-    tasksWithConflicts = new List();
-    _getAllTasks().then((tasksList) {
-      if (tasksList == null) return;
-      DateTime duedatetime = new DateTime(
+    DateTime duedatetime = new DateTime(
           _selectedDate.year,
           _selectedDate.month,
           _selectedDate.day,
           _selectedTime.hour,
           _selectedTime.minute);
-      DateTime toduedatetime;
-      if (_duration != null) {
-        toduedatetime = duedatetime.add(_duration);
-      } else {
-        toduedatetime = duedatetime.add(new Duration(hours: 0, minutes: 1));
-      }
-      for (int i = 0; i < tasksList.length; i++) {
-        debugPrint(tasksList[i].toString());
-        if (tasksList[i].documentID == taskId) {
-          continue;
-        }
-        debugPrint(tasksList[i].data['title']);
-        debugPrint(
-            (tasksList[i].data['due'] as Timestamp).toDate().toIso8601String());
-
-        debugPrint(tasksList[i].data['frequency']);
-
-        debugPrint(tasksList[i].data['duration']);
-        debugPrint(tasksList[i].data['repeat'].toString());
-
-        DateTime existingduedatetime =
-            (tasksList[i].data['due'] as Timestamp).toDate();
-        DateTime existingtoduedatetime =
-            existingduedatetime.add(new Duration(hours: 0, minutes: 1));
-        DateTime relativeExistingToDueDateTime = new DateTime(
-                duedatetime.year,
-                duedatetime.month,
-                duedatetime.day,
-                existingduedatetime.hour,
-                existingduedatetime.minute)
-            .add(new Duration(hours: 0, minutes: 1));
-
-        DateTime relativeExistingDateTime = new DateTime(
-            duedatetime.year,
-            duedatetime.month,
-            duedatetime.day,
-            existingduedatetime.hour,
-            existingduedatetime.minute);
-        if (tasksList[i].data['duration'] != '') {
-          int hours = int.parse(tasksList[i].data['duration'].split(':')[0]);
-          int minutes = int.parse(tasksList[i].data['duration'].split(':')[1]);
-          existingtoduedatetime = existingduedatetime
-              .add(new Duration(hours: hours, minutes: minutes));
-          relativeExistingToDueDateTime = new DateTime(
-                  duedatetime.year,
-                  duedatetime.month,
-                  duedatetime.day,
-                  existingduedatetime.hour,
-                  existingduedatetime.minute)
-              .add(new Duration(hours: hours, minutes: minutes));
-        }
-
-        int taskRepeat = tasksList[i].data['repeat'];
-        if (taskRepeat == 3 && _repeat == 2) {
-          List<int> frequency =
-              tasksList[i].data['frequency'].split(',').map(int.parse).toList();
-          if (frequency.contains(duedatetime.weekday) &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 2 && _repeat == 3) {
-          List<int> frequency = _selectedFrequencies.toList();
-          if (frequency.contains(existingduedatetime.weekday) &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 5 && _repeat == 4) {
-          List<int> frequency =
-              tasksList[i].data['frequency'].split(',').map(int.parse).toList();
-          if (frequency.contains(duedatetime.day) &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 4 && _repeat == 5) {
-          List<int> frequency = _selectedFrequencies.toList();
-
-          if (frequency.contains(existingduedatetime.day) &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 2 && _repeat == 2) {
-          if (duedatetime.weekday == existingduedatetime.weekday &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 4 && _repeat == 4) {
-          if (duedatetime.day == existingduedatetime.day &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 3 && _repeat == 3) {
-          Set<int> frequency1 = (tasksList[i].data['frequency'] as String)
-              .split(',')
-              .map(int.parse)
-              .toList()
-              .toSet();
-
-          if (frequency1.intersection(_selectedFrequencies).isNotEmpty &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 5 && _repeat == 5) {
-          Set<int> frequency1 = tasksList[i]
-              .data['frequency']
-              .split(',')
-              .map(int.parse)
-              .toList()
-              .toSet();
-          if (frequency1.intersection(_selectedFrequencies).isNotEmpty &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == -1 && _repeat == 2) {
-          if (duedatetime.weekday == existingduedatetime.weekday &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == -1 && _repeat == 3) {
-          if (_selectedFrequencies.contains(existingduedatetime.weekday) &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == -1 && _repeat == 4) {
-          if (duedatetime.day == existingduedatetime.day &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == -1 && _repeat == 5) {
-          if (_selectedFrequencies.contains(existingduedatetime.day) &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 2 && _repeat == -1) {
-          if (duedatetime.weekday == existingduedatetime.weekday &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 3 && _repeat == -1) {
-          Set<int> frequency1 = tasksList[i]
-              .data['frequency']
-              .split(',')
-              .map(int.parse)
-              .toList()
-              .toSet();
-
-          if (frequency1.contains(duedatetime.weekday) &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 4 && _repeat == -1) {
-          if (duedatetime.day == existingduedatetime.day &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 5 && _repeat == -1) {
-          Set<int> frequency1 = tasksList[i]
-              .data['frequency']
-              .split(',')
-              .map(int.parse)
-              .toList()
-              .toSet();
-
-          if (frequency1.contains(duedatetime.day) &&
-              _overlap(duedatetime, toduedatetime, relativeExistingDateTime,
-                  relativeExistingToDueDateTime)) {
-            tasksWithConflicts.add(tasksList[i].data);
-          }
-        } else if (taskRepeat == 1) {
-          tasksWithConflicts.add(tasksList[i].data);
-        } else if (taskRepeat == -1 &&
-            _repeat == -1 &&
-            _overlap(duedatetime, toduedatetime, existingduedatetime,
-                existingtoduedatetime)) {
-          tasksWithConflicts.add(tasksList[i].data);
-        } else if (_overlap(duedatetime, toduedatetime,
-            relativeExistingDateTime, relativeExistingToDueDateTime)) {
-          debugPrint(tasksList[i].data['title']);
-          tasksWithConflicts.add(tasksList[i].data);
-        }
-      }
-
-      for (int i = 0; i < tasksWithConflicts.length; i++) {
-        debugPrint("conflicts - " +
-            i.toString() +
-            " - " +
-            tasksWithConflicts[i]['title']);
-      }
-
+    tasksWithConflicts = await TaskService.getTasksWithConflicts(this._flat.getOwnerTenantId(), tasksWithConflicts, _repeat, _selectedFrequencies, taskId, _duration, duedatetime);
+   
       setState(() {
         tasksWithConflicts = tasksWithConflicts;
         if (tasksWithConflicts.length > 0)
@@ -1869,25 +1103,282 @@ class _CreateTask extends State<CreateTask> {
         else
           showConflictsWarningSign = false;
       });
-    }).catchError((e) => print("error while fetching data: $e"));
+    
   }
 
-  ///check if the two tasks overlap with respect to time
-  bool _overlap(DateTime newTaskFrom, DateTime newTaskTo,
-      DateTime existingTaskFrom, DateTime existingTaskTo) {
-    debugPrint(newTaskFrom.toIso8601String() +
-        ' -- ' +
-        newTaskTo.toIso8601String() +
-        ' -- ' +
-        existingTaskFrom.toIso8601String() +
-        ' -- ' +
-        existingTaskTo.toIso8601String());
-    return !(newTaskFrom.isAfter(existingTaskTo) ||
-            existingTaskFrom.isAfter(newTaskTo)) ||
-        newTaskFrom.compareTo(existingTaskFrom) == 0 ||
-        newTaskFrom.compareTo(existingTaskTo) == 0 ||
-        newTaskTo.compareTo(existingTaskFrom) == 0 ||
-        newTaskTo.compareTo(existingTaskTo) == 0;
+  Widget populateTaskDetails(AsyncSnapshot<DocumentSnapshot> snapshot) {
+    if (taskId != null && !initialized) {
+                              /** if edit task */
+                              /** process data receieved from database and assign */
+                              
+                              Task task = Task.fromJson(snapshot.data.data, taskId);
+                              debugPrint(snapshot.data['title'] +
+                                  ' ' +
+                                  snapshot.data['priority'].toString() +
+                                  ' ' +
+                                  snapshot.data['duration'].toString() +
+                                  ' ' +
+                                  snapshot.data['repeat'].toString() +
+                                  ' ' +
+                                  snapshot.data['frequency'].toString() +
+                                  ' ' +
+                                  snapshot.data['assignee'].toString() +
+                                  ' ' +
+                                  snapshot.data['due'].toString() +
+                                  ' ' +
+                                  snapshot.data['notes']);
+                              
+                              this.createdBy = task.getCreatedByUserId();
+
+
+                              /** get task name */
+                              tc.text = task.getTitle();
+                              /** get task name ends */
+
+                              /** get priority */
+                              _selectedPriority = task.getPriority() == 0
+                                  ? "Low"
+                                  : "High";
+                              /** get priority ends */
+
+                              /**  get duration */
+                              _duration = task.getDuration();
+                              if(_duration != null) {
+                                _durationStr = getFormattedDurationString();
+                              } else {
+                                _durationStr = '';
+                              }
+                              /** get duration ends */
+
+                              /** get repeat */
+                              _repeat = task.getRepeat();
+                              repeatbefore = _repeat;
+                              if (task.getFrequency() != null)
+                                _selectedFrequencies = task.getFrequency().toSet();
+                              else
+                                _selectedFrequencies = new Set();
+                              if (_repeat == -1)
+                                _repeatStr = 'Repeat';
+                              else
+                                _repeatStr = repeatMsgs[_repeat];
+                              /** get repeat ends */
+
+                              /** get assigned users */
+                              if (task.getAssignees() != null)
+                                selectedUsers
+                                    .addAll(task.getAssignees());
+                              /** get assigned users ends */
+
+                              _selectedType = task.getType();
+                              typeOfTask = task.getType();
+
+                              /** get due date time starts */
+                              _selectedDate =
+                                  task.getDue().toDate();
+                              duebefore =
+                                  task.getDue().toDate();
+                              _selectedTime = new TimeOfDay(
+                                  hour: _selectedDate.hour,
+                                  minute: _selectedDate.minute);
+                              /** get due date time ends */
+
+                              /** get notes */
+                              _notes = task.getNotes();
+                              notescontroller.text = _notes;
+                              /** get notes ends */
+
+                              /** get remindIssue */
+                              _isRemindMeOfIssueSelected =
+                                  task.isRemindIssue();
+                              /** get remindIssue ends */
+
+                              /** get payment amount */
+                              paymentAmountController.text =
+                                  task.getPaymentAmount().toString();
+                              /** get payment amount ends */
+
+                              /** get payee */
+                              _payee = task.getPayee();
+                              payeecontroller.text =
+                                  _payee == null ? '' : _payee;
+                              /** get payee ends */
+
+                              /** get next due date starts */
+                              if (task.getNextDueDate() != null)
+                                _nextDueDate =
+                                    task.getNextDueDate()
+                                        .toDate();
+                              else
+                                _nextDueDate =
+                                    task.getNextDueDate()
+                                        .toDate();
+                              ;
+                              /** get next due date ends */
+
+                              _remind =
+                                  task.isShouldRemindDaily();
+
+                              initialized = true;
+
+                              //return buildForm(snapshot.data);
+                              /** data processed and assigned */
+                            } else if (taskId == null) {
+                              tc.text = "";
+                              notescontroller.text = "";
+                              payeecontroller.text = "";
+                            }
+
+                            return buildForm();
+  }
+
+  void saveTask() async {
+    String errorMsg = _validateForm();
+                if (errorMsg == '') {
+                  debugPrint('Saved');
+                  String taskTitle = tc.text.trim();
+                  DateTime timeNow = DateTime.now();
+
+                  String notestext = '';
+                  if (notescontroller.text != null)
+                    notestext = notescontroller.text.trim();
+
+                  String payeetext = '';
+                  if (payeecontroller.text != null)
+                    payeetext = payeecontroller.text.trim();
+
+                  String _time = "$_selectedTime".substring(10, 15);
+                  String _date = "$_selectedDate.toLocal()".substring(0, 11);
+                  _duedate = "$_date$_time" + ":00";
+                  debugPrint("Due date is: $_duedate");
+                  _due = DateTime.parse(_duedate);
+                  debugPrint("Due date is: $_due");
+                  DateTime temp = new DateTime(
+                      _selectedDate.year,
+                      _selectedDate.month,
+                      _selectedDate.day,
+                      _selectedTime.hour,
+                      _selectedTime.minute);
+                  Timestamp duedatetime = Timestamp.fromDate(temp);
+                  String _frequencies = (_selectedFrequencies == null)
+                      ? ""
+                      : _selectedFrequencies.toList().join(",");
+
+                  double paymentAmount = (typeOfTask == 'Payment')
+                      ? double.parse(paymentAmountController.text)
+                      : 0.0;
+
+
+
+                  Timestamp _nextNewDueDate;
+
+                  if (taskId == null) {
+                    _nextNewDueDate = Timestamp.fromDate(TaskService.getNextDueDateTime(
+                        duedatetime.toDate(),
+                        _repeat,
+                        _frequencies));
+                
+                    Task task = getTaskObject(title: taskTitle, due: duedatetime, frequencies: _frequencies, notes: notestext, payee: payeetext, paymentAmount: paymentAmount, nextDueDate: _nextNewDueDate, createdBy: this.user.getUserId());
+                    if (!ifAssignToUser) {
+                      assignedFlatIds.remove('ALL');
+                      WriteBatch batch = Firestore.instance.batch();
+                      assignedFlatIds.forEach((doc) {
+                        var docRef = Firestore.instance
+                            .collection(globals.ownerTenantFlat)
+                            .document(doc)
+                            .collection(globals.tasksLandlord)
+                            .document(); //automatically generate unique id
+                        batch.setData(docRef, task.toJson());
+                      });
+                      await batch.commit();
+                    } else {
+                      Firestore.instance
+                          .collection(globals.ownerTenantFlat)
+                          .document(_flat.getOwnerTenantId())
+                          .collection(globals.tasksLandlord)
+                          .add(task.toJson());
+                    }
+                    if (_selectedFrequencies != null)
+                      _selectedFrequencies.clear();
+                    _repeat = -1;
+                    Navigator.of(_navigatorContext).pop();
+                  } else {
+                    if (duebefore.compareTo(duedatetime.toDate()) != 0 ||
+                        repeatbefore != _repeat) {
+                      _nextNewDueDate = Timestamp.fromDate(TaskService.getNextDueDateTime(
+                          duedatetime.toDate(),
+                          _repeat,
+                          _frequencies));
+                    } else {
+                      _nextNewDueDate = Timestamp.fromDate(_nextDueDate);
+                    }
+
+                    Task task = getTaskObject(title: taskTitle, due: duedatetime, frequencies: _frequencies, notes: notestext, payee: payeetext, paymentAmount: paymentAmount, nextDueDate: _nextNewDueDate, createdBy: this.createdBy, update: true);
+
+                    
+                    Firestore.instance
+                        .collection(globals.ownerTenantFlat)
+                        .document(_flat.getOwnerTenantId())
+                        .collection(globals.tasksLandlord)
+                        .document(taskId)
+                        .updateData(task.toJson());
+
+                    if (_selectedFrequencies != null)
+                      _selectedFrequencies.clear();
+                    _repeat = -1;
+                    Navigator.of(_navigatorContext).pop();
+                  }
+                } else {
+                  return showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text('Validation Error'),
+                          content: Text(errorMsg),
+                          actions: <Widget>[
+                            FlatButton(
+                              child: Text('OK'),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      });
+                }
+  }
+
+  void deleteTask() async {
+    bool ifSuccess = await TaskDao.delete(_flat.getOwnerTenantId(), taskId);
+                if(ifSuccess) {
+                  Utility.createErrorSnackBar(_navigatorContext, error: "Success!");
+                  Navigator.of(_navigatorContext).pop();
+                }
+  }
+
+  Task getTaskObject({String title, Timestamp due, String frequencies, String notes, double paymentAmount, String payee, Timestamp nextDueDate, String createdBy, bool update: false}) {
+    Task task = new Task();
+    task.setTitle(title);
+    task.setDue(due);
+    task.setType(typeOfTask);
+    task.setPriority(_selectedPriority == "Low" ? 0 : 1);
+    task.setAssignees(selectedUsers.toList());
+    task.setCreatedByUserId(createdBy);
+    task.setFrequency(frequencies == "" || frequencies == null?List():frequencies.split(",").map(int.parse).toList());
+    task.setRepeat(_repeat);
+    task.setDuration(_duration);
+    task.setNotes(notes);
+    task.setRemindIssue(_isRemindMeOfIssueSelected);
+    task.setPaymentAmount(paymentAmount);
+    task.setPayee(payee);
+    task.setNextDueDate(nextDueDate);
+    task.setCompleted(false);
+    task.setAssignedToFlat(!ifAssignToUser);
+    task.setShouldRemindDaily(_selectedType == "Responsibility" ? false : _remind);
+    task.setLandlordId(this.user.getUserId());
+    task.setUpdatedAt(Timestamp.now());
+    if(!update) task.setCreatedAt(Timestamp.now());
+    return task;
   }
 }
 

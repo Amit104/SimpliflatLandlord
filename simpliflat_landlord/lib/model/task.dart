@@ -20,6 +20,7 @@ class Task extends BaseModel {
   String type;
   String createdByUserId;
   String taskId;
+  String landlordId;
 
 	bool isAssignedToFlat() {
 		return this.assignedToFlat;
@@ -165,6 +166,14 @@ class Task extends BaseModel {
 		this.taskId = taskId;
 	}
 
+  String getLandlordId() {
+    return this.landlordId;
+  }
+
+  void setLandlordId(String landlordId) {
+    this.landlordId = landlordId;
+  }
+
   static Task fromJson(Map<String, dynamic> data, String documentId) {
     Task task = new Task();
     task.setAssignedToFlat(data['assigned_to_flat']);
@@ -198,6 +207,31 @@ class Task extends BaseModel {
     task.setTaskId(documentId);
     
     return task;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+                      "title": this.title,
+                      "updated_at": this.updatedAt,
+                      "created_at": this.createdAt,
+                      "due": this.due,
+                      "type": this.type,
+                      "priority": this.priority,
+                      "assignee": this.assignees == null? "": this.assignees.join(","),
+                      "user_id": this.createdByUserId,
+                      "shouldRemindDaily": this.remindIssue,
+                      "repeat": this.repeat,
+                      "frequency": this.frequency == null? "": this.frequency.join(","),
+                      "duration": this.duration == null?"":this.duration.toString(),
+                      "notes": this.notes,
+                      "remindIssue": this.remindIssue,
+                      "paymentAmount": this.paymentAmount,
+                      "payee": this.payee,
+                      "nextDueDate": this.nextDueDate,
+                      "completed": this.completed,
+                      "landlord_id": this.landlordId,
+                      "assigned_to_flat": this.assignedToFlat
+                    };
   }
 
   static Map<String, dynamic> toUpdateJson({Timestamp nextDueDate, bool completed}) {

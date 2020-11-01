@@ -1,4 +1,5 @@
 import 'package:simpliflat_landlord/model/base_model.dart';
+import 'package:simpliflat_landlord/model/tenant.dart';
 
 class TenantFlat extends BaseModel {
   String buildingAddress;
@@ -7,6 +8,7 @@ class TenantFlat extends BaseModel {
   String flatName;
   String flatDisplayId;
   String flatId;
+  List<Tenant> tenants;
 
 	String getBuildingAddress() {
 		return this.buildingAddress;
@@ -55,6 +57,14 @@ class TenantFlat extends BaseModel {
 	void setFlatId(String flatId) {
 		this.flatId = flatId;
 	}
+
+  List<Tenant> getTenants() {
+    return this.tenants;
+  }
+
+  void setTenants(List<Tenant> tenants) {
+    this.tenants = tenants;
+  }
 
   static TenantFlat fromJson(Map<String, dynamic> data, String documentId) {
     TenantFlat flat = new TenantFlat();

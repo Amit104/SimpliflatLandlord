@@ -27,7 +27,7 @@ class ProfileOptions extends StatefulWidget {
 
   final User user;
 
-  final OwnerFlat flat;
+  final OwnerTenant flat;
 
   ProfileOptions(this.user, this.flat);
 
@@ -47,7 +47,7 @@ class _ProfileOptions extends State<ProfileOptions> {
   //String userName;
 
   final User user;
-  final OwnerFlat flat;
+  final OwnerTenant flat;
 
   _ProfileOptions(this.user, this.flat);
 
@@ -118,7 +118,7 @@ class _ProfileOptions extends State<ProfileOptions> {
                       elevation: 2.0,
                       child: ListTile(
                           title: Text(
-                            this.flat.getFlatName()
+                            this.flat.getOwnerFlat().getFlatName(),
                           ),
                           leading: Icon(
                             Icons.home,
@@ -180,7 +180,7 @@ class _ProfileOptions extends State<ProfileOptions> {
                                  Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) {
-                    return SearchOwner(this.flat);
+                    return SearchOwner(this.flat.getOwnerFlat());
                   }),
                  );
 
@@ -286,7 +286,7 @@ class _ProfileOptions extends State<ProfileOptions> {
 
   Widget _getOwners(BuildContext scaffoldC) {
     return ListView.builder(
-        itemCount: this.flat.getOwners().length,
+        itemCount: this.flat.getOwnerFlat().getOwners().length,
         scrollDirection: Axis.horizontal,
         itemBuilder: (BuildContext context, int position) {
           return SizedBox(
@@ -302,18 +302,18 @@ class _ProfileOptions extends State<ProfileOptions> {
                     GestureDetector(
                       onLongPress: () {
                         debugPrint("on long press");
-                        getOwnerActions(scaffoldC, this.flat.getOwners()[position]);
+                        getOwnerActions(scaffoldC, this.flat.getOwnerFlat().getOwners()[position]);
                       },
                                           child: CircleAvatar(
                         backgroundColor: Utility.userIdColor(
-                            this.flat.getOwners()[position].getOwnerId()),
+                            this.flat.getOwnerFlat().getOwners()[position].getOwnerId()),
                         child: Align(
                           child: Text(
-                            this.flat.getOwners()[position]
+                            this.flat.getOwnerFlat().getOwners()[position]
                                 .getName() == ""
                                 ? "S"
                                 : 
-                                this.flat.getOwners()[position]
+                                this.flat.getOwnerFlat().getOwners()[position]
                                 .getName()[0]
                                 .toUpperCase(),
                             style: TextStyle(
@@ -329,7 +329,7 @@ class _ProfileOptions extends State<ProfileOptions> {
                     Padding(
                       padding: const EdgeInsets.only(top: 7.5),
                       child: Text(
-                        this.flat.getOwners()[position]
+                        this.flat.getOwnerFlat().getOwners()[position]
                               .getName(),
                         style:
                         TextStyle(fontSize: 14.0, fontFamily: 'Montserrat'),
@@ -373,8 +373,8 @@ class _ProfileOptions extends State<ProfileOptions> {
 
   void _removeOwnerForFlat(BuildContext scaffoldC, Owner ownerTemp) async {
     /** check if user is allowed to remove owner */
-    if(this.flat.getOwners() != null) {
-      Owner allowed = this.flat.getOwners().firstWhere((Owner ownerTemp1) {
+    if(this.flat.getOwnerFlat().getOwners() != null) {
+      Owner allowed = this.flat.getOwnerFlat().getOwners().firstWhere((Owner ownerTemp1) {
         return ownerTemp1.getOwnerId() == this.user.getUserId() && ownerTemp1.getRole() == globals.OwnerRoles.Admin.index.toString();
       }, orElse: () {return null;});
       if(allowed == null) {
@@ -383,7 +383,7 @@ class _ProfileOptions extends State<ProfileOptions> {
       }
     }
     
-    bool ifSuccess = await OwnerRequestsService.removeOwnerFromFlat(ownerTemp, flat);
+    bool ifSuccess = await OwnerRequestsService.removeOwnerFromFlat(ownerTemp, flat.getOwnerFlat());
 
     if(ifSuccess) {
       Utility.createErrorSnackBar(scaffoldC, error: 'Owner removed successfully');
@@ -509,16 +509,14 @@ class _ProfileOptions extends State<ProfileOptions> {
   }
 
   void _evacuateFlat(BuildContext scaffoldC) async {
-    bool ifSuccess = await OwnerTenantDao.update(this.flat.getApartmentTenantId(), OwnerTenant.toUpdateJson(status: 1));
+    bool ifSuccess = await OwnerTenantDao.update(this.flat.getOwnerTenantId(), OwnerTenant.toUpdateJson(status: 1));
     if(ifSuccess) {
-      flat.setApartmentTenantId(null);
-      flat.setTenantFlatId(null);
-      flat.setTenantFlatName(null);
+      this.flat.setTenantFlat(null);
       Navigator.of(context).pop();
       Navigator.of(context).push(
         new MaterialPageRoute(
           builder: (BuildContext ctx) {
-            return AddTenant(this.flat);
+            return AddTenant(this.flat.getOwnerFlat());
           }
         )
       );
@@ -554,8 +552,7 @@ class _ProfileOptions extends State<ProfileOptions> {
   }
 
   void _updateUsersView() async {
-    debugPrint('tenant_flat_id - ' + this.flat.getTenantFlatId());
-    QuerySnapshot snapshot = await TenantDao.getTenantsUsingTenantFlatId(this.flat.getTenantFlatId());
+    QuerySnapshot snapshot = await TenantDao.getTenantsUsingTenantFlatId(this.flat.getTenantFlat().getFlatId());
     
       if (snapshot == null || snapshot.documents.length == 0) {
         //addContacts

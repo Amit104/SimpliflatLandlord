@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/landlord_requests_dao.dart';
 import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
+import 'package:simpliflat_landlord/dao/tenant_dao.dart';
+import 'package:simpliflat_landlord/model/owner_tenant.dart';
+import 'package:simpliflat_landlord/model/tenant.dart';
+import 'package:simpliflat_landlord/model/tenant_flat.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/model/block.dart';
@@ -168,13 +172,19 @@ class MyFlats extends StatelessWidget {
     debugPrint("navigate to landlord portal");
     QuerySnapshot q = await OwnerTenantDao.getByOwnerFlatId(flat.getFlatId());
     if (q != null && q.documents.length > 0) {
-      flat.setTenantFlatId(q.documents[0].data['tenantFlatId']);
-      flat.setTenantFlatName(q.documents[0].data['tenantFlatName']);
-      flat.setApartmentTenantId(q.documents[0].documentID);
+      TenantFlat tenantFlat = new TenantFlat();
+      tenantFlat.setFlatId(q.documents[0].data['tenantFlatId']);
+      tenantFlat.setFlatName(q.documents[0].data['tenantFlatName']);
+      tenantFlat.setTenants(getTenants(q));
+      OwnerTenant ownerTenantFlat = new OwnerTenant();
+      ownerTenantFlat.setOwnerFlat(flat);
+      ownerTenantFlat.setStatus(0);
+      ownerTenantFlat.setTenantFlat(tenantFlat);
+      ownerTenantFlat.setOwnerTenantId(q.documents[0].documentID);
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {
-          return LandlordPortal(flat);
+          return LandlordPortal(ownerTenantFlat);
         }),
       );
     } else {
@@ -185,5 +195,21 @@ class MyFlats extends StatelessWidget {
         }),
       );
     }
+  }
+
+  List<Tenant> getTenants(QuerySnapshot snapshot) {
+    Map<String, dynamic> doc = snapshot.documents[0].data;
+    List<Tenant> tenants = new List();
+    doc.forEach((String key, dynamic value) {
+      if(key.startsWith("o_")) {
+        String tenantId = key.substring(2);
+        Tenant tenant = new Tenant();
+        tenant.setTenantId(tenantId);
+        tenant.setName(value.toString().split("::")[0]);
+        tenants.add(tenant);
+      }
+    });
+    return tenants;
+
   }
 }

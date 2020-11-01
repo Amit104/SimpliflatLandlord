@@ -5,7 +5,9 @@ import 'package:simpliflat_landlord/dao/tenant_dao.dart';
 import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
 import 'package:simpliflat_landlord/model/models.dart';
+import 'package:simpliflat_landlord/model/owner_tenant.dart';
 import 'package:simpliflat_landlord/model/task.dart';
+import 'package:simpliflat_landlord/model/tenant.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/ui/tasks/create_task.dart';
 import 'package:simpliflat_landlord/ui/tasks/taskHistory.dart';
@@ -14,38 +16,17 @@ import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 import 'package:intl/intl.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 
-class ViewTask extends StatefulWidget {
+
+
+class ViewTask extends StatelessWidget {
   final String taskId;
-  final OwnerFlat _flat;
-  final User user;
-
-  ViewTask(this.taskId, this._flat, this.user);
-
-  @override
-  State<StatefulWidget> createState() {
-    return _ViewTask(taskId, _flat, this.user);
-  }
-}
-
-class _ViewTask extends State<ViewTask> {
-  final String taskId;
-  final OwnerFlat _flat;
-  bool _remind = false;
-  String _selectedType = "Responsibility";
-  String _selectedPriority = "Low";
-  static const _priorities = ["High", "Low"];
-  static const _taskType = ["Responsibility", "Issue"];
-  static const _days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  List<String> assignedTo = new List();
-  var _navigatorContext;
-  TextEditingController tc = TextEditingController();
-  var _formKey1 = GlobalKey<FormState>();
-  Set<String> selectedUsers = new Set();
-  String collectionname;
+  final OwnerTenant _flat;
+  static final _days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  final TextEditingController tc = TextEditingController();
 
   final User user;
 
-  Map<int, String> repeatMsgs = {
+  final Map<int, String> repeatMsgs = {
     -1: 'Occur Once',
     0: 'Occurs daily',
     1: 'Always Available',
@@ -55,9 +36,7 @@ class _ViewTask extends State<ViewTask> {
     5: 'Occurs monthly on particular dates'
   };
 
-  _ViewTask(this.taskId, this._flat, this.user) {
-    collectionname = 'tasks_landlord';
-  }
+  ViewTask(this.taskId, this._flat, this.user);
 
   @override
   Widget build(BuildContext context) {
@@ -76,12 +55,11 @@ class _ViewTask extends State<ViewTask> {
           ),
           //floatingActionButton: Padding(padding: EdgeInsets.only(bottom:50.0), child:FloatingActionButton(onPressed: () {_navigateToTaskHistory(taskId, _flatId);},child: Icon(Icons.history), tooltip: 'History',)),
           body: Builder(builder: (BuildContext scaffoldC) {
-            _navigatorContext = scaffoldC;
             return Container(
               child: taskId == null
                   ? Container()
                   : StreamBuilder(
-                      stream: TaskDao.getTask(_flat.getApartmentTenantId(), taskId),
+                      stream: TaskDao.getTask(_flat.getOwnerTenantId(), taskId),
                       builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
                         if (!snapshot.hasData)
                           return LoadingContainerVertical(1);
@@ -91,7 +69,7 @@ class _ViewTask extends State<ViewTask> {
                         tc.text = taskId == null ? "" : task.getTitle();
                         return Column(
                           children: <Widget>[
-                            Expanded(child: buildView(task)),
+                            Expanded(child: buildView(scaffoldC, task)),
                             Row(
                               children: <Widget>[
                                 Expanded(
@@ -116,7 +94,7 @@ class _ViewTask extends State<ViewTask> {
                                               fontFamily: 'Montserrat'),
                                         ),
                                         onPressed: () {
-                                          navigateToAddTask(taskId,
+                                          navigateToAddTask(scaffoldC, taskId,
                                               task.getType());
                                         },
                                       ),
@@ -145,9 +123,9 @@ class _ViewTask extends State<ViewTask> {
                                               fontFamily: 'Montserrat'),
                                         ),
                                         onPressed: () async {
-                                          bool ifSuccess = await TaskDao.delete(_flat.getApartmentTenantId(), taskId);
+                                          bool ifSuccess = await TaskDao.delete(_flat.getOwnerTenantId(), taskId);
                                           if(ifSuccess)
-                                            Navigator.of(_navigatorContext).pop();
+                                            Navigator.of(scaffoldC).pop();
                                           else
                                             Utility.createErrorSnackBar(scaffoldC, error: "Error while deleting task. Please try again");
                                         },
@@ -166,7 +144,7 @@ class _ViewTask extends State<ViewTask> {
         ));
   }
 
-  void navigateToAddTask(taskId, String typeOfTask) {
+  void navigateToAddTask(BuildContext context, String taskId, String typeOfTask) {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) {
@@ -227,7 +205,6 @@ class _ViewTask extends State<ViewTask> {
   }
 
   Widget _getDueDateTimeWidget(String nextDueDate) {
-    var deviceSize = MediaQuery.of(context).size;
 
     return Container(
       decoration: BoxDecoration(
@@ -299,7 +276,7 @@ class _ViewTask extends State<ViewTask> {
         ));
   }
 
-  Widget buildView(Task task) {
+  Widget buildView(BuildContext scaffoldC, Task task) {
     String type = task.getType();
     return Container(
       padding: EdgeInsets.only(left: 15.0, right: 15.0),
@@ -337,14 +314,14 @@ class _ViewTask extends State<ViewTask> {
           SizedBox(height: 20.0),
           _getNotesWidget(task.getNotes()),
           SizedBox(height: 20.0),
-          _getHistoryButton(),
+          _getHistoryButton(scaffoldC),
           SizedBox(height: 20.0),
         ],
       ),
     );
   }
 
-  Widget _getHistoryButton() {
+  Widget _getHistoryButton(BuildContext scaffoldC) {
     return RaisedButton(
       padding: EdgeInsets.symmetric(vertical: 15.0),
       shape: RoundedRectangleBorder(
@@ -357,7 +334,7 @@ class _ViewTask extends State<ViewTask> {
             color: Colors.black, fontSize: 18.0, fontFamily: 'Montserrat'),
       ),
       onPressed: () {
-        _navigateToTaskHistory(taskId, _flat);
+        _navigateToTaskHistory(scaffoldC, taskId, _flat.getOwnerTenantId());
       },
     );
   }
@@ -460,64 +437,19 @@ class _ViewTask extends State<ViewTask> {
             )));
   }
 
-  _navigateToTaskHistory(taskId, flatId) {
+  _navigateToTaskHistory(BuildContext context, String taskId, String flatId) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return TaskHistory(taskId, _flat.getApartmentTenantId());
+        return TaskHistory(taskId, _flat.getOwnerTenantId());
       }),
     );
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   _moveToLastScreen(BuildContext _navigatorContext) {
     debugPrint("Back");
     Navigator.pop(_navigatorContext, true);
-  }
-
-  Card _getListTile(String title, subtitle) {
-    return Card(
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(15.0))),
-      elevation: 7.0,
-      child: Container(
-        padding: EdgeInsets.only(top: 5.0, bottom: 5.0),
-        decoration: BoxDecoration(
-            gradient: LinearGradient(
-                begin: Alignment.centerRight,
-                end: Alignment.centerLeft,
-                colors: [Colors.blue[50], Colors.white])),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Padding(
-              padding: EdgeInsets.all(13.0),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      title,
-                      style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 18.0,
-                          fontFamily: 'Montserrat'),
-                    ),
-                    SizedBox(height: 8.0),
-                    Text(
-                      subtitle == null ? '-' : subtitle.toString(),
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14.0,
-                        fontFamily: 'Montserrat',
-                      ),
-                    ),
-                  ])),
-          SizedBox(height: 2.0)
-        ]),
-      ),
-    );
   }
 
   Container _getRepeatLayout(String title, subtitle, List<int> frequency) {
@@ -595,11 +527,6 @@ class _ViewTask extends State<ViewTask> {
   }
 
   String getDateTimeFormattedString(Timestamp duedate) {
-    // DateTime _selectedDate = (duedate as Timestamp).toDate();
-    // var _selectedTime = new TimeOfDay(hour: _selectedDate.hour, minute: _selectedDate.minute);
-    // String date = DateFormat('dd/MM/yyyy').format(_selectedDate);
-    // String time = _selectedTime.hour.toString().padLeft(2, '0') + ":" + _selectedTime.minute.toString().padLeft(2, '0');
-    // return date + ' ' + time;
     var numToMonth = {
       1: 'Jan',
       2: 'Feb',
@@ -614,7 +541,7 @@ class _ViewTask extends State<ViewTask> {
       11: 'Nov',
       12: 'Dec'
     };
-    DateTime datetime = (duedate as Timestamp).toDate();
+    DateTime datetime = duedate.toDate();
     final f = new DateFormat.jm();
     var datetimeString = datetime.day.toString() +
         " " +
@@ -637,13 +564,7 @@ class _ViewTask extends State<ViewTask> {
     }
   }
 
-  Widget _getAssigneesLayout(String title, List<String >assignees) {
-    debugPrint('tenant flat id - ' + _flat.getTenantFlatId());
-    return FutureBuilder(
-      future: TenantDao.getTenantsUsingTenantFlatId(_flat.getTenantFlatId()),
-      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-        if (!snapshot.hasData) return LoadingContainerVertical(1);
-        debugPrint('length of assignees - ' + snapshot.data.documents.length.toString());
+  Widget _getAssigneesLayout(String title, List<String>assignees) {
         return Container(
             padding: EdgeInsets.all(5.0),
             child: Column(
@@ -662,15 +583,13 @@ class _ViewTask extends State<ViewTask> {
                     margin: EdgeInsets.only(left: 5.0),
                     child: Wrap(
                       children:
-                          getAssignees(snapshot.data.documents, assignees),
+                          getAssignees(assignees),
                     ),
                   )
                 ]));
-      },
-    );
   }
 
-  List<Widget> getAssignees(List<DocumentSnapshot> documents, assignees) {
+  List<Widget> getAssignees(assignees) {
     List<Widget> chips = new List();
     List<String> assigneesList = new List();
     debugPrint(assignees.toString());
@@ -687,33 +606,32 @@ class _ViewTask extends State<ViewTask> {
         ),
       ));
     }
-    for (int i = 0; i < documents.length; i++) {
-      if (assigneesList.contains(documents[i].documentID)) {
+    List<Owner> owners = this._flat.getOwnerFlat().getOwners();
+    List<Tenant> tenants = this._flat.getTenantFlat().getTenants();
+    for (int i = 0; i < owners.length; i++) {
+      if (assigneesList.contains(owners[i].getOwnerId())) {
         chips.add(Container(
           margin: EdgeInsets.only(right: 5.0),
           child: Chip(
             labelPadding: EdgeInsets.all(0.0),
-            label: Text(' ' + documents[i]['name'] + '  '),
+            label: Text(' ' + owners[i].getName() + '  '),
+            backgroundColor: Colors.grey[200],
+          ),
+        ));
+      }
+    }
+    for (int i = 0; i < tenants.length; i++) {
+      if (assigneesList.contains(tenants[i].getTenantId())) {
+        chips.add(Container(
+          margin: EdgeInsets.only(right: 5.0),
+          child: Chip(
+            labelPadding: EdgeInsets.all(0.0),
+            label: Text(' ' + tenants[i].getName() + '  '),
             backgroundColor: Colors.grey[200],
           ),
         ));
       }
     }
     return chips;
-  }
-
-  List<Container> _getAssigneesTiles(List documents) {
-    List<Container> w = new List();
-    for (int i = 0; i < documents.length; i++) {
-      w.add(Container(
-        child: Column(children: [
-          Divider(height: 1.0),
-          ListTile(
-            title: Text(documents[i]['name']),
-          ),
-        ]),
-      ));
-    }
-    return w;
   }
 }

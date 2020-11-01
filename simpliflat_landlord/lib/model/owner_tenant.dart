@@ -1,26 +1,29 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/model/base_model.dart';
+import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/model/tenant_flat.dart';
 
 class OwnerTenant extends BaseModel {
-  String ownerFlatId;
-  String tenantFlatId;
   int status;
+  OwnerFlat ownerFlat;
+  TenantFlat tenantFlat;
+  String ownerTenantId;
 
-	String getOwnerFlatId() {
-		return this.ownerFlatId;
+	OwnerFlat getOwnerFlat() {
+		return this.ownerFlat;
 	}
 
-	void setOwnerFlatId(String ownerFlatId) {
-		this.ownerFlatId = ownerFlatId;
+	void setOwnerFlat(OwnerFlat ownerFlat) {
+		this.ownerFlat = ownerFlat;
 	}
 
-	String getTenantFlatId() {
-		return this.tenantFlatId;
+	TenantFlat getTenantFlat() {
+		return this.tenantFlat;
 	}
 
-	void setTenantFlatId(String tenantFlatId) {
-		this.tenantFlatId = tenantFlatId;
+	void setTenantFlat(TenantFlat tenantFlat) {
+		this.tenantFlat = tenantFlat;
 	}
 
   int getStatus() {
@@ -29,6 +32,14 @@ class OwnerTenant extends BaseModel {
 
   void setStatus(int status) {
     this.status = status;
+  }
+
+  String getOwnerTenantId() {
+    return this.ownerTenantId;
+  }
+
+  void setOwnerTenantId(String ownerTenantId) {
+    this.ownerTenantId = ownerTenantId;
   }
 
   static Map<String, dynamic> toUpdateJson({status}) {
