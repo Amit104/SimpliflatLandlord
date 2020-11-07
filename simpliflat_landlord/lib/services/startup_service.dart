@@ -9,10 +9,7 @@ import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 class StartupService {
   
   static Future<User> getUser() async {
-     
-    
     String userId = await Utility.getUserId();
-
 
     if (userId == null) {
       return null;
@@ -31,28 +28,10 @@ class StartupService {
   }
 
   static Future<User> _getUserObject(String userId) async {
-    User user = new User();
-    String _userPhone = await Utility.getUserPhone();
-      String _userName = await Utility.getUserName();
-      if (_userName == null ||
-          _userName == "" ||
-          _userPhone == null ||
-          _userPhone == "") {
-        DocumentSnapshot userDoc = await OwnerDao.getDocument(userId);
+    
+    DocumentSnapshot userDoc = await OwnerDao.getDocument(userId);
 
-        if (userDoc.exists) {
-          _userName = userDoc.data['name'];
-          _userPhone = userDoc.data['phone'];
-          Utility.addToSharedPref(userName: _userName);
-          Utility.addToSharedPref(userPhone: _userPhone);
-        }
-      }
-
-      user.setName(_userName);
-      user.setPhone(_userPhone);
-      user.setUserId(userId);
-
-      return user;
+    return User.fromJson(userDoc.data, userDoc.documentID);
   }
 
   static Future<bool> _getAndSetIfPropertyRegistred(String userId) async {

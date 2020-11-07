@@ -111,17 +111,6 @@ class _LandlordPortal extends State<LandlordPortal> {
           return null;
         },
         child: Scaffold(
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            title: Text(
-              _appBarTitle,
-              style: TextStyle(color: Colors.indigo[900]),
-            ),
-            actions: <Widget>[_selectedIndex == 1?IconButton(icon: Icon(Icons.add), onPressed: () {openActionMenu();},):SizedBox()],
-            elevation: 0.0,
-            centerTitle: true,
-            
-          ),
           body: Center(
             child: _selectedIndex == 0
                 ? Dashboard(this.flat, user)

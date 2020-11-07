@@ -209,20 +209,6 @@ class AddTenantState extends State<AddTenant> {
 
   }
 
-  BoxDecoration getGradientBackground() {
-    return new BoxDecoration(
-      gradient: new LinearGradient(
-          colors: [
-            const Color(0xFF00CCFF),
-            const Color(0xFF00CCFF),
-          ],
-          begin: const FractionalOffset(0.0, 0.0),
-          end: const FractionalOffset(1.0, 0.0),
-          stops: [0.0, 1.0],
-          tileMode: TileMode.clamp),
-    );
-  }
-
   Future<bool> rejectRequest(
       TenantRequest request, BuildContext scaffoldC) async {
     Utility.createErrorSnackBar(scaffoldC, error: 'Rejecting request');
@@ -288,7 +274,7 @@ class AddTenantState extends State<AddTenant> {
     Map<String, dynamic> doc = snapshot.documents[0].data;
     List<Tenant> tenants = new List();
     doc.forEach((String key, dynamic value) {
-      if(key.startsWith("o_")) {
+      if(key.startsWith("t_")) {
         String tenantId = key.substring(2);
         Tenant tenant = new Tenant();
         tenant.setTenantId(tenantId);

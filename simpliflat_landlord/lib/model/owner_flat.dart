@@ -205,6 +205,9 @@ class OwnerFlat extends BaseModel {
     flat.setBuildingName(json['buildingName']);
     flat.setVerified(json['verified']);
     flat.setZipcode(json['zipcode']);
+    if(flat.getZipcode() == null) {
+      flat.setZipcode(json['buildingDetails']);
+    }
     flat.setCreatedAt(json['createdAt']);
     flat.setUpdatedAt(json['updatedAt']);
     return flat;

@@ -164,11 +164,15 @@ class _MessageBoard extends State<MessageBoard> {
                                 decoration: InputDecoration(
                                   hintText: "Add Message...",
                                   hintStyle: TextStyle(color: Colors.black87),
-                                  border: new OutlineInputBorder(
+                                  focusedBorder: new OutlineInputBorder(
                                     borderRadius:
-                                        new BorderRadius.circular(25.0),
+                                        new BorderRadius.circular(20.0),
                                     borderSide: new BorderSide(),
                                   ),
+				border: new OutlineInputBorder(
+                                	borderRadius: new BorderRadius.circular(20.0),
+                                	borderSide: new BorderSide(),
+                              	),
                                   errorStyle: TextStyle(
                                       color: Colors.red,
                                       fontSize: 10.0,
@@ -184,7 +188,7 @@ class _MessageBoard extends State<MessageBoard> {
                           ),
                           ClipOval(
                             child: Material(
-                              color: Colors.red[900], // button color
+                              color: Colors.indigo, // button color
                               child: InkWell(
                                 splashColor: Colors.indigo, // inkwell color
                                 child: SizedBox(

@@ -102,15 +102,7 @@ class DashboardState extends State<Dashboard> {
 
   BoxDecoration getBlueGradientBackground() {
     return new BoxDecoration(
-            gradient: new LinearGradient(
-                colors: [
-                  const Color(0xFF3366a0),
-                  const Color(0xFF00CCFF),
-                ],
-                begin: const FractionalOffset(0.0, 0.0),
-                end: const FractionalOffset(1.0, 0.0),
-                stops: [0.0, 1.0],
-                tileMode: TileMode.clamp),
+            color: Colors.teal
           );
   }
 

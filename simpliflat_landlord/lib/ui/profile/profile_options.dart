@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/owner_dao.dart';
 import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
 import 'package:simpliflat_landlord/dao/tenant_dao.dart';
@@ -68,138 +69,101 @@ class _ProfileOptions extends State<ProfileOptions> {
           return null;
         },
         child: Scaffold(
+        appBar: AppBar(
+          title: Text('Profile Options', style: CommonWidgets.getAppBarTitleStyle()),
+          centerTitle: true,
+          elevation: 0,
+        ),
             body: Builder(builder: (BuildContext scaffoldC) {
               _scaffoldContext = scaffoldC;
               return new Center(
                   child: ListView(children: <Widget>[
-                    Padding(
-                      padding: EdgeInsets.only(left: 10.0, top: 10.0),
-                      child: Text(
-                        "Flat Members",
-                        textAlign: TextAlign.left,
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontFamily: 'Montserrat',
-                          color: Colors.black,
+                    SizedBox(height: 10),
+                    Container(
+                      color: Colors.white,
+                                          child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [Padding(
+                        padding: EdgeInsets.only(left: 10.0, top: 10.0),
+                        child: Text(
+                          "Flat Members",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            fontFamily: 'Roboto',
+                            color: Color(0xff2079FF),
+                            fontWeight: FontWeight.w600
+                          ),
                         ),
                       ),
+                      Container(
+                        padding: EdgeInsets.only(top: 5.0),
+                        height: 90.0,
+                        child: (existingUsers == null ||
+                            existingUsers.length == 0)
+                            ? LoadingContainerHorizontal(
+                            MediaQuery.of(context).size.height / 10 -
+                                10.0)
+                            : _getExistingUsers(),
+                      )]),
+                    ),
+                    SizedBox(height:10),
+                    Container(
+                      color: Colors.white,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [Padding(
+                        padding: EdgeInsets.only(left: 10.0, top: 10.0),
+                        child: Text(
+                          "Owners",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            fontFamily: 'Roboto',
+                            color: Color(0xff2079FF),
+                            fontWeight: FontWeight.w600
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.only(top: 5.0),
+                        height: 90.0,
+                        child: _getOwners(scaffoldC),
+                      )]),
                     ),
                     Container(
-                      padding: EdgeInsets.only(top: 5.0),
-                      height: 118.0,
-                      color: Colors.white,
-                      child: (existingUsers == null ||
-                          existingUsers.length == 0)
-                          ? LoadingContainerHorizontal(
-                          MediaQuery.of(context).size.height / 10 -
-                              10.0)
-                          : _getExistingUsers(),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 10.0, top: 10.0),
-                      child: Text(
-                        "Owners",
-                        textAlign: TextAlign.left,
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontFamily: 'Montserrat',
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.only(top: 5.0),
-                      height: 118.0,
-                      color: Colors.white,
-                      child: _getOwners(scaffoldC),
-                    ),
-                    Card(
-                      color: Colors.white,
-                      elevation: 2.0,
-                      child: ListTile(
-                          title: Text(
-                            this.flat.getOwnerFlat().getFlatName(),
-                          ),
-                          leading: Icon(
-                            Icons.home,
-                            color: Colors.redAccent,
-                          ),
-                          onTap: () {}),
-                    ),
-                    Card(
-                      color: Colors.white,
-                      elevation: 2.0,
-                      child: ListTile(
-                        title: Text(
-                          this.user.getName(),
-                        ),
-                        leading: Icon(
-                          Icons.account_circle,
-                          color: Colors.orange,
-                        ),
-                        trailing: GestureDetector(
-                            child: Text(
-                              "EDIT",
-                              style: TextStyle(
-                                  color: Colors.indigo[900],
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: 'Montserrat',
-                                  fontSize: 14.0),
-                            ),
-                            onTap: () {
-                              showDialog(
-                                  context: context,
-                                  builder: (_) => _getEditPrompt(
-                                      textStyle,
-                                      "Name",
-                                      _changeUserName,
-                                      _userNameValidator,
-                                      TextInputType.text,
-                                      this.user.getName()));
-                            }),
-                      ),
-                    ),
-                    Card(
-                      color: Colors.white,
-                      elevation: 2.0,
-                      child: ListTile(
-                          title: Text(
-                            this.user.getPhone(),
-                          ),
-                          leading: Icon(
-                            Icons.phone,
-                            color: Colors.blue,
-                          ),
-                          onTap: () {}),
-                    ),
-                    Card(
-                        child: ListTile(
-                          title: Text('Add Owner'),
-                         
+                      margin: EdgeInsets.only(left:10, top: 20, bottom: 5, right: 10),
+                                          child: ListTile(
+                        title: Text('Add Owner', style: TextStyle(
+                              fontSize: 17.0,
+                              fontFamily: 'Roboto',
+                              color: Color(0xff2079FF),
+                              fontWeight: FontWeight.w600
+                            ),),
+                            trailing: Icon(Icons.add),
+                       
               onTap: () {
-                                 Navigator.push(
+                               Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) {
-                    return SearchOwner(this.flat.getOwnerFlat());
+                      return SearchOwner(this.flat.getOwnerFlat());
                   }),
                  );
 
               },
-                        ),
+                      ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 5.0, right: 5.0),
-                      child: RaisedButton(
-                        shape: new RoundedRectangleBorder(
-                          borderRadius: new BorderRadius.circular(40.0),
-                          side: BorderSide(
-                            width: 0.5,
-                            color: Colors.indigo[900],
-                          ),
-                        ),
-                        color: Colors.white,
-                        textColor: Colors.indigo[900],
-                        onPressed: () {
+                    Container(
+                      margin: EdgeInsets.only(left:10, top: 5, bottom: 10, right: 10),
+                                          child: ListTile(
+title: Text('Evacuate Flat', style: TextStyle(
+                              fontSize: 17.0,
+                              fontFamily: 'Roboto',
+                              color: Color(0xff2079FF),
+                              fontWeight: FontWeight.w600
+                            ),),
+                            trailing: Icon(Icons.home),
+                        onTap: () {
                           showDialog<bool>(
                             context: context,
                             builder: (context) {
@@ -224,49 +188,10 @@ class _ProfileOptions extends State<ProfileOptions> {
                             },
                           );
                         },
-                        child: Text('Evacuate Flat'),
+                       
                       ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 5.0, right: 5.0),
-                      child: RaisedButton(
-                        shape: new RoundedRectangleBorder(
-                          borderRadius: new BorderRadius.circular(40.0),
-                          side: BorderSide(
-                            width: 0.5,
-                            color: Colors.indigo[900],
-                          ),
-                        ),
-                        color: Colors.white,
-                        textColor: Colors.indigo[900],
-                        onPressed: () {
-                          showDialog<bool>(
-                            context: context,
-                            builder: (context) {
-                              return new AlertDialog(
-                                title: new Text('Log out'),
-                                content:
-                                new Text('Are you sure you want to log out?'),
-                                actions: <Widget>[
-                                  new FlatButton(
-                                    child: new Text('Cancel'),
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(false),
-                                  ),
-                                  new FlatButton(
-                                      child: new Text('Yes'),
-                                      onPressed: () {
-                                        Navigator.of(context).pop(true);
-                                        _signOut();
-                                      }),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                        child: Text('Logout'),
-                      ),
-                    ),
+                    
                   ]));
             })));
   }
@@ -291,12 +216,12 @@ class _ProfileOptions extends State<ProfileOptions> {
         itemBuilder: (BuildContext context, int position) {
           return SizedBox(
             width: 100,
-            height: 105,
+            height: 90,
             child: Card(
               color: Colors.white30,
               elevation: 0.0,
               child: Padding(
-                padding: const EdgeInsets.only(top: 15.0),
+                padding: const EdgeInsets.only(top: 5.0),
                 child: Column(
                   children: <Widget>[
                     GestureDetector(
@@ -317,8 +242,8 @@ class _ProfileOptions extends State<ProfileOptions> {
                                 .getName()[0]
                                 .toUpperCase(),
                             style: TextStyle(
-                              fontSize: 30.0,
-                              fontFamily: 'Satisfy',
+                              fontSize: 20.0,
+                              fontFamily: 'Roboto',
                               color: Colors.white,
                             ),
                           ),
@@ -332,7 +257,7 @@ class _ProfileOptions extends State<ProfileOptions> {
                         this.flat.getOwnerFlat().getOwners()[position]
                               .getName(),
                         style:
-                        TextStyle(fontSize: 14.0, fontFamily: 'Montserrat'),
+                        TextStyle(fontSize: 14.0, fontFamily: 'Roboto', fontWeight: FontWeight.w600),
                         maxLines: 2,
                       ),
                     ),
@@ -578,12 +503,12 @@ class _ProfileOptions extends State<ProfileOptions> {
         itemBuilder: (BuildContext context, int position) {
           return SizedBox(
             width: 100,
-            height: 105,
+            height: 90,
             child: Card(
               color: Colors.white30,
               elevation: 0.0,
               child: Padding(
-                padding: const EdgeInsets.only(top: 15.0),
+                padding: const EdgeInsets.only(top: 5.0),
                 child: Column(
                   children: <Widget>[
                     CircleAvatar(
@@ -600,8 +525,8 @@ class _ProfileOptions extends State<ProfileOptions> {
                               .name[0]
                               .toUpperCase(),
                           style: TextStyle(
-                            fontSize: 30.0,
-                            fontFamily: 'Satisfy',
+                            fontSize: 20.0,
+                            fontFamily: 'Roboto',
                             color: Colors.white,
                           ),
                         ),
@@ -613,7 +538,7 @@ class _ProfileOptions extends State<ProfileOptions> {
                       child: Text(
                         this.existingUsers[position].name,
                         style:
-                        TextStyle(fontSize: 14.0, fontFamily: 'Montserrat'),
+                        TextStyle(fontSize: 14.0, fontFamily: 'Roboto', fontWeight: FontWeight.w600),
                         maxLines: 2,
                       ),
                     ),

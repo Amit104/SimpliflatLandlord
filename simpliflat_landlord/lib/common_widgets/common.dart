@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
+import 'package:simpliflat_landlord/constants/strings.dart';
 
 class CommonWidgets {
   static Widget optionText(String message, BuildContext context, {List list}) {
@@ -17,13 +18,14 @@ class CommonWidgets {
   }
 
   static Widget textBox(String text, double fontSize,
-      {String fontFamily = 'Montserrat', fontStyle = FontStyle.normal, color: Colors.blue}) {
+      {String fontFamily = Strings.PRIMARY_FONT_FAMILY, fontWeight = Strings.PRIMARY_FONT_WEIGHT, fontStyle = FontStyle.normal, color: Colors.blue}) {
     return Text(
       text,
       style: TextStyle(
           color: color,
           fontSize: fontSize,
           fontFamily: fontFamily,
+          fontWeight: fontWeight,
           fontStyle: fontStyle),
     );
   }

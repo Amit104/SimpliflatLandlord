@@ -201,7 +201,7 @@ class MyFlats extends StatelessWidget {
     Map<String, dynamic> doc = snapshot.documents[0].data;
     List<Tenant> tenants = new List();
     doc.forEach((String key, dynamic value) {
-      if(key.startsWith("o_")) {
+      if(key.startsWith("t_")) {
         String tenantId = key.substring(2);
         Tenant tenant = new Tenant();
         tenant.setTenantId(tenantId);

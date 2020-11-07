@@ -49,8 +49,8 @@ class ViewTask extends StatelessWidget {
           backgroundColor: Colors.white,
           appBar: AppBar(
             title: Text('Task Details'),
-            elevation: 0.0,
-            backgroundColor: Colors.grey[300],
+            elevation: 2.0,
+            backgroundColor: Colors.white,
             centerTitle: true,
           ),
           //floatingActionButton: Padding(padding: EdgeInsets.only(bottom:50.0), child:FloatingActionButton(onPressed: () {_navigateToTaskHistory(taskId, _flatId);},child: Icon(Icons.history), tooltip: 'History',)),
@@ -74,14 +74,14 @@ class ViewTask extends StatelessWidget {
                               children: <Widget>[
                                 Expanded(
                                   child: Opacity(
-                                    opacity: 0.6,
+                                    opacity: 1.0,
                                     child: Container(
                                       padding: const EdgeInsets.only(
                                           top: 1.0, right: 1.0, left: 0.0),
                                       child: RaisedButton(
                                         padding: EdgeInsets.symmetric(
                                             vertical: 15.0),
-                                        color: Colors.grey[200],
+                                        color: Colors.green[200],
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
                                               BorderRadius.circular(0.0),
@@ -103,7 +103,7 @@ class ViewTask extends StatelessWidget {
                                 ),
                                 Expanded(
                                   child: Opacity(
-                                    opacity: 0.6,
+                                    opacity: 1.0,
                                     child: Container(
                                       padding: const EdgeInsets.only(
                                           top: 1.0, right: 1.0, left: 0.0),
@@ -114,7 +114,7 @@ class ViewTask extends StatelessWidget {
                                           borderRadius:
                                               BorderRadius.circular(0.0),
                                         ),
-                                        color: Colors.grey[200],
+                                        color: Colors.red[200],
                                         child: Text(
                                           "Delete",
                                           style: TextStyle(
@@ -175,6 +175,7 @@ class ViewTask extends StatelessWidget {
                   fontSize: 13.0,
                   fontFamily: 'Montserrat',
                 )),
+            elevation: 3.0,
             backgroundColor: Colors.deepPurple[100],
           ),
           SizedBox(width: 5.0),
@@ -185,6 +186,7 @@ class ViewTask extends StatelessWidget {
                   fontSize: 13.0,
                   fontFamily: 'Montserrat',
                 )),
+            elevation: 3.0,
             backgroundColor: Colors.indigo[100],
           ),
           duration != '-' ? SizedBox(width: 5.0) : Container(),
@@ -196,6 +198,7 @@ class ViewTask extends StatelessWidget {
                         fontSize: 13.0,
                         fontFamily: 'Montserrat',
                       )),
+                  elevation: 3.0,
                   backgroundColor: Colors.lightGreen[100],
                 )
               : Container()
@@ -210,6 +213,13 @@ class ViewTask extends StatelessWidget {
       decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(5.0),
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.25),
+              blurRadius: 4,
+              offset: Offset(0, 4), // changes position of shadow
+            ),
+          ],
           border: Border.all(width: 1.0, color: Colors.grey[300])),
       child: ListTile(
         dense: true,
@@ -322,20 +332,27 @@ class ViewTask extends StatelessWidget {
   }
 
   Widget _getHistoryButton(BuildContext scaffoldC) {
-    return RaisedButton(
-      padding: EdgeInsets.symmetric(vertical: 15.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(0.0),
-      ),
-      color: Colors.grey[300],
-      child: Text(
-        "History",
-        style: TextStyle(
-            color: Colors.black, fontSize: 18.0, fontFamily: 'Montserrat'),
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        Expanded(
+          child: RaisedButton(
+            padding: EdgeInsets.all(15.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(0.0),
+            ),
+            color: Colors.grey[300],
+            child: Text(
+              "History",
+              style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14.0,
+                  fontFamily: 'Montserrat'),
+            ),
       onPressed: () {
         _navigateToTaskHistory(scaffoldC, taskId, _flat.getOwnerTenantId());
-      },
+      }))],
     );
   }
 
@@ -460,6 +477,14 @@ class ViewTask extends StatelessWidget {
         padding: EdgeInsets.only(top: 5.0, bottom: 5.0),
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5.0),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Color.fromRGBO(0, 0, 0, 0.25),
+                blurRadius: 4,
+                offset: Offset(0, 4), // changes position of shadow
+              ),
+            ],
             border: Border.all(width: 1.0, color: Colors.grey[300])),
         child: subtitle != 5
             ? ListTile(
@@ -601,6 +626,7 @@ class ViewTask extends StatelessWidget {
         margin: EdgeInsets.only(right: 5.0),
         child: Chip(
           labelPadding: EdgeInsets.all(0.0),
+	  elevation: 1.0,
           label: Text(' ' + this.user.getName() + ' '),
           backgroundColor: Colors.grey[200],
         ),
@@ -614,6 +640,7 @@ class ViewTask extends StatelessWidget {
           margin: EdgeInsets.only(right: 5.0),
           child: Chip(
             labelPadding: EdgeInsets.all(0.0),
+	    elevation: 1.0,
             label: Text(' ' + owners[i].getName() + '  '),
             backgroundColor: Colors.grey[200],
           ),
@@ -626,6 +653,7 @@ class ViewTask extends StatelessWidget {
           margin: EdgeInsets.only(right: 5.0),
           child: Chip(
             labelPadding: EdgeInsets.all(0.0),
+	    elevation: 1.0,
             label: Text(' ' + tenants[i].getName() + '  '),
             backgroundColor: Colors.grey[200],
           ),

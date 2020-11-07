@@ -6,6 +6,7 @@ import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
 import 'package:simpliflat_landlord/model/owner_tenant.dart';
 import 'package:simpliflat_landlord/model/task.dart';
+import 'package:simpliflat_landlord/model/tenant.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/services/task_service.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
@@ -112,9 +113,9 @@ class _CreateTask extends State<CreateTask> {
         child: Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
-            backgroundColor: Colors.grey[300],
+            backgroundColor: Colors.white,
             title: taskId == null ? Text("Add Task") : Text("Edit Task"),
-            elevation: 0.0,
+            elevation: 2.0,
             centerTitle: true,
           ),
           body: Builder(builder: (BuildContext scaffoldC) {
@@ -150,7 +151,7 @@ class _CreateTask extends State<CreateTask> {
   Widget _getDeleteButtonWidget() {
     return Expanded(
       child: Opacity(
-        opacity: 0.6,
+        opacity: 1.0,
         child: Container(
           padding: const EdgeInsets.only(top: 1.0, right: 1.0, left: 0.0),
           child: RaisedButton(
@@ -158,7 +159,7 @@ class _CreateTask extends State<CreateTask> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(0.0),
               ),
-              color: Colors.grey[200],
+              color: Colors.red[200],
               child: Text(
                 "Delete",
                 style: TextStyle(
@@ -177,12 +178,12 @@ class _CreateTask extends State<CreateTask> {
   Widget _getSaveButtonWidget() {
     return Expanded(
       child: Opacity(
-        opacity: 0.6,
+        opacity: 1.0,
         child: Container(
           padding: const EdgeInsets.only(top: 1.0, right: 1.0, left: 0.0),
           child: RaisedButton(
               padding: EdgeInsets.symmetric(vertical: 15.0),
-              color: Colors.grey[200],
+              color: Colors.green[200],
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(0.0),
               ),
@@ -240,6 +241,13 @@ class _CreateTask extends State<CreateTask> {
       decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(5.0),
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.25),
+              blurRadius: 4,
+              offset: Offset(0, 4), // changes position of shadow
+            ),
+          ],
           border: Border.all(width: 1.0, color: Colors.grey[300])),
       child: ListTile(
           dense: true,
@@ -327,7 +335,16 @@ class _CreateTask extends State<CreateTask> {
         padding: EdgeInsets.only(top: 5.0, bottom: 5.0),
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5.0),
-            border: Border.all(width: 1.0, color: Colors.grey[300])),
+            color: Colors.white,
+            border: Border.all(width: 1.0, color: Colors.grey[300]),
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.25),
+              blurRadius: 4,
+              offset: Offset(0, 4), // changes position of shadow
+            ),
+          ],
+        ),
         child: ListTile(
           dense: true,
           leading: Column(
@@ -467,14 +484,14 @@ class _CreateTask extends State<CreateTask> {
                                 debugPrint("position - " + position.toString());
                                 var documentID;
                                 var name;
-                                if(position >= this._flat.getOwnerFlat().getOwners().length) {
-                                  //tenants
-                                  documentID = this._flat.getTenantFlat().getTenants()[position].getTenantId();
-                                  name = this._flat.getTenantFlat().getTenants()[position].getName();
-                                } else {
+                                if(position < this._flat.getOwnerFlat().getOwners().length) {
                                   //owners
                                   documentID = this._flat.getOwnerFlat().getOwners()[position].getOwnerId();
                                   name = this._flat.getOwnerFlat().getOwners()[position].getName();
+                                } else {
+                                  //tenants
+                                  documentID = this._flat.getTenantFlat().getTenants()[position - this._flat.getOwnerFlat().getOwners().length].getTenantId();
+                                  name = this._flat.getTenantFlat().getTenants()[position - this._flat.getOwnerFlat().getOwners().length].getName();
                                 }
                                 
                                 return GestureDetector(
@@ -495,7 +512,7 @@ class _CreateTask extends State<CreateTask> {
                                           backgroundColor:
                                               selectedUsers.contains(documentID)
                                                   ? Colors.grey[400]
-                                                  : Colors.purple,
+                                                  :  Colors.primaries[documentID.hashCode % Colors.primaries.length],
                                           child: Text(
                                             getInitials(name),
                                           )),
@@ -571,6 +588,14 @@ class _CreateTask extends State<CreateTask> {
         padding: EdgeInsets.only(top: 5.0, bottom: 5.0),
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5.0),
+            boxShadow: [
+              BoxShadow(
+                color: Color.fromRGBO(0, 0, 0, 0.25),
+                blurRadius: 4,
+                offset: Offset(0, 4), // changes position of shadow
+              ),
+            ],
+            color: Colors.white,
             border: Border.all(width: 1.0, color: Colors.grey[300])),
         child: ListTile(
             dense: true,

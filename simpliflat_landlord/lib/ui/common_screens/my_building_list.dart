@@ -101,7 +101,7 @@ class MyBuildingListState extends State<MyBuildingList> {
 
   void navigate(OwnerFlat flat, BuildContext scaffoldC) async {
 
-    Provider.of<LoadingModel>(scaffoldC).startLoading();
+    Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
     Map<String, List<OwnerFlat>> ownedFlats =
         Provider.of<MyBuildingListModel>(scaffoldC, listen: false)
             .getOwnedFlatIds();
@@ -111,7 +111,7 @@ class MyBuildingListState extends State<MyBuildingList> {
     Building b =
         await createBuildingObject(flat, ownedFlats);
 
-    Provider.of<LoadingModel>(scaffoldC).stopLoading();
+    Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
     if(toTenantPortal) {
       Navigator.push(
         context,

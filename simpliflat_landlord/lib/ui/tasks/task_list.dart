@@ -43,7 +43,7 @@ class DualHeaderWithHint extends StatelessWidget {
       sizeCurve: Curves.fastOutSlowIn,
       crossFadeState:
           isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 100),
     );
   }
 
@@ -62,7 +62,7 @@ class DualHeaderWithHint extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               name,
-              style: textTheme.body1.copyWith(fontSize: 15.0),
+              style: textTheme.body1.copyWith(fontSize: 15.0 , fontFamily: 'Roboto',fontWeight: FontWeight.w700,color: name.toLowerCase() == "to-do" ? Colors.white: Color(0xff2079FF)),
             ),
           ),
         ),
@@ -90,7 +90,7 @@ class CollapsibleBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(children: <Widget>[
       Container(
-          margin: const EdgeInsets.only(bottom: 2.0, right: 15.0, left: 15.0) -
+          margin: const EdgeInsets.only(bottom: 2.0, right: 0.0, left: 0.0) -
               margin,
           child: Divider(
             height: 1.0,
@@ -213,9 +213,9 @@ class TaskListState extends State<TaskList> {
 
     _taskItems = <TaskItem<dynamic>>[
       TaskItem<String>(
-        name: 'To-Do',
-        value: 'What you do',
-        hint: 'Do these items',
+        name: 'Todo',
+        value: '',
+        hint: '',
         valueToString: (String value) => value,
         isExpanded: true,
         builder: (TaskItem<String> item) {
@@ -226,8 +226,8 @@ class TaskListState extends State<TaskList> {
       ),
       TaskItem<String>(
         name: 'Completed',
-        value: 'These you did',
-        hint: 'Items here are done',
+        value: '',
+        hint: '',
         valueToString: (String value) => value,
         isExpanded: false,
         builder: (TaskItem<String> item) {
@@ -247,6 +247,32 @@ class TaskListState extends State<TaskList> {
         return null;
       },
       child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: Text(
+            "Tasks",
+            style: TextStyle(color: Color(0xff373D4C), fontFamily: 'Roboto',fontWeight: FontWeight.w700,),
+          ),
+          elevation: 0.0,
+          centerTitle: true,
+          leading: IconButton(
+            icon:  Icon(
+                    Icons.arrow_back,
+                    color: Color(0xff373D4C),
+                  ),
+            onPressed: () {
+              
+                Navigator.of(context).pop();
+            }),
+          actions: <Widget>[
+            IconButton(
+                icon: Icon(Icons.add_circle),
+                color: Colors.black,
+                onPressed: () {
+                  openActionMenu();
+                })
+          ],
+        ),
         body: new SingleChildScrollView(
           child: Column(
             children: <Widget>[
@@ -255,19 +281,22 @@ class TaskListState extends State<TaskList> {
                 top: false,
                 bottom: false,
                 child: Container(
-                  margin: const EdgeInsets.all(5.0),
+                  margin: const EdgeInsets.all(1.0),
                   child: ExpansionPanelList(
                       expansionCallback: (int index, bool isExpanded) {
                         setState(() {
                           _taskItems[index].isExpanded = !isExpanded;
                         });
                       },
+                      expandedHeaderPadding: EdgeInsets.all(0),
                       children: _taskItems
                           .map<ExpansionPanel>((TaskItem<dynamic> item) {
                         return ExpansionPanel(
                             isExpanded: item.isExpanded,
                             headerBuilder: item.headerBuilder,
                             canTapOnHeader: true,
+                            //headerColor: item.name.toLowerCase() == "to-do" ? Color(0xff2079FF) : Color(0xffBFDAFF),
+                            //arrowColor: item.name.toLowerCase() == "to-do" ? Color(0xffffffff) : Color(0xff2079FF),
                             body: item.build());
                       }).toList()),
                 ),
@@ -445,26 +474,38 @@ class TaskListState extends State<TaskList> {
                               ),
                             ],
                             child: Card(
-                              margin: EdgeInsets.only(top: 5.0, bottom: 5.0),
-                              elevation: 5.0,
+                              margin: EdgeInsets.only(top: 0.0, bottom: 0.0),
+                              elevation: 0.0,
                               child: ClipPath(
                                 clipper: ShapeBorderClipper(
                                     shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(3))),
+                                        borderRadius: BorderRadius.circular(0),
+
+                                    ),
+                                ),
                                 child: Container(
                                   padding:
-                                      EdgeInsets.only(top: 7.0, bottom: 7.0),
+                                      EdgeInsets.only(top: 0.0, bottom: 0.0),
                                   decoration: BoxDecoration(
                                     border: Border(
                                         left: BorderSide(
-                                            color: getPriorityColor(
-                                                datetime, isCompleted),
-                                            width: 5.0)),
+                                            // color: getPriorityColor(
+                                            //     datetime, isCompleted),
+                                            color: (icons[taskSnapshot
+                                                    .data.documents[position]
+                                                ["type"]]['color']),
+                                            width: 5.0),
+                                      bottom: BorderSide(
+                                        color: Color(0xffA6A8AB),
+                                        width: 0.5,
+                                      ),
+                                    ),
                                   ),
                                   child: ListTile(
+                                    dense: true,
                                     title: CommonWidgets.textBox(task.getTitle(),
                                         15.0,
+                                        fontFamily: 'Roboto',fontWeight: FontWeight.w700,
                                         color: Colors.black),
                                     subtitle: Column(
                                       mainAxisAlignment:
@@ -472,11 +513,11 @@ class TaskListState extends State<TaskList> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        SizedBox(height: 10.0),
+                                        SizedBox(height: 6.0),
                                         task.getRepeat() == 1
                                             ? CommonWidgets.textBox(
                                                 'Always Available', 12.0,
-                                                color: Colors.black45)
+                                                color: Colors.black45, fontFamily: 'Roboto',fontWeight: FontWeight.w700,)
                                             : Row(
                                                 children: <Widget>[
                                                   CommonWidgets.textBox(
@@ -486,7 +527,7 @@ class TaskListState extends State<TaskList> {
                                                           : _getDateTimeString(
                                                               task.getDue().toDate()),
                                                       11.0,
-                                                      color: Colors.black45),
+                                                      color: Colors.black45, fontFamily: 'Roboto',fontWeight: FontWeight.w700,),
                                                   Container(
                                                     width: 4.0,
                                                   ),
@@ -833,9 +874,9 @@ class TaskListState extends State<TaskList> {
   }
 
   Map<String, Map<String, dynamic>> icons = {
-    'Reminder': {'icon': Icons.calendar_today, 'color': Colors.black},
-    'Payment': {'icon': Icons.payment, 'color': Colors.blue},
-    'Complaint': {'icon': Icons.error_outline, 'color': Colors.red}
+    'Reminder': {'icon': Icons.calendar_today, 'color': Color(0xff6C67D3)},
+    'Payment': {'icon': Icons.payment, 'color': Color(0xff47D76E)},
+    'Complaint': {'icon': Icons.error, 'color': Color(0xffFFC217)}
   };
 
   void navigateToAddTask(String typeOfTask, {taskId}) {
@@ -961,11 +1002,11 @@ class TaskListState extends State<TaskList> {
     final action = CupertinoActionSheet(
       title: Text(
         "Tasks",
-        style: TextStyle(fontSize: 30),
+        style: TextStyle(fontSize: 30, color: Colors.black87),
       ),
       message: Text(
         "Select the type of task to be created",
-        style: TextStyle(fontSize: 15.0),
+        style: TextStyle(fontSize: 15.0, color: Colors.black87),
       ),
       actions: <Widget>[
         CupertinoActionSheetAction(
@@ -991,6 +1032,7 @@ class TaskListState extends State<TaskList> {
         )
       ],
       cancelButton: CupertinoActionSheetAction(
+        isDestructiveAction: true,
         child: Text("Cancel"),
         onPressed: () {
           Navigator.pop(context);
@@ -1016,155 +1058,175 @@ class TaskListState extends State<TaskList> {
 
   Widget filterOptions() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 8.0),
+      padding: EdgeInsets.only(bottom: 14.0),
       color: Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          /// Show all tasks
-          Column(
-            children: <Widget>[
-              Material(
-                borderRadius: BorderRadius.circular(31),
-                color: peopleFilterAllSelected ? Colors.black12 : Colors.white,
-                child: InkWell(
-                  customBorder: CircleBorder(),
-                  child: IconButton(
-                      icon: Icon(
-                        Icons.home,
-                        color: Colors.black,
-                      ),
-                      onPressed: null),
-                  onTap: () {
-                    setState(() {
-                      peopleFilterAllSelected = true;
-                    });
-                  },
-                ),
-              ),
-              SizedBox(
-                height: 2.0,
-              ),
-              Text(
-                "All",
-                style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 12.0,
-                    fontFamily: 'Montserrat',
-                    fontWeight: FontWeight.w700),
-              ),
-              SizedBox(
-                height: 2.0,
-              ),
-            ],
+          Expanded(
+            flex: 1,
+            child: Container(),
           ),
 
+          /// Show all tasks
+          Expanded(
+              flex: 2,
+              child: Column(
+                children: <Widget>[
+                  Material(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                            color: peopleFilterAllSelected
+                                ? Colors.white
+                                : Color(0xff2079FF))),
+                    color: peopleFilterAllSelected
+                        ? Color(0xff2079FF)
+                        : Colors.white,
+                    child: InkWell(
+                      customBorder: CircleBorder(),
+                      child: Padding(
+                          padding: EdgeInsets.only(left: 15, right: 15, top: 12.0, bottom: 12),
+                          child: Text(
+                            "ALL",
+                            style: TextStyle(
+                              color: peopleFilterAllSelected
+                                  ? Colors.white
+                                  : Color(0xff2079FF),
+                              fontSize: 15.0,
+                              fontFamily: 'Roboto',fontWeight: FontWeight.w700,
+                            ),
+                          )),
+                      onTap: () {
+                        setState(() {
+                          peopleFilterAllSelected = true;
+                        });
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    height: 6.0,
+                  ),
+                ],
+              )),
+
           /// Show my tasks
-          Column(
-            children: <Widget>[
-              Material(
-                borderRadius: BorderRadius.circular(31),
-                color: peopleFilterAllSelected ? Colors.white : Colors.black12,
-                child: InkWell(
-                  customBorder: CircleBorder(),
-                  child: IconButton(
-                      icon: Icon(
-                        Icons.person,
-                        color: Colors.black,
-                      ),
-                      onPressed: null),
-                  onTap: () {
-                    setState(() {
-                      peopleFilterAllSelected = false;
-                    });
-                  },
-                ),
-              ),
-              SizedBox(
-                height: 2.0,
-              ),
-              Text(
-                "Me",
-                style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 12.0,
-                    fontFamily: 'Montserrat',
-                    fontWeight: FontWeight.w700),
-              ),
-              SizedBox(
-                height: 2.0,
-              ),
-            ],
+          Expanded(
+              flex: 2,
+              child: Column(
+                children: <Widget>[
+                  Material(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                            color: peopleFilterAllSelected
+                                ? Color(0xff2079FF)
+                                : Colors.white)),
+                    color: peopleFilterAllSelected
+                        ? Colors.white
+                        : Color(0xff2079FF),
+                    child: InkWell(
+                      customBorder: CircleBorder(),
+                      child: Padding(
+                          padding: EdgeInsets.only(left: 15, right: 15, top: 12.0, bottom: 12),
+                          child: Text(
+                            "ME",
+                            style: TextStyle(
+                              color: peopleFilterAllSelected
+                                  ? Color(0xff2079FF)
+                                  : Colors.white,
+                              fontSize: 15.0,
+                              fontFamily: 'Roboto',fontWeight: FontWeight.w700,
+                            ),
+                          )),
+                      onTap: () {
+                        setState(() {
+                          peopleFilterAllSelected = false;
+                        });
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    height: 6.0,
+                  ),
+                ],
+              )),
+
+          Expanded(
+            flex: 2,
+            child: Container(),
           ),
 
           /// Task Filter
-          Column(
-            children: <Widget>[
-              Material(
-                color: Colors.white,
-                child: InkWell(
-                  customBorder: CircleBorder(),
-                  child: IconButton(
-                      icon: Icon(
-                        Icons.filter_list,
-                        color: Colors.black,
+          Expanded(
+              flex: 2,
+              child: Column(
+                children: <Widget>[
+                  Material(
+                    color: Color(0xffBFDAFF),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                      splashColor: Color(0xff2079FF),
+                      child: Tooltip(
+                        child: IconButton(
+                            icon: Icon(
+                              Icons.filter_list,
+                              color: Color(0xff2079FF),
+                            ),
+                            onPressed: null),
+                        decoration: BoxDecoration(color: Color(0xff2079FF)),
+                        message: 'Filter',
                       ),
-                      onPressed: null),
-                  onTap: () {
-                    showFilterBottomSheet();
-                  },
-                ),
-              ),
-              SizedBox(
-                height: 2.0,
-              ),
-              Text(
-                "Filter",
-                style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 12.0,
-                    fontFamily: 'Montserrat',
-                    fontWeight: FontWeight.w700),
-              ),
-              SizedBox(
-                height: 2.0,
-              ),
-            ],
-          ),
+                      onTap: () {
+                        showFilterBottomSheet();
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    height: 6.0,
+                  ),
+                ],
+              )),
 
           ///Task Sort
-          Column(
-            children: <Widget>[
-              Material(
-                color: Colors.white,
-                child: InkWell(
-                  customBorder: CircleBorder(),
-                  child: IconButton(
-                      icon: Icon(
-                        Icons.sort,
-                        color: Colors.black,
-                      ),
-                      onPressed: null),
-                  onTap: () {
-                    showSortBottomSheet(context);
-                  },
-                ),
-              ),
-              SizedBox(
-                height: 2.0,
-              ),
-              Text(
-                "Sort",
-                style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 12.0,
-                    fontFamily: 'Montserrat',
-                    fontWeight: FontWeight.w700),
-              ),
-              SizedBox(
-                height: 2.0,
-              ),
-            ],
+          Expanded(
+              flex: 2,
+              child: Column(
+                children: <Widget>[
+                  Material(
+                    color: Color(0xffBFDAFF),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                      splashColor: Color(0xff2079FF),
+                      child: Tooltip(
+                          child: IconButton(
+                              icon: Icon(
+                                Icons.sort,
+                                color: Color(0xff2079FF),
+                              ),
+                              onPressed: null),
+                          decoration: BoxDecoration(color: Color(0xff2079FF)),
+                          message: 'Sort'),
+                      onTap: () {
+                        showSortBottomSheet(context);
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    height: 6.0,
+                  ),
+                ],
+              )),
+
+          Expanded(
+            flex: 1,
+            child: Container(),
           ),
         ],
       ),
@@ -1220,8 +1282,7 @@ class TaskListState extends State<TaskList> {
                           style: new TextStyle(
                               color: Colors.black,
                               fontSize: 16.0,
-                              fontFamily: 'Montserrat',
-                              fontWeight: FontWeight.w700),
+                              fontFamily: 'Roboto',fontWeight: FontWeight.w700,),
                         ),
                       ],
                     ),
@@ -1238,8 +1299,7 @@ class TaskListState extends State<TaskList> {
                           style: new TextStyle(
                               color: Colors.black,
                               fontSize: 16.0,
-                              fontFamily: 'Montserrat',
-                              fontWeight: FontWeight.w700),
+                              fontFamily: 'Roboto',fontWeight: FontWeight.w700,),
                         ),
                       ],
                     ),
@@ -1252,8 +1312,7 @@ class TaskListState extends State<TaskList> {
                     style: const TextStyle(
                         color: Colors.black,
                         fontSize: 12.0,
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w700),
+                        fontFamily: 'Roboto',fontWeight: FontWeight.w700,),
                   ),
                   trailing: sortBy == sortingValues.DUE_DATE
                       ? Icon(
