@@ -77,6 +77,12 @@ class DashboardState extends State<Dashboard> {
         return null;
       },
       child: Scaffold(
+        appBar: AppBar(
+          title: Text('DashBoard', style: CommonWidgets.getAppBarTitleStyle(),),
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: Colors.white,
+        ),
         backgroundColor: Colors.white,
         body: Builder(builder: (BuildContext scaffoldC) {
           _navigatorContext = scaffoldC;

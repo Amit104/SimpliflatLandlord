@@ -308,8 +308,9 @@ class CreateOrJoinHome extends StatelessWidget {
   }
 
   navigateToHome(BuildContext context) {
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
+    Navigator.popUntil(context, ModalRoute.withName('/'));
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
       return Home();
-    }), ModalRoute.withName('/'));
+    }));
   }
 }

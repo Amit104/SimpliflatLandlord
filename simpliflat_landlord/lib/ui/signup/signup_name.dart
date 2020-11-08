@@ -356,24 +356,17 @@ class _SignUpNameUser extends State<SignUpName> {
   navigateToHome(User user) {
     //TODO: check if the get from sp in main clashes with the set in sp in onsuccess method in this file
     debugPrint('user id in signup name - ' + user.getUserId());
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
+    Navigator.popUntil(context, ModalRoute.withName('/'));
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
       return MyApp();
-    }), ModalRoute.withName('/'))
-        .whenComplete(() {
-      _progressCircleState = 0;
-      _isButtonDisabled = false;
-    });
+    }));
   }
 
   navigateToCreateOrJoin(User user) {
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
-      
-        return MyApp();
-    }), ModalRoute.withName('/'))
-        .whenComplete(() {
-      _progressCircleState = 0;
-      _isButtonDisabled = false;
-    });
+    Navigator.popUntil(context, ModalRoute.withName('/'));
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
+      return MyApp();
+    }));
   }
 
   @override

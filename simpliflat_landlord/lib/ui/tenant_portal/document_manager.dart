@@ -54,6 +54,12 @@ class _DocumentManager extends State<DocumentManager> {
     _userId = user.getUserId();
     _userName = user.getName();
     return Scaffold(
+      appBar: AppBar(
+          title: Text('Document Manager', style: CommonWidgets.getAppBarTitleStyle(),),
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: Colors.white,
+        ),
       floatingActionButton: new FloatingActionButton(
         onPressed: () {
           _openFileExplorer();

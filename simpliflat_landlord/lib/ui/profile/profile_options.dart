@@ -201,14 +201,6 @@ title: Text('Evacuate Flat', style: TextStyle(
     Navigator.pop(_navigatorContext, {'editedData': editedData});
   }
 
-  void _signOut() async {
-    await FirebaseAuth.instance.signOut();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    //SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-    _backHome();
-  }
-
   Widget _getOwners(BuildContext scaffoldC) {
     return ListView.builder(
         itemCount: this.flat.getOwnerFlat().getOwners().length,

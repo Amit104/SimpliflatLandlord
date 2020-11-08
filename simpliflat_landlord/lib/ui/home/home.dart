@@ -1,8 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/owner_flat_dao.dart';
 import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
+import 'package:simpliflat_landlord/main.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/model/block.dart';
@@ -13,10 +16,12 @@ import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 import 'package:simpliflat_landlord/ui/common_screens/my_building_list.dart';
 import 'package:simpliflat_landlord/ui/create_or_join/flat_list.dart';
 import 'package:simpliflat_landlord/ui/flat_setup/add_tenant.dart';
+import 'package:simpliflat_landlord/ui/home/activity_list.dart';
 import 'package:simpliflat_landlord/ui/home/all_incoming_requests.dart';
 import 'package:simpliflat_landlord/ui/owner_requests/coowner_requests.dart';
 import 'package:simpliflat_landlord/ui/owner_requests/landlord_requests.dart';
 import 'package:simpliflat_landlord/ui/owner_requests/search_owner.dart';
+import 'package:simpliflat_landlord/ui/profile/user_profile.dart';
 import 'package:simpliflat_landlord/ui/tenant_portal/tenant_portal.dart';
 import 'package:simpliflat_landlord/ui/tenant_requests.dart/search_tenant.dart';
 import 'package:simpliflat_landlord/ui/tenant_requests.dart/tenant_requests.dart';
@@ -45,7 +50,7 @@ class Home extends StatelessWidget {
   }
 
   Widget getBody(BuildContext context) {
-    return Container();
+    return ActivityList();
   }
 
   Widget getDrawer(BuildContext context) {
@@ -155,8 +160,46 @@ class Home extends StatelessWidget {
               },
             ),
           ),
+          Container(
+              decoration: BoxDecoration(color: Colors.white),
+                    child: ListTile(
+              title: Text('Profile'),
+              onTap: () async {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) {
+                    return UserProfile();
+                  }),
+                );
+              },
+            ),
+          ),
+          Container(
+              decoration: BoxDecoration(color: Colors.white),
+                    child: ListTile(
+              title: Text('Logout'),
+              onTap: () async {
+                _signOut(context);
+              },
+            ),
+          ),
         ],
       )),
     );
+  }
+
+  void _signOut(BuildContext scaffoldC) async {
+    await FirebaseAuth.instance.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    navigateToHome(scaffoldC);
+  }
+
+  navigateToHome(BuildContext context) {
+    Navigator.popUntil(context, ModalRoute.withName('/'));
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
+      return MyApp();
+    }));
   }
 }

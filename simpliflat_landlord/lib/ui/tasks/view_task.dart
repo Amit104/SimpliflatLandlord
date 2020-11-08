@@ -621,7 +621,7 @@ class ViewTask extends StatelessWidget {
     if (assignees != null) {
       assigneesList = assignees;
     }
-    if (assigneesList.contains(this.user.getUserId())) {
+    /*if (assigneesList.contains(this.user.getUserId())) {
       chips.add(Container(
         margin: EdgeInsets.only(right: 5.0),
         child: Chip(
@@ -631,7 +631,7 @@ class ViewTask extends StatelessWidget {
           backgroundColor: Colors.grey[200],
         ),
       ));
-    }
+    }*/
     List<Owner> owners = this._flat.getOwnerFlat().getOwners();
     List<Tenant> tenants = this._flat.getTenantFlat().getTenants();
     for (int i = 0; i < owners.length; i++) {

@@ -964,7 +964,7 @@ class TaskListState extends State<TaskList> {
         ),
       ));
     }
-    if (userList.contains(this.user.getUserId())) {
+    /*if (userList.contains(this.user.getUserId())) {
       var colorL = this.user.getUserId().toString().trim().hashCode;
 
       overlappingUsers.add(new Positioned(
@@ -976,7 +976,7 @@ class TaskListState extends State<TaskList> {
           child: Text(this.user.getName()[0]),
         ),
       ));
-    }
+    }*/
     return overlappingUsers;
   }
 

@@ -849,8 +849,11 @@ class _CreateTask extends State<CreateTask> {
   }
 
   Widget _getConflictsViewWidget() {
+    if(tasksWithConflicts == null || tasksWithConflicts.length == 0) {
+      return Container();
+    }
     return Visibility(
-      visible: tasksWithConflicts.length > 0 && openConfictsView,
+      visible: tasksWithConflicts != null && tasksWithConflicts.length > 0 && openConfictsView,
       child: Container(
         color: Colors.grey[100],
         child: Card(
@@ -1123,7 +1126,7 @@ class _CreateTask extends State<CreateTask> {
    
       setState(() {
         tasksWithConflicts = tasksWithConflicts;
-        if (tasksWithConflicts.length > 0)
+        if (tasksWithConflicts != null && tasksWithConflicts.length > 0)
           showConflictsWarningSign = true;
         else
           showConflictsWarningSign = false;

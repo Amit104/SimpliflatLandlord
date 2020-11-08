@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/dao/message_dao.dart';
 import 'package:simpliflat_landlord/model/message.dart';
@@ -48,6 +49,12 @@ class _MessageBoard extends State<MessageBoard> {
     User user = Provider.of<User>(context, listen: false);
     this.currentUserId = user.getUserId();
     return Scaffold(
+      appBar: AppBar(
+          title: Text('Notice Board', style: CommonWidgets.getAppBarTitleStyle(),),
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: Colors.white,
+        ),
       body: Builder(
         builder: (BuildContext scaffoldC) {
           _navigatorContext = scaffoldC;
