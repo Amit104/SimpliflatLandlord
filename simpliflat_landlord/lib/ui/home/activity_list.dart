@@ -1,14 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 import 'package:simpliflat_landlord/model/activity.dart';
+import 'package:simpliflat_landlord/model/user.dart';
 
 class ActivityList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    User user = Provider.of<User>(context, listen: false);
     return FutureBuilder(
-      future: _getActivities(),
+      future: _getActivities(user.getUserId()),
       builder: (BuildContext context, AsyncSnapshot<List<Activity>> data) {
         if(!data.hasData) {
           return LoadingContainerVertical(3);
@@ -28,14 +31,13 @@ class ActivityList extends StatelessWidget {
     );
   }
 
-  Future<List<Activity>> _getActivities() async {
-    //TODO: add owner id list in activity so that owner ld list condition can be added here
+  Future<List<Activity>> _getActivities(String userId) async {
     DateTime now= new DateTime.now();
     Timestamp startDate = Timestamp.fromDate(DateTime(now.year, now.month, now.day));
     Timestamp endDate = Timestamp.fromDate(DateTime(now.year, now.month, now.day).add(new Duration(days: 1)));
     int start = startDate.millisecondsSinceEpoch;
     int end = endDate.millisecondsSinceEpoch;
-    QuerySnapshot s = await Firestore.instance.collection('activity').where('timestamp', isGreaterThan: start).where('timestamp', isLessThan: end).getDocuments();
+    QuerySnapshot s = await Firestore.instance.collection('activity').where('timestamp', isGreaterThan: start).where('timestamp', isLessThan: end).where('ownerIdList', arrayContains: userId).getDocuments();
     List<Activity> activities = new List();
     if(s.documents != null) {
       activities = s.documents.map((DocumentSnapshot doc) => Activity.fromJson(doc.data, doc.documentID)).toList();

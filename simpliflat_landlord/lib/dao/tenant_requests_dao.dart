@@ -21,6 +21,14 @@ class TenantRequestsDao {
         .getDocuments();
   }
 
+  static Future<QuerySnapshot> getRequestsForFlatD(String flatId) {
+    return Firestore.instance
+        .collection(globals.joinFlatLandlordTenant)
+        .where('owner_flat_id', isEqualTo: flatId)
+        .where('status', isEqualTo: globals.RequestStatus.Pending.index)
+        .getDocuments();
+  }
+
   static Stream<QuerySnapshot> getSentRequestsForFlat(String flatId) {
     return Firestore.instance
         .collection(globals.joinFlatLandlordTenant)

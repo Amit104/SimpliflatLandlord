@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/constants/colors.dart';
+import 'package:simpliflat_landlord/constants/strings.dart';
 import 'package:simpliflat_landlord/dao/landlord_requests_dao.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/model/landlord_request.dart';
@@ -27,86 +29,146 @@ class CreateOrJoinHome extends StatelessWidget {
   }
 
   Widget getBody(BuildContext scaffoldC, BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: <Widget>[
-          getCreateOrJoinOptionsWidget(context),
-          getInfoWidget(context),
-          ChangeNotifierProvider(
-            create: (_) => LoadingModel(),
-            builder: (BuildContext context1, Widget child) {
-              return getIncomingRequestsWidget(context1, scaffoldC);
-            }),
-        ],
-      ),
+    return Column(
+      children: [
+        SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              getInfoWidget(context),
+              getCreateOrJoinOptionsWidget(context),
+              ChangeNotifierProvider(
+                create: (_) => LoadingModel(),
+                builder: (context, child) =>
+                    getIncomingRequestsWidget(context),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget getCreateOrJoinOptionsWidget(BuildContext context) {
+    var deviceSize = MediaQuery.of(context).size;
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 50.0),
+      margin: EdgeInsets.symmetric(vertical: 20.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: <Widget>[
+          Expanded(
+            child: Container(),
+            flex: 2,
+          ),
           GestureDetector(
             onTap: () {
               navigateToCreateProperty(false, context);
             },
-            child: ClipRRect(
-              child: Stack(children: [
-                Image.asset(
-                  'assets/images/CreateProperty.jpg',
-                  width: MediaQuery.of(context).size.width * 0.45,
-                  height: MediaQuery.of(context).size.width * 0.40,
-                  fit: BoxFit.fill,
-                ),
-                Positioned(
-                    bottom: 15.0,
-                    left: 15.0,
-                    width: MediaQuery.of(context).size.width * 0.35,
-                    child: Center(
-                        child: Text(
-                      'Create a Property',
-                      style: TextStyle(
-                        color: Color.fromRGBO(255, 226, 184, 1),
-                        fontSize: 20.0,
-                      ),
-                    ))),
-              ]),
-              borderRadius: BorderRadius.circular(30.0),
+            child: SizedBox(
+              height: 225,
+              width: deviceSize.width * 0.42,
+              child: new Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5.0)),
+                  color: Colors.black87,
+                  elevation: 2.0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5.0),
+                        color: Color(0xff6C67D3)),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Padding(
+                              padding: EdgeInsets.only(
+                                left: 28.0,
+                                top: 40.0,
+                              ),
+                              child: Icon(
+                                Icons.add_circle_outline,
+                                size: 30.0,
+                                color: Colors.white,
+                              )),
+                          textInCard(
+                              "CREATE", FontWeight.w700, 21.0, 28.0, 10.0),
+                          textInCard(
+                              "A FLAT", FontWeight.normal, 21.0, 28.0, 3.0),
+                          textInCard(
+                              "Create a new flat", null, 14.0, 28.0, 8.0),
+                          textInCard("and invite your", null, 14.0, 28.0, 4.0),
+                          textInCard("flatmates", null, 14.0, 28.0, 4.0),
+                        ]),
+                  )),
             ),
+          ),
+          Expanded(
+            child: Container(),
+            flex: 3,
           ),
           GestureDetector(
             onTap: () {
               navigateToCreateProperty(true, context);
             },
-            child: ClipRRect(
-              child: Stack(children: [
-                Image.asset(
-                  'assets/images/JoinProperty.jpg',
-                  width: MediaQuery.of(context).size.width * 0.45,
-                  height: MediaQuery.of(context).size.width * 0.40,
-                  fit: BoxFit.fill,
-                ),
-                Positioned(
-                    bottom: 15.0,
-                    left: 15.0,
-                    width: MediaQuery.of(context).size.width * 0.35,
-                    child: Center(
-                        child: Text(
-                      'Join a Property',
-                      style: TextStyle(
-                          color: Color.fromRGBO(255, 226, 184, 1),
-                          fontSize: 20.0),
-                    ))),
-              ]),
-              borderRadius: BorderRadius.circular(30.0),
+            child: SizedBox(
+              height: 225,
+              width: deviceSize.width * 0.42,
+              child: new Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5.0)),
+                  color: Color(0xff2079FF),
+                  elevation: 2.0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5.0),
+                    ),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Padding(
+                              padding: EdgeInsets.only(
+                                left: 28.0,
+                                top: 40.0,
+                              ),
+                              child: Icon(
+                                Icons.play_circle_outline,
+                                size: 30.0,
+                                color: Colors.white,
+                              )),
+                          textInCard("JOIN", FontWeight.w700, 21.0, 28.0, 10.0),
+                          textInCard(
+                              "A FLAT", FontWeight.normal, 21.0, 28.0, 3.0),
+                          textInCard("Search for your", null, 14.0, 28.0, 8.0),
+                          textInCard("flat and send a", null, 14.0, 28.0, 4.0),
+                          textInCard("request", null, 14.0, 28.0, 4.0),
+                        ]),
+                  )),
             ),
+          ),
+          Expanded(
+            child: Container(),
+            flex: 2,
           ),
         ],
       ),
     );
   }
+
+  Widget textInCard(text, weight, size, padLeft, padTop) {
+    return Padding(
+      padding: EdgeInsets.only(top: padTop, left: padLeft),
+      child: Text(
+        text,
+        textAlign: TextAlign.left,
+        style: TextStyle(
+          fontSize: size,
+          color: Colors.white,
+          fontFamily: Strings.PRIMARY_FONT_FAMILY,
+          fontWeight: Strings.PRIMARY_FONT_WEIGHT,
+        ),
+      ),
+    );
+  }
+
+
 
   void navigateToCreateProperty(bool join, BuildContext context) async {
     await Navigator.push(
@@ -119,34 +181,40 @@ class CreateOrJoinHome extends StatelessWidget {
 
   Widget getInfoWidget(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 20.0),
+      padding: EdgeInsets.symmetric(vertical: 10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           Container(
             child: Text(
-              'Welcome to Simpliflat Landlord',
+              'Welcome to Simpliflat',
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16.0,
+                fontFamily: Strings.PRIMARY_FONT_FAMILY,
+                fontWeight: Strings.PRIMARY_FONT_WEIGHT,
+                fontSize: 22.0,
+                color: AppColors.PRIMARY_COLOR,
               ),
             ),
           ),
           Container(
             child: Text(
-              'Please create a property or join an existing one.',
+              'Please create a flat or join an existing one.',
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: Colors.grey,
+                fontFamily: Strings.PRIMARY_FONT_FAMILY,
+                fontWeight: Strings.PRIMARY_FONT_WEIGHT,
+                color: Colors.black54,
               ),
             ),
           ),
           Container(
             child: Text(
-              'We make management of your property easy.',
+              'We make living simple.',
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: Colors.grey,
+                fontFamily: Strings.PRIMARY_FONT_FAMILY,
+                fontWeight: Strings.PRIMARY_FONT_WEIGHT,
+                color: Colors.black54,
               ),
             ),
           ),
@@ -155,25 +223,14 @@ class CreateOrJoinHome extends StatelessWidget {
     );
   }
 
-  Widget getIncomingRequestsWidget(BuildContext provCxt, BuildContext scaffoldC) {
+  Widget getIncomingRequestsWidget(BuildContext scaffoldC) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 30.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            'Incoming Requests',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16.0),
-          ),
-          SizedBox(height: 10.0),
-          getIncomingRequestsDataWidget(provCxt, scaffoldC),
-        ],
-      ),
+      child: getIncomingRequestsDataWidget(scaffoldC),
     );
   }
 
-  Widget getIncomingRequestsDataWidget(BuildContext provCxt, BuildContext scaffoldC) {
+  Widget getIncomingRequestsDataWidget(BuildContext scaffoldC) {
     User user = Provider.of<User>(scaffoldC, listen: false);
     return StreamBuilder(
         stream: LandlordRequestsDao.getRequestsSentToMeByOwner(user.getUserId()),
@@ -186,9 +243,25 @@ class CreateOrJoinHome extends StatelessWidget {
               physics: NeverScrollableScrollPhysics(),
               shrinkWrap: true,
               scrollDirection: Axis.vertical,
-              itemCount: snapshots.data.documents.length,
+              itemCount: snapshots.data.documents.length + 1,
               itemBuilder: (BuildContext context, int position) {
-                
+                if(snapshots.data.documents.length == 0) return Container();
+
+                if (position == 0 && snapshots.data.documents.length > 0) {
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: 10.0),
+                    child: Text(
+                      'Requests',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18.0,
+                        fontFamily: Strings.PRIMARY_FONT_FAMILY,
+                        fontWeight: Strings.PRIMARY_FONT_WEIGHT,
+                        color: AppColors.PRIMARY_COLOR,
+                      ),
+                    ),
+                  );
+                }
                 Map<String, dynamic> data =
                     snapshots.data.documents[position].data;
                 LandlordRequest req = LandlordRequest.fromJson(
@@ -202,7 +275,7 @@ class CreateOrJoinHome extends StatelessWidget {
                         : Card(
                             margin: EdgeInsets.symmetric(
                                 vertical: 3.0, horizontal: 12.0),
-                            elevation: 5.0,
+                            elevation: 1.0,
                             child: Container(
                               padding: EdgeInsets.symmetric(vertical: 10.0),
                               child: Row(
@@ -216,7 +289,7 @@ class CreateOrJoinHome extends StatelessWidget {
                                           size: 25.0,
                                         ),
                                         onPressed: () {
-                                          acceptRequest(req, scaffoldC, provCxt);
+                                          acceptRequest(req, scaffoldC);
                                           Utility.addToSharedPref(
                                               propertyRegistered: true);
                                         },
@@ -226,7 +299,13 @@ class CreateOrJoinHome extends StatelessWidget {
                                       Text(
                                         getTitleText(req),
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(fontSize: 14.0),
+                                        style: TextStyle(
+                                          fontSize: 14.0,
+                                          fontFamily:
+                                              Strings.PRIMARY_FONT_FAMILY,
+                                          fontWeight:
+                                              Strings.PRIMARY_FONT_WEIGHT,
+                                        ),
                                       ),
                                       SizedBox(height: 5.0),
                                       Text(
@@ -234,8 +313,15 @@ class CreateOrJoinHome extends StatelessWidget {
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                            color: Colors.grey, fontSize: 12.0),
+                                          color: Colors.grey,
+                                          fontSize: 12.0,
+                                          fontFamily:
+                                              Strings.PRIMARY_FONT_FAMILY,
+                                          fontWeight:
+                                              Strings.PRIMARY_FONT_WEIGHT,
+                                        ),
                                       )
+                                      
                                     ]),
                                   ),
                                   Container(
@@ -244,7 +330,7 @@ class CreateOrJoinHome extends StatelessWidget {
                                         icon: Icon(Icons.close,
                                             color: Colors.red, size: 25.0),
                                         onPressed: () {
-                                          rejectRequest(req, scaffoldC, provCxt);
+                                          rejectRequest(req, scaffoldC);
                                         },
                                       )),
                                 ],
@@ -266,8 +352,8 @@ class CreateOrJoinHome extends StatelessWidget {
   }
 
   Future<bool> rejectRequest(
-      LandlordRequest request, BuildContext scaffoldC, BuildContext provCxt) async {
-    Provider.of<LoadingModel>(provCxt, listen: false).startLoading();
+      LandlordRequest request, BuildContext scaffoldC) async {
+    Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
     Utility.createErrorSnackBar(scaffoldC, error: 'Rejecting request');
     bool ifSuccess = await OwnerRequestsService.rejectRequest(request);
     if(ifSuccess) {
@@ -280,12 +366,12 @@ class CreateOrJoinHome extends StatelessWidget {
           error: 'Error while rejecting request');
     };
 
-    Provider.of<LoadingModel>(provCxt, listen: false).stopLoading();
+    Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
     return ifSuccess;
   }
 
-  void acceptRequest(LandlordRequest request, BuildContext scaffoldC, BuildContext provCxt) async {
-    Provider.of<LoadingModel>(provCxt, listen: false).startLoading();
+  void acceptRequest(LandlordRequest request, BuildContext scaffoldC) async {
+    Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
 
     Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
 
@@ -304,7 +390,7 @@ class CreateOrJoinHome extends StatelessWidget {
           error: 'Error while accepting request');
     }
 
-    Provider.of<LoadingModel>(provCxt, listen: false).stopLoading();
+    Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
   }
 
   navigateToHome(BuildContext context) {

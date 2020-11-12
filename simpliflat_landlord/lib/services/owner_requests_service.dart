@@ -111,7 +111,7 @@ class OwnerRequestsService {
 
     /** Add ownerId in ownerId List of all requests received for that flat */
 
-    QuerySnapshot ts = await TenantRequestsDao.getReceivedRequestsForFlatD(request.getFlatId());
+    QuerySnapshot ts = await TenantRequestsDao.getRequestsForFlatD(request.getFlatId());
 
     Map<String, dynamic> updateTenReqData = TenantRequest.toUpdateJson(ownerIdList: FieldValue.arrayUnion([request.getToUserId()]));
 
@@ -273,7 +273,7 @@ class OwnerRequestsService {
 
     /** remove ownerId from incoming requests for flat from tenant */
 
-    QuerySnapshot ts = await TenantRequestsDao.getReceivedRequestsForFlatD(flat.getFlatId());
+    QuerySnapshot ts = await TenantRequestsDao.getRequestsForFlatD(flat.getFlatId());
 
     Map<String, dynamic> updateTenReqData = TenantRequest.toUpdateJson(ownerIdList: FieldValue.arrayRemove([owner.getOwnerId()]));
 

@@ -78,10 +78,6 @@ class MyBuildingListState extends State<MyBuildingList> {
         return Consumer<LoadingModel>(
             builder: (BuildContext context, LoadingModel loadingModel, Widget child) {
                 if(loadingModel.load) return LoadingContainerVertical(3);
-              //TODO: test this
-              if(buildings.data != null && buildings.data.length == 1) {
-                navigate(buildings.data[0], scaffoldC);
-              }
 
                   return ListView.separated(
             separatorBuilder: (BuildContext ctx, int pos) {

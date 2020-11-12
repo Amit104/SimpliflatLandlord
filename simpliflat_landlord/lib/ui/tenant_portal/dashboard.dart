@@ -157,6 +157,7 @@ class DashboardState extends State<Dashboard> {
                   .snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> taskSnapshot) {
                 if (!taskSnapshot.hasData) return LoadingContainerVertical(3);
+                debugPrint("after fetching");
 
                 /// TASK LIST VIEW
                 var tooltipKey = new List();

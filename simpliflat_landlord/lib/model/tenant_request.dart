@@ -18,6 +18,15 @@ class TenantRequest extends BaseModel {
   String buildingAddress;
   String requestId;
   String ownerFlatName;
+  List<String> ownerIdList;
+
+  List<String> getOwnerIdList() {
+		return this.ownerIdList;
+	}
+
+	void setOwnerIdList(List<String> ownerIdList) {
+		this.ownerIdList = ownerIdList;
+	}
 
 	String getBuildingId() {
 		return this.buildingId;
@@ -151,7 +160,8 @@ class TenantRequest extends BaseModel {
           'owner_flat_name': this.ownerFlatName,
           'created_by' : { "user_id" : this.createdByUserId, 'name' : this.createdByUserName, 'phone' : this.createdByUserPhone },
           'tenant_flat_name' : this.tenantFlatName,
-          'building_details' : {'building_name' : this.buildingName, 'building_zipcode' : this.buildingZipcode, 'building_address' : this.buildingAddress}};
+          'building_details' : {'building_name' : this.buildingName, 'building_zipcode' : this.buildingZipcode, 'building_address' : this.buildingAddress},
+          'ownerIdList': this.ownerIdList};
   }
 
   static TenantRequest fromJson(Map<String, dynamic> data, String documentId) {
@@ -173,7 +183,8 @@ class TenantRequest extends BaseModel {
     tenantRequest.setUpdatedAt(data['updated_at']);
     tenantRequest.setOwnerFlatName(data['owner_flat_name']);
     tenantRequest.setRequestId(documentId);
-
+    List<String> ownerIdList = new List<String>.from(data['ownerIdList'] == null?new List():data['ownerIdList']);
+    tenantRequest.setOwnerIdList(ownerIdList);
     return tenantRequest;
   }
 

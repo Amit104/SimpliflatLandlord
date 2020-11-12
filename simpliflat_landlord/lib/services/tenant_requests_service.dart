@@ -5,6 +5,7 @@ import 'package:simpliflat_landlord/dao/owner_flat_dao.dart';
 import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
 import 'package:simpliflat_landlord/dao/tenant_dao.dart';
 import 'package:simpliflat_landlord/dao/tenant_requests_dao.dart';
+import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
 import 'package:simpliflat_landlord/model/tenant_flat.dart';
 import 'package:simpliflat_landlord/model/tenant_request.dart';
@@ -124,6 +125,7 @@ class TenantRequestsService {
     req.setBuildingZipcode(flat.getZipcode());
     req.setBuildingAddress(flat.getBuildingAddress());
     req.setOwnerFlatName(flat.getFlatName());
+    req.setOwnerIdList(flat.getOwners().map((Owner o) => o.getOwnerId()).toList());
     
     return TenantRequestsDao.add(req.toJson());
   }
