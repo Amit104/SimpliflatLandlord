@@ -70,3 +70,5 @@ String propertyRegistered = "propertyRegistered";
 String user = "user";
 
 String tasksLandlord = "tasks_landlord";
+
+String activityLastSeen = "activityLastSeen";

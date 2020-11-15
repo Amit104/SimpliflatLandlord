@@ -2,30 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
-import 'package:simpliflat_landlord/model/owner.dart';
-import 'package:simpliflat_landlord/model/owner_flat.dart';
 import 'package:simpliflat_landlord/model/owner_tenant.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/ui/tasks/view_task.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 
-class Dashboard extends StatefulWidget {
-  final OwnerTenant flat;
-  final User user;
+class Dashboard extends StatelessWidget {
 
-  Dashboard(this.flat, this.user);
-
-  @override
-  State<StatefulWidget> createState() {
-    return DashboardState(this.flat, this.user);
-  }
-}
-
-class DashboardState extends State<Dashboard> {
-  var _navigatorContext;
   final OwnerTenant flat;
   //bool noticesExist = false;
   bool tasksExist = false;
@@ -57,17 +42,10 @@ class DashboardState extends State<Dashboard> {
 
   Map<String, Map> flatIdentifierData = new Map();
 
-  var _progressCircleState = 0;
 
-  var _isButtonDisabled = false;
 
-  DashboardState(this.flat, this.user);
+  Dashboard(this.flat, this.user);
 
-  @override
-  void initState() {
-    super.initState();
-    debugPrint("in init");
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,15 +63,13 @@ class DashboardState extends State<Dashboard> {
         ),
         backgroundColor: Colors.white,
         body: Builder(builder: (BuildContext scaffoldC) {
-          _navigatorContext = scaffoldC;
           return new SingleChildScrollView(
             child: Column(
               children: <Widget>[
-                flatNameWidget(),
+                flatNameWidget(context),
 
-                getTasks(),
+                getTasks(context),
                 
-
                 getNotices(),
               ],
             ),
@@ -112,7 +88,7 @@ class DashboardState extends State<Dashboard> {
           );
   }
 
-  Widget flatNameWidget() {
+  Widget flatNameWidget(BuildContext context) {
 
     return Card(
       elevation: 5.0,
@@ -138,7 +114,7 @@ class DashboardState extends State<Dashboard> {
 
 
   // Get Tasks data for today
-  Widget getTasks() {
+  Widget getTasks(BuildContext context) {
     //DONE: need to change below
 
     DateTime now= new DateTime.now();
@@ -225,7 +201,7 @@ class DashboardState extends State<Dashboard> {
                                 ],
                               ),
                               onTap: () {
-                                navigateToViewTask(
+                                navigateToViewTask(context,
                                     taskId: taskSnapshot
                                         .data.documents[position].documentID);
                               },
@@ -241,7 +217,7 @@ class DashboardState extends State<Dashboard> {
 
   /// TODO: Change taskList code to store names along with user id in array. Then change this hardcoded values to show those.
 
-  void navigateToViewTask({taskId}) async {
+  void navigateToViewTask(BuildContext context, {taskId}) async {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
@@ -378,7 +354,7 @@ class DashboardState extends State<Dashboard> {
     );
   }
 
-  _moveToLastScreen(BuildContext _navigatorContext) {
+  _moveToLastScreen(BuildContext context) {
     debugPrint("Back");
     Navigator.of(context).pop();
   }

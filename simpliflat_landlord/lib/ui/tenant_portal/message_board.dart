@@ -555,14 +555,14 @@ class _MessageBoard extends State<MessageBoard> {
     var userName = await Utility.getUserName();
     if (addOrUpdate == 1) {
       /// add Message
-      var data = {
-        'message': addNote.text.toString().trim(),
-        'user_id': userId,
-        'created_at': timeNow,
-        'updated_at': timeNow,
-        'user_name': userName,
-        'is_created_by_tenant': 0
-      };
+      Message message = new Message();
+      message.setMessage(addNote.text.toString().trim());
+      message.setCreatedByUserId(userId);
+      message.setCreatedAt(Timestamp.fromDate(timeNow));
+      message.setUpdatedAt(Timestamp.fromDate(timeNow));
+      message.setCreatedByUserName(userName);
+      message.setCreatedByTenant(0);
+
       setState(() {
         addNote.text = '';
       });
@@ -580,7 +580,7 @@ class _MessageBoard extends State<MessageBoard> {
         allflatsList.forEach((doc) {
           debugPrint("add to flat - " + doc.toString());
           DocumentReference docRef = MessageDao.getDocumentReference(doc, null);
-          batch.setData(docRef, data);
+          batch.setData(docRef, message.toJson());
         });
         await batch.commit().then((v) {
           if (mounted)
@@ -592,7 +592,7 @@ class _MessageBoard extends State<MessageBoard> {
         });
       } else {
         DocumentReference addNoteRef = MessageDao.getDocumentReference(_flatId, null);
-        addNoteRef.setData(data).then((v) {
+        addNoteRef.setData(message.toJson()).then((v) {
           if (mounted)
             Utility.createErrorSnackBar(scaffoldContext,
                 error: 'Message Saved');

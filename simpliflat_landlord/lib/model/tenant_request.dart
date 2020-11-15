@@ -149,39 +149,39 @@ class TenantRequest extends BaseModel {
 	}
 
   Map<String, dynamic> toJson() {
-    return {'building_id' : this.buildingId,
-          'block_id' : this.blockName,
-          'owner_flat_id' : this.ownerFlatId,
-          'tenant_flat_id': this.tenantFlatId,
-          'request_from_tenant': this.requestFromTenant,
+    return {'buildingId' : this.buildingId,
+          'blockId' : this.blockName,
+          'ownerFlatId' : this.ownerFlatId,
+          'tenantFlatId': this.tenantFlatId,
+          'requestFromTenant': this.requestFromTenant,
           'status': this.status,
-          'created_at': Timestamp.now(),
-          'updated_at': Timestamp.now(),
-          'owner_flat_name': this.ownerFlatName,
-          'created_by' : { "user_id" : this.createdByUserId, 'name' : this.createdByUserName, 'phone' : this.createdByUserPhone },
-          'tenant_flat_name' : this.tenantFlatName,
-          'building_details' : {'building_name' : this.buildingName, 'building_zipcode' : this.buildingZipcode, 'building_address' : this.buildingAddress},
+          'createdAt': Timestamp.now(),
+          'updatedAt': Timestamp.now(),
+          'ownerFlatName': this.ownerFlatName,
+          'createdBy' : { "userId" : this.createdByUserId, 'name' : this.createdByUserName, 'phone' : this.createdByUserPhone },
+          'tenantFlatName' : this.tenantFlatName,
+          'buildingDetails' : {'buildingName' : this.buildingName, 'buildingZipcode' : this.buildingZipcode, 'buildingAddress' : this.buildingAddress},
           'ownerIdList': this.ownerIdList};
   }
 
   static TenantRequest fromJson(Map<String, dynamic> data, String documentId) {
     TenantRequest tenantRequest = new TenantRequest();
-    tenantRequest.setBlockName(data['block_id']);
-    tenantRequest.setBuildingAddress(data['building_details']['building_address']);
-    tenantRequest.setBuildingId(data['building_id']);
-    tenantRequest.setBuildingName(data['building_details']['building_name']);
-    tenantRequest.setBuildingZipcode(data['building_details']['building_zipcode']);
-    tenantRequest.setCreatedByUserId(data['created_by']['user_id']);
-    tenantRequest.setCreatedByUserName(data['created_by']['user_id']);
-    tenantRequest.setCreatedByUserPhone(data['created_by']['phone']);
+    tenantRequest.setBlockName(data['blockId']);
+    tenantRequest.setBuildingAddress(data['buildingDetails']['buildingAddress']);
+    tenantRequest.setBuildingId(data['buildingId']);
+    tenantRequest.setBuildingName(data['buildingDetails']['buildingName']);
+    tenantRequest.setBuildingZipcode(data['buildingDetails']['buildingZipcode']);
+    tenantRequest.setCreatedByUserId(data['createdBy']['userId']);
+    tenantRequest.setCreatedByUserName(data['createdBy']['userId']);
+    tenantRequest.setCreatedByUserPhone(data['createdBy']['phone']);
     tenantRequest.setStatus(data['status']);
-    tenantRequest.setOwnerFlatId(data['owner_flat_id']);
-    tenantRequest.setTenantFlatId(data['tenant_flat_id']);
-    tenantRequest.setRequestFromTenant(data['request_from_tenant']);
-    tenantRequest.setTenantFlatName(data['tenant_flat_name']);
-    tenantRequest.setCreatedAt(data['created_at']);
-    tenantRequest.setUpdatedAt(data['updated_at']);
-    tenantRequest.setOwnerFlatName(data['owner_flat_name']);
+    tenantRequest.setOwnerFlatId(data['ownerFlatId']);
+    tenantRequest.setTenantFlatId(data['tenantFlatId']);
+    tenantRequest.setRequestFromTenant(data['requestFromTenant']);
+    tenantRequest.setTenantFlatName(data['tenantFlatName']);
+    tenantRequest.setCreatedAt(data['createdAt']);
+    tenantRequest.setUpdatedAt(data['updatedAt']);
+    tenantRequest.setOwnerFlatName(data['ownerFlatName']);
     tenantRequest.setRequestId(documentId);
     List<String> ownerIdList = new List<String>.from(data['ownerIdList'] == null?new List():data['ownerIdList']);
     tenantRequest.setOwnerIdList(ownerIdList);

@@ -141,7 +141,7 @@ class PropertyRequests extends StatelessWidget {
       scrollDirection: Axis.vertical,
       itemBuilder: (BuildContext context, int pos) {
         return getFlatNamesWidget(
-            blocks[pos], context, existingLandlordRequests, joinPropertyModel);
+            blocks[pos], scaffoldC, existingLandlordRequests, joinPropertyModel);
       },
     );
   }
@@ -217,7 +217,6 @@ class PropertyRequests extends StatelessWidget {
 
     bool ifSuccess = await OwnerRequestsService.sendRequestToCoOwner(
         flat, user, this.toOwner);
-
     if (ifSuccess) {
       Utility.createErrorSnackBar(ctx, error: 'Request created successfully');
       LandlordRequest req = new LandlordRequest();

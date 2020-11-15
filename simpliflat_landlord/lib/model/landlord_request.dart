@@ -187,7 +187,7 @@ class LandlordRequest extends BaseModel {
       'blockName' : this.blockName,
       'flatDisplayId' : this.flatDisplayId,
       'flatId' : this.flatId,
-      'flatNumber' : this.flatNumber,
+      'flatName' : this.flatNumber,
       'status' : this.status,
       'requesterId' : this.requesterId,
       'requesterPhone' : this.requesterPhone,
@@ -210,7 +210,7 @@ class LandlordRequest extends BaseModel {
     request.setBuildingId(data['buildingId']);
     request.setFlatDisplayId(data['flatDisplayId']);
     request.setFlatId(data['flatId']);
-    request.setFlatNumber(data['flatNumber']);
+    request.setFlatNumber(data['flatName']);
     request.setRequesterId(data['requesterId']);
     request.setRequesterPhone(data['requesterPhone']);
     request.setRequesterUserName(data['requesterUserName']);

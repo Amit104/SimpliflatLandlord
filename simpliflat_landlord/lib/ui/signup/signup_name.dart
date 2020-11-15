@@ -321,9 +321,10 @@ class _SignUpNameUser extends State<SignUpName> {
         _serverError(scaffoldContext);
       });
     } else {
+      User existingUser = User.fromJson(snapshot.documents[0].data, snapshot.documents[0].documentID);
       _onSuccess(
-          userId: snapshot.documents[0].documentID,
-          userName: snapshot.documents[0].data['name']);
+          userId: existingUser.getUserId(),
+          userName: existingUser.getName());
       navigate(false, userObj);
     }
   }

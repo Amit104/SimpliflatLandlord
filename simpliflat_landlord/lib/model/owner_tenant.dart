@@ -42,6 +42,15 @@ class OwnerTenant extends BaseModel {
     this.ownerTenantId = ownerTenantId;
   }
 
+  static OwnerTenant fromJson(Map<String, dynamic> data, String documentId) {
+    OwnerTenant ot = new OwnerTenant();
+    return ot;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {};
+  }
+
   static Map<String, dynamic> toUpdateJson({status}) {
     Map<String, dynamic> updateJson = new Map();
     if(status != null) updateJson['status'] = status;

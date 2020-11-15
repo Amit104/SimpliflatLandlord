@@ -1140,21 +1140,6 @@ class _CreateTask extends State<CreateTask> {
                               /** process data receieved from database and assign */
                               
                               Task task = Task.fromJson(snapshot.data.data, taskId);
-                              debugPrint(snapshot.data['title'] +
-                                  ' ' +
-                                  snapshot.data['priority'].toString() +
-                                  ' ' +
-                                  snapshot.data['duration'].toString() +
-                                  ' ' +
-                                  snapshot.data['repeat'].toString() +
-                                  ' ' +
-                                  snapshot.data['frequency'].toString() +
-                                  ' ' +
-                                  snapshot.data['assignee'].toString() +
-                                  ' ' +
-                                  snapshot.data['due'].toString() +
-                                  ' ' +
-                                  snapshot.data['notes']);
                               
                               this.createdBy = task.getCreatedByUserId();
 

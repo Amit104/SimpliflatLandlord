@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/constants/colors.dart';
 import 'package:simpliflat_landlord/constants/strings.dart';
 import 'package:simpliflat_landlord/dao/landlord_requests_dao.dart';
+import 'package:simpliflat_landlord/main.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/model/landlord_request.dart';
+import 'package:simpliflat_landlord/services/authentication_service.dart';
 import 'package:simpliflat_landlord/ui/create_or_join/flat_list.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
@@ -45,9 +47,72 @@ class CreateOrJoinHome extends StatelessWidget {
             ],
           ),
         ),
+        Expanded(
+            child: Padding(
+          padding: EdgeInsets.only(bottom: 15.0),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: SizedBox(
+              child: getSignOutButton(scaffoldC),
+              height: 40.0,
+            ),
+          ),
+        )),
       ],
     );
   }
+
+  Widget getSignOutButton(BuildContext context) {
+    return RaisedButton(
+      shape: new RoundedRectangleBorder(
+        borderRadius: new BorderRadius.circular(25.0),
+        side: BorderSide(
+          width: 0.0,
+        ),
+      ),
+      color: AppColors.PRIMARY_COLOR,
+      textColor: Colors.white,
+      onPressed: () {
+        showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return new AlertDialog(
+              title: new Text('Sign out'),
+              content: new Text('Are you sure you want to sign out?'),
+              actions: <Widget>[
+                new FlatButton(
+                  child: new Text('Cancel'),
+                  onPressed: () => Navigator.of(context).pop(false),
+                ),
+                new FlatButton(
+                    child: new Text('Yes'),
+                    onPressed: () async {
+                      Navigator.of(context).pop(true);
+                      await AuthenticationService.signOut();
+                      navigateToSignIn(context);
+                    }),
+              ],
+            );
+          },
+        );
+      },
+      child: Text(
+        'SIGN OUT',
+        style: TextStyle(
+            fontFamily: Strings.PRIMARY_FONT_FAMILY,
+            fontWeight: Strings.PRIMARY_FONT_WEIGHT,
+            color: Colors.white),
+      ),
+    );
+  }
+
+  navigateToSignIn(BuildContext context) {
+    Navigator.popUntil(context, ModalRoute.withName('/'));
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
+      return MyApp();
+    }));
+  }
+
 
   Widget getCreateOrJoinOptionsWidget(BuildContext context) {
     var deviceSize = MediaQuery.of(context).size;

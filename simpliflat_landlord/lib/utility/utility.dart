@@ -78,7 +78,8 @@ class Utility {
       flatIdDefault: 'null',
       notificationToken: 'null',
       flatName: 'null',
-      bool propertyRegistered}) async {
+      bool propertyRegistered,
+      int activityLastSeen}) async {
     final prefs = await SharedPreferences.getInstance();
     if (userName != 'null')
       await prefs.setString(globals.userName, userName.toString());
@@ -99,6 +100,7 @@ class Utility {
       await prefs.setString(globals.notificationToken, notificationToken);
     if (flatName != 'null') await prefs.setString(globals.flatName, flatName);
     if (propertyRegistered != null) await prefs.setBool(globals.propertyRegistered, propertyRegistered);
+    if(activityLastSeen != null) await prefs.setInt(globals.activityLastSeen, activityLastSeen);
   }
 
   // static Future<List> getReadNoticeIds() async {
@@ -123,6 +125,12 @@ class Utility {
     final prefs = await SharedPreferences.getInstance();
     // Try reading data from the counter key. If it does not exist, return 0.
     return await prefs.get(globals.propertyRegistered);
+  }
+
+  static Future<int> getActivityLastSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Try reading data from the counter key. If it does not exist, return 0.
+    return await prefs.get(globals.activityLastSeen);
   }
 
   static Future<String> getUserPhone() async {

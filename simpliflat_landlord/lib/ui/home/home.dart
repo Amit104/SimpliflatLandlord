@@ -13,6 +13,7 @@ import 'package:simpliflat_landlord/model/building.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
+import 'package:simpliflat_landlord/services/authentication_service.dart';
 import 'package:simpliflat_landlord/ui/common_screens/my_building_list.dart';
 import 'package:simpliflat_landlord/ui/create_or_join/flat_list.dart';
 import 'package:simpliflat_landlord/ui/flat_setup/add_tenant.dart';
@@ -43,7 +44,7 @@ class Home extends StatelessWidget {
         ),
         backgroundColor: Colors.white,
         body: Builder(builder: (BuildContext scaffoldC) {
-          return SingleChildScrollView(child: getBody(context));
+          return getBody(context);
         }),
       
     );
@@ -180,7 +181,8 @@ class Home extends StatelessWidget {
                     child: ListTile(
               title: Text('Logout'),
               onTap: () async {
-                _signOut(context);
+                await AuthenticationService.signOut();
+                navigateToSignIn(context);
               },
             ),
           ),
@@ -189,14 +191,9 @@ class Home extends StatelessWidget {
     );
   }
 
-  void _signOut(BuildContext scaffoldC) async {
-    await FirebaseAuth.instance.signOut();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    navigateToHome(scaffoldC);
-  }
+  
 
-  navigateToHome(BuildContext context) {
+  navigateToSignIn(BuildContext context) {
     Navigator.popUntil(context, ModalRoute.withName('/'));
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
       return MyApp();

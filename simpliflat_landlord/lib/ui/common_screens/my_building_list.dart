@@ -141,16 +141,16 @@ class MyBuildingListState extends State<MyBuildingList> {
   Future<List<OwnerFlat>> getBuildingList(String userId, BuildContext scaffoldC) async {
     Map<String, List<OwnerFlat>> ownedFlats = new Map();
     QuerySnapshot allFlats = await OwnerFlatDao.getByOwnerId(userId);
+    List<OwnerFlat> ownerFlatsTemp = allFlats.documents.map((DocumentSnapshot doc) => OwnerFlat.fromJson(doc.data, doc.documentID)).toList();
     List<OwnerFlat> buildings = new List();
-    for(int i = 0; i < allFlats.documents.length; i++) {
-      DocumentSnapshot d1 = allFlats.documents[i];
-      OwnerFlat flatTemp = OwnerFlat.fromJson(d1.data, d1.documentID);
+    for(int i = 0; i < ownerFlatsTemp.length; i++) {
+      OwnerFlat flatTemp = ownerFlatsTemp[i];
       if(ownedFlats[flatTemp.getBuildingId()] == null) {
         ownedFlats[flatTemp.getBuildingId()] = new List();
       }
       ownedFlats[flatTemp.getBuildingId()].add(flatTemp);
       OwnerFlat alreadyAdded = buildings.firstWhere((OwnerFlat b) {
-        return (b.getBuildingId() == d1.data['buildingId']);
+        return (b.getBuildingId() == flatTemp.getBuildingId());
       }, orElse: () {return null;});
       if(alreadyAdded == null) {
         buildings.add(flatTemp);

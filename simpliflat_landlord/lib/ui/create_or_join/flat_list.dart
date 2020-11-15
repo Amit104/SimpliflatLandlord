@@ -48,6 +48,8 @@ class FlatList extends StatelessWidget {
         if(!snaphot.hasData) {
           return LoadingContainerVertical(2);
         }
+
+        List<Building> buildings = snaphot.data.documents.map((DocumentSnapshot doc) => Building.fromJson(doc.data, doc.documentID)).toList();
         return Consumer<LoadingModel>(
             builder: (BuildContext context, LoadingModel loadingModel, Widget child) {
               return loadingModel.load? LoadingContainerVertical(3):
@@ -55,13 +57,12 @@ class FlatList extends StatelessWidget {
             separatorBuilder: (BuildContext ctx, int pos){
               return Divider(height: 1.0);
             },
-            itemCount: snaphot.data.documents.length,
+            itemCount: buildings.length,
             itemBuilder: (BuildContext context, int position) {
-              Map<String, dynamic> buildingData = snaphot.data.documents[position].data;
               return ListTile(
-                onTap: () {createDataObjectAndNavigate(buildingData, snaphot.data.documents[position].documentID, scaffoldC);},
-                title: Text(buildingData['buildingName'], style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 17.0),),
-                subtitle: Text(buildingData['buildingAddress'] + ' ' + buildingData['zipcode'],  style: TextStyle(fontFamily: 'Roboto'),),
+                onTap: () {createDataObjectAndNavigate(buildings[position], snaphot.data.documents[position].documentID, scaffoldC);},
+                title: Text(buildings[position].getBuildingName(), style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, fontSize: 17.0),),
+                subtitle: Text(buildings[position].getBuildingAddress() + ' ' + buildings[position].getZipcode(),  style: TextStyle(fontFamily: 'Roboto'),),
                 trailing: Icon(Icons.keyboard_arrow_right, color: Color(0xff2079FF),),
               );
             },
@@ -95,10 +96,9 @@ class FlatList extends StatelessWidget {
     }
   }
 
-  void createDataObjectAndNavigate(Map<String, dynamic> buildingData, documentId, BuildContext ctx) async {
+  void createDataObjectAndNavigate(Building b, documentId, BuildContext ctx) async {
     debugPrint("navigating");
     Provider.of<LoadingModel>(ctx, listen: false).startLoading();
-    Building b = Building.fromJson(buildingData, documentId);
 
     List<Block> blocks = b.getBlocks();
 

@@ -85,7 +85,7 @@ class LandlordRequests extends StatelessWidget {
   }
 
   String getSubtitleText(LandlordRequest request) {
-    return 'Request for flat ' + request.getFlatNumber();
+    return 'Request for flat ' + (request.getFlatNumber() == null?'':request.getFlatNumber());
   }
 
   Future<bool> rejectRequest(LandlordRequest request, BuildContext scaffoldC) async {

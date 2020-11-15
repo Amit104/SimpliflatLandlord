@@ -45,7 +45,7 @@ class TenantRequestsService {
     DocumentReference propDoc = OwnerTenantDao.getDocumentReference(null);
     
     
-    Map<String, dynamic> reqData = {'ownerFlatId': request.getOwnerFlatId(), 'tenantFlatId': request.getTenantFlatId(), 'status': 0, 'tenantFlatName': request.getTenantFlatName(), 'building_name': request.getBuildingName(), 'building_address': request.getBuildingAddress(), 'zipcode': request.getBuildingZipcode()};
+    Map<String, dynamic> reqData = {'ownerFlatId': request.getOwnerFlatId(), 'tenantFlatId': request.getTenantFlatId(), 'status': 0, 'tenantFlatName': request.getTenantFlatName(), 'buildingName': request.getBuildingName(), 'buildingAddress': request.getBuildingAddress(), 'zipcode': request.getBuildingZipcode(), 'ownerFlatName': request.getOwnerFlatName()};
     
       /** add all owners and tenants */
     DocumentSnapshot ofd = await OwnerFlatDao.getDocument(request.getOwnerFlatId());

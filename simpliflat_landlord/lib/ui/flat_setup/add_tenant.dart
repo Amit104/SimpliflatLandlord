@@ -159,6 +159,8 @@ class AddTenantState extends State<AddTenant> {
           return Container();
         }
 
+        List<TenantRequest> tenantRequests = snapshot.data.documents.map((DocumentSnapshot doc) => TenantRequest.fromJson(doc.data, doc.documentID)).toList();
+
         return Consumer<LoadingModel>(
           builder: (BuildContext context, LoadingModel loadingModel, Widget child) {
             return loadingModel.load? LoadingContainerVertical(3):
@@ -171,18 +173,18 @@ class AddTenantState extends State<AddTenant> {
               return Divider(height: 1.0);
             },
           shrinkWrap: true,
-          itemCount: snapshot.data.documents.length,
+          itemCount: tenantRequests.length,
           itemBuilder: (BuildContext context, int pos) {
             return Card(
                           child: Dismissible(
-                key: Key(snapshot.data.documents[pos].documentID),
+                key: Key(tenantRequests[pos].getRequestId()),
                 child: ListTile(
                   title:
-                      Text(snapshot.data.documents[pos].data['tenant_flat_name']),
+                      Text(tenantRequests[pos].getTenantFlatName()),
                 ),
                 onDismissed: (var dir) {
                   deleteRequestSentToTenant(
-                      snapshot.data.documents[pos], scaffoldC);
+                      tenantRequests[pos], scaffoldC);
                 },
               ),
             );
@@ -194,10 +196,10 @@ class AddTenantState extends State<AddTenant> {
   }
 
   void deleteRequestSentToTenant(
-      DocumentSnapshot doc, BuildContext scaffoldC) async {
+      TenantRequest req, BuildContext scaffoldC) async {
     Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
 
-    bool ifSuccess = await TenantRequestsService.deleteRequestSentToTenant(doc.documentID);
+    bool ifSuccess = await TenantRequestsService.deleteRequestSentToTenant(req.getRequestId());
     if(ifSuccess) {
       Utility.createErrorSnackBar(scaffoldC,
           error: 'Request deleted successfully');
