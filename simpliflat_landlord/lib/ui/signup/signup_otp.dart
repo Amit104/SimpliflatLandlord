@@ -1,10 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
+import 'package:simpliflat_landlord/dao/owner_dao.dart';
+import 'package:simpliflat_landlord/model/owner.dart';
+import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/services/authentication_service.dart';
 import 'package:simpliflat_landlord/ui/signup/signup_name.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
+import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 
 
 class SignUpOTP extends StatefulWidget {
@@ -24,6 +30,9 @@ class _SignUpOTPUser extends State<SignUpOTP> {
   _SignUpOTPUser(this.phone) {
     verifyPhone();
   }
+
+  FirebaseMessaging firebaseMessaging = new FirebaseMessaging();
+
 
   var _formKey = GlobalKey<FormState>();
   var _progressCircleState = 0;
@@ -262,7 +271,9 @@ class _SignUpOTPUser extends State<SignUpOTP> {
       this.smsCode =
           otp.text.trim();
 
-      if(!(widget.navigateToName)) {
+      signIn();
+
+      /*if(!(widget.navigateToName)) {
         signIn();
       }
 
@@ -273,7 +284,7 @@ class _SignUpOTPUser extends State<SignUpOTP> {
       }
       else {
         signIn();
-      }
+      }*/
     }
   }
 
@@ -307,7 +318,20 @@ class _SignUpOTPUser extends State<SignUpOTP> {
     FirebaseUser user = await AuthenticationService.signinWithCredentials(verificationId, smsCode);
 
     if (user != null) {
-      navigateToSignUpName();
+      User userObj = await getUser(user.uid);
+      if(userObj != null) {
+        String token = await AuthenticationService.getNotificationToken(user.uid);
+        if(token != "") {
+          bool ifSuccess = await AuthenticationService.setNotificationToken(user.uid, token);
+                if(ifSuccess) {
+                  Utility.addToSharedPref(notificationToken: token);
+                }
+        }
+        await Utility.addToSharedPref(userId: user.uid, userName: userObj.getName());
+        AuthenticationService.navigate(context, true, userObj);
+      } else {
+        navigateToSignUpName();
+      }
     } else {
       Utility.createErrorSnackBar(_scaffoldContext,
           error: "Phone verification failed");
@@ -335,5 +359,14 @@ class _SignUpOTPUser extends State<SignUpOTP> {
 
   void moveToLastScreen(BuildContext context) {
     Navigator.pop(context);
+  }
+
+  Future<User> getUser(String userId) async {
+    DocumentSnapshot doc = await OwnerDao.getDocument(userId);
+    if(doc.exists) {
+      return User.fromJson(doc.data, doc.documentID);
+    }
+
+    return null;
   }
 }

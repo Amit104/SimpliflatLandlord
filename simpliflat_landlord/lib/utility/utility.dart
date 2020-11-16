@@ -70,7 +70,7 @@ class Utility {
     });
   }
 
-  static void addToSharedPref(
+  static Future<void> addToSharedPref(
       {userName: 'null',
       userPhone: '',
       userId: 'null',

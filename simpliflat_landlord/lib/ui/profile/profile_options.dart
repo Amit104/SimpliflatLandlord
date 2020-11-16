@@ -8,6 +8,7 @@ import 'package:simpliflat_landlord/dao/owner_dao.dart';
 import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
 import 'package:simpliflat_landlord/dao/tenant_dao.dart';
 import 'package:simpliflat_landlord/model/owner_tenant.dart';
+import 'package:simpliflat_landlord/model/tenant.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/ui/flat_setup/add_tenant.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
@@ -43,8 +44,6 @@ class _ProfileOptions extends State<ProfileOptions> {
   var _minimumPadding = 5.0;
   BuildContext _scaffoldContext;
   TextEditingController textField = TextEditingController();
-  List existingUsers;
-  int usersCount;
   //String userName;
 
   final User user;
@@ -52,17 +51,9 @@ class _ProfileOptions extends State<ProfileOptions> {
 
   _ProfileOptions(this.user, this.flat);
 
-  void initLists() async {
-    if (this.existingUsers == null) {
-      existingUsers = new List();
-      _updateUsersView();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     TextStyle textStyle = Theme.of(context).textTheme.title;
-    initLists();
     return WillPopScope(
         onWillPop: () {
           _moveToLastScreen(context);
@@ -99,12 +90,7 @@ class _ProfileOptions extends State<ProfileOptions> {
                       Container(
                         padding: EdgeInsets.only(top: 5.0),
                         height: 90.0,
-                        child: (existingUsers == null ||
-                            existingUsers.length == 0)
-                            ? LoadingContainerHorizontal(
-                            MediaQuery.of(context).size.height / 10 -
-                                10.0)
-                            : _getExistingUsers(),
+                        child: _getExistingUsers(),
                       )]),
                     ),
                     SizedBox(height:10),
@@ -468,29 +454,11 @@ title: Text('Evacuate Flat', style: TextStyle(
     });
   }
 
-  void _updateUsersView() async {
-    QuerySnapshot snapshot = await TenantDao.getTenantsUsingTenantFlatId(this.flat.getTenantFlat().getFlatId());
-    
-      if (snapshot == null || snapshot.documents.length == 0) {
-        //addContacts
-      } else {
-        setState(() {
-          snapshot.documents.sort(
-                  (a, b) => b.data['updated_at'].compareTo(a.data['updated_at']));
-          var responseArray = snapshot.documents
-              .map((m) => new FlatUsersResponse.fromJson(m.data, m.documentID))
-              .toList();
-          this.usersCount = responseArray.length;
-          debugPrint(this.usersCount.toString());
-          this.existingUsers = responseArray;
-        });
-      }
-  }
-
   ListView _getExistingUsers() {
     TextStyle titleStyle = Theme.of(_scaffoldContext).textTheme.subhead;
+    List<Tenant> tenants = this.flat.getTenantFlat().getTenants();
     return ListView.builder(
-        itemCount: this.usersCount,
+        itemCount: tenants.length,
         scrollDirection: Axis.horizontal,
         itemBuilder: (BuildContext context, int position) {
           return SizedBox(
@@ -505,16 +473,12 @@ title: Text('Evacuate Flat', style: TextStyle(
                   children: <Widget>[
                     CircleAvatar(
                       backgroundColor: Utility.userIdColor(
-                          this.existingUsers[position].userId),
+                          tenants[position].getTenantId()),
                       child: Align(
                         child: Text(
-                          this
-                              .existingUsers[position]
-                              .name == ""
+                          tenants[position].getName() == ""
                               ? "S"
-                              : this
-                              .existingUsers[position]
-                              .name[0]
+                              : tenants[position].getName()[0]
                               .toUpperCase(),
                           style: TextStyle(
                             fontSize: 20.0,
@@ -528,7 +492,7 @@ title: Text('Evacuate Flat', style: TextStyle(
                     Padding(
                       padding: const EdgeInsets.only(top: 7.5),
                       child: Text(
-                        this.existingUsers[position].name,
+                        tenants[position].getName(),
                         style:
                         TextStyle(fontSize: 14.0, fontFamily: 'Roboto', fontWeight: FontWeight.w600),
                         maxLines: 2,

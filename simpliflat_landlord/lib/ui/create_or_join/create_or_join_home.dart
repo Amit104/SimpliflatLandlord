@@ -108,7 +108,7 @@ class CreateOrJoinHome extends StatelessWidget {
 
   navigateToSignIn(BuildContext context) {
     Navigator.popUntil(context, ModalRoute.withName('/'));
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
       return MyApp();
     }));
   }
@@ -328,9 +328,9 @@ class CreateOrJoinHome extends StatelessWidget {
                   );
                 }
                 Map<String, dynamic> data =
-                    snapshots.data.documents[position].data;
+                    snapshots.data.documents[position - 1].data;
                 LandlordRequest req = LandlordRequest.fromJson(
-                    data, snapshots.data.documents[position].documentID);
+                    data, snapshots.data.documents[position - 1].documentID);
 
                 return Consumer<LoadingModel>(
                   builder: (BuildContext context, LoadingModel loadingModel,
@@ -408,11 +408,11 @@ class CreateOrJoinHome extends StatelessWidget {
         });
   }
 
-  String getTitleText(request) {
+  String getTitleText(LandlordRequest request) {
     if (request.getFlatId() == null) {
-      return 'Request for building ' + request.getBuildingName();
+      return 'Request for building ' + (request.getBuildingName() == null?'':request.getBuildingName());
     } else {
-      return 'Request for flat ' + request.getFlatNumber();
+      return 'Request for flat ' + (request.getFlatNumber() == null?'':request.getFlatNumber());
     }
   }
 

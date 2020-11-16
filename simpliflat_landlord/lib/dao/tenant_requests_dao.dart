@@ -6,25 +6,25 @@ class TenantRequestsDao {
   static Stream<QuerySnapshot> getReceivedRequestsForFlat(String flatId) {
     return Firestore.instance
         .collection(globals.joinFlatLandlordTenant)
-        .where('owner_flat_id', isEqualTo: flatId)
+        .where('ownerFlatId', isEqualTo: flatId)
         .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-        .where('request_from_tenant', isEqualTo: true)
+        .where('requestFromTenant', isEqualTo: true)
         .snapshots();
   }
 
   static Future<QuerySnapshot> getReceivedRequestsForFlatD(String flatId) {
     return Firestore.instance
         .collection(globals.joinFlatLandlordTenant)
-        .where('owner_flat_id', isEqualTo: flatId)
+        .where('ownerFlatId', isEqualTo: flatId)
         .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-        .where('request_from_tenant', isEqualTo: true)
+        .where('requestFromTenant', isEqualTo: true)
         .getDocuments();
   }
 
   static Future<QuerySnapshot> getRequestsForFlatD(String flatId) {
     return Firestore.instance
         .collection(globals.joinFlatLandlordTenant)
-        .where('owner_flat_id', isEqualTo: flatId)
+        .where('ownerFlatId', isEqualTo: flatId)
         .where('status', isEqualTo: globals.RequestStatus.Pending.index)
         .getDocuments();
   }
@@ -32,18 +32,18 @@ class TenantRequestsDao {
   static Stream<QuerySnapshot> getSentRequestsForFlat(String flatId) {
     return Firestore.instance
         .collection(globals.joinFlatLandlordTenant)
-        .where('owner_flat_id', isEqualTo: flatId)
+        .where('ownerFlatId', isEqualTo: flatId)
         .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-        .where('request_from_tenant', isEqualTo: false)
+        .where('requestFromTenant', isEqualTo: false)
         .snapshots();
   }
 
   static Future<QuerySnapshot> getSentRequestsForFlatD(String flatId) async {
     return Firestore.instance
         .collection(globals.joinFlatLandlordTenant)
-        .where('owner_flat_id', isEqualTo: flatId)
+        .where('ownerFlatId', isEqualTo: flatId)
         .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-        .where('request_from_tenant', isEqualTo: false)
+        .where('requestFromTenant', isEqualTo: false)
         .getDocuments();
   }
 
@@ -51,7 +51,7 @@ class TenantRequestsDao {
       String buildingId) {
     return Firestore.instance
         .collection(globals.joinFlatLandlordTenant)
-        .where('building_id', isEqualTo: buildingId)
+        .where('buildingId', isEqualTo: buildingId)
         .where('status', isEqualTo: 0)
         .snapshots();
   }
@@ -59,9 +59,9 @@ class TenantRequestsDao {
   static Stream<QuerySnapshot> getAllReceivedRequests(String userId) {
     return Firestore.instance
         .collection(globals.joinFlatLandlordTenant)
-        .where('owner_id_list', arrayContains: userId)
+        .where('ownerIdList', arrayContains: userId)
         .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-        .where('request_from_tenant', isEqualTo: true)
+        .where('requestFromTenant', isEqualTo: true)
         .snapshots();
   }
 
@@ -76,9 +76,9 @@ class TenantRequestsDao {
     return Firestore.instance
         .collection(globals.joinFlatLandlordTenant)
         .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-        .where('owner_flat_id', isEqualTo: flatId)
-        .where('request_from_tenant', isEqualTo: false)
-        .where('created_by.user_id', isEqualTo: userId)
+        .where('ownerFlatId', isEqualTo: flatId)
+        .where('requestFromTenant', isEqualTo: false)
+        .where('createdBy.userId', isEqualTo: userId)
         .getDocuments();
   }
 

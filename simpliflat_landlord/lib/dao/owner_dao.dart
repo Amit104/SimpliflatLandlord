@@ -24,4 +24,15 @@ class OwnerDao {
           return false;
         });
   }
+
+  static Future<bool> add(String documentId, Map<String, dynamic> data) async {
+    DocumentReference docRef = OwnerDao.getDocumentReference(documentId);
+    return docRef.setData(data)
+    
+        .then((ret) {
+          return true;
+        }).catchError((e) {
+          return false;
+        });
+  }
 }

@@ -55,7 +55,7 @@ class Owner extends BaseModel {
     owner.setName(data['name']);
     owner.setPhone(data['phone']);
     owner.setOwnerId(documentId);
-    owner.setNotificationToken(data['notification_token']);
+    owner.setNotificationToken(data['notificationToken']);
     owner.setCreatedAt(data['createdAt']);
     owner.setUpdatedAt(data['updatedAt']);
 
@@ -64,7 +64,7 @@ class Owner extends BaseModel {
 
   static Map<String, dynamic> toUpdateJson({String notificationToken, String name, String phoneNumber}) {
     Map<String, dynamic> updateJson = new Map();
-    if(notificationToken != null) updateJson['notification_token'] = notificationToken;
+    if(notificationToken != null) updateJson['notificationToken'] = notificationToken;
     if(name != null) updateJson['name'] = name;
     if(phoneNumber != null) updateJson['phone'] = phoneNumber;
     updateJson['updatedAt'] = Timestamp.now();

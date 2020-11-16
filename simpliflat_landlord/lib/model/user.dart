@@ -63,7 +63,7 @@ class User extends BaseModel {
     user.setName(data['name']);
     user.setPhone(data['phone']);
     user.setUserId(documentId);
-    user.setNotificationToken(data['notification_token']);
+    user.setNotificationToken(data['notificationToken']);
     user.setCreatedAt(data['createdAt']);
     user.setUpdatedAt(data['updatedAt']);
 
@@ -74,7 +74,7 @@ class User extends BaseModel {
     return {
       'name': this.name,
       'phone': this.phone,
-      'notification_token': this.notificationToken,
+      'notificationToken': this.notificationToken,
       'createdAt': Timestamp.now(),
       'updatedAt': Timestamp.now()
     };

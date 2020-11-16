@@ -6,6 +6,7 @@ import 'package:simpliflat_landlord/dao/owner_flat_dao.dart';
 import 'package:simpliflat_landlord/main.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:simpliflat_landlord/services/authentication_service.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 
 class SignUpName extends StatefulWidget {
@@ -268,106 +269,27 @@ class _SignUpNameUser extends State<SignUpName> {
     });
   }
 
-  void _onSuccess(
-      {String userId,
-      String flatId,
-      String displayId,
-      String userName,
-      String flatName}) {
-    String flatTemp;
-    if (flatId != null && flatId.length > 0) {
-      flatTemp = flatId[0];
-    } else {
-      flatTemp = null;
-    }
-    Utility.addToSharedPref(
-        userId: userId,
-        flatIdDefault: flatTemp,
-        flatIdList: flatId,
-        userName: userName,
-        flatName: flatName);
-    setState(() {
-      _isButtonDisabled = false;
-      _progressCircleState = 2;
-      debugPrint("CALL SUCCCESS");
-    });
-  }
-
   void _addUserHandler(scaffoldContext) async {
 
     final FirebaseAuth _auth = FirebaseAuth.instance;
-    final Firestore _firestore = Firestore.instance;
 
     FirebaseUser user = await _auth.currentUser();
 
     User userObj = new User();
     userObj.setPhone(phone);
     userObj.setName(name.text);
-    userObj.setNotificationToken("");
     userObj.setUserId(user.uid);
-    Map<String, dynamic> userData = userObj.toJson();
-    
-    debugPrint('phone = ' + phone);
-    QuerySnapshot snapshot = await OwnerDao.getOwnerByPhoneNumber(phone.trim());
-    
-    if (snapshot == null || snapshot.documents.length == 0) {
-      debugPrint("IN NEW USER === " + user.uid.toString());
-      DocumentReference ref = OwnerDao.getDocumentReference(user.uid);
-      ref.setData(userData).then((addedUser) {
-        var userId = user.uid;
-        _onSuccess(userId: userId, userName: name.text);
-        navigate(true, userObj);
-      }, onError: (e) {
-        _serverError(scaffoldContext);
-      });
-    } else {
-      User existingUser = User.fromJson(snapshot.documents[0].data, snapshot.documents[0].documentID);
-      _onSuccess(
-          userId: existingUser.getUserId(),
-          userName: existingUser.getName());
-      navigate(false, userObj);
+
+    String token = await AuthenticationService.getNotificationToken(user.uid);
+
+    userObj.setNotificationToken(token);
+    bool ifSuccess = await OwnerDao.add(user.uid, userObj.toJson());
+    if(!ifSuccess) {
+      _serverError(scaffoldContext);
+      return;
     }
-  }
-
-  void navigate(bool newUser, User user) async {
-    
-    if (newUser) {
-      navigateToCreateOrJoin(user);
-    } else {
-      bool propReg = await Utility.getPropertyRegistered();
-      if (propReg == null) {
-        propReg = await getAndSetIfPropertyRegistred(user.getUserId());
-      }
-
-      if (propReg) {
-        navigateToHome(user);
-      } else {
-        navigateToCreateOrJoin(user);
-      }
-    }
-  }
-
-  Future<bool> getAndSetIfPropertyRegistred(String userId) async {
-    QuerySnapshot docs = await OwnerFlatDao.getAnOwnerFlatForUser(userId);
-    bool propReg = docs.documents != null && docs.documents.length > 0;
-    Utility.addToSharedPref(propertyRegistered: propReg);
-    return propReg;
-  }
-
-  navigateToHome(User user) {
-    //TODO: check if the get from sp in main clashes with the set in sp in onsuccess method in this file
-    debugPrint('user id in signup name - ' + user.getUserId());
-    Navigator.popUntil(context, ModalRoute.withName('/'));
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
-      return MyApp();
-    }));
-  }
-
-  navigateToCreateOrJoin(User user) {
-    Navigator.popUntil(context, ModalRoute.withName('/'));
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
-      return MyApp();
-    }));
+    await Utility.addToSharedPref(userId: user.uid, userName: name.text);
+    AuthenticationService.navigate(context, true, userObj);
   }
 
   @override

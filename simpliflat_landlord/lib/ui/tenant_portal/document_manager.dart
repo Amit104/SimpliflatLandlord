@@ -30,16 +30,10 @@ class DocumentManager extends StatefulWidget {
 
 class _DocumentManager extends State<DocumentManager> {
   final _flatId;
-  var _userId, _userName;
-  var _navigatorContext;
-  //var date = DateFormat("yyyy-MM-dd");
-  //TextEditingController note = TextEditingController();
-  //TextEditingController addNote = TextEditingController();
-
-  //String _path;
-  //String _extension;
+  String _userId, _userName;
+  BuildContext _navigatorContext;
+  
   FileType _pickingType = FileType.ANY;
-  //bool _loadingPath = false;
 
   _DocumentManager(this._flatId);
 
@@ -108,8 +102,8 @@ class _DocumentManager extends State<DocumentManager> {
   }
 
   Widget _buildListItem(UploadDocument doc, index) {
-    var datetime = doc.getCreatedAt().toDate();
-    var numToMonth = {
+    DateTime datetime = doc.getCreatedAt().toDate();
+    Map<int, String> numToMonth = {
       1: 'Jan',
       2: 'Feb',
       3: 'Mar',
@@ -124,7 +118,7 @@ class _DocumentManager extends State<DocumentManager> {
       12: 'Dec'
     };
     final f = new DateFormat.jm();
-    var datetimeString = datetime.day.toString() +
+    String datetimeString = datetime.day.toString() +
         " " +
         numToMonth[datetime.month.toInt()] +
         " " +
@@ -132,10 +126,10 @@ class _DocumentManager extends State<DocumentManager> {
         " - " +
         f.format(datetime);
 
-    var userName =
+    String userName =
         doc.getCreatedByUserName()== null ? "" : doc.getCreatedByUserName().trim();
 
-    var color = doc.getCreatedByUserId().trim().hashCode;
+    int color = doc.getCreatedByUserId().trim().hashCode;
 
     return Padding(
       padding: const EdgeInsets.only(right: 8.0, left: 8.0),
@@ -186,8 +180,8 @@ class _DocumentManager extends State<DocumentManager> {
                 color: Colors.red,
                 icon: Icons.delete,
                 onTap: () async {
-                  var state = Slidable.of(context);
-                  var dismiss = await showDialog<bool>(
+                  SlidableState state = Slidable.of(context);
+                  bool dismiss = await showDialog<bool>(
                     context: context,
                     builder: (context) {
                       return new AlertDialog(
@@ -291,12 +285,12 @@ class _DocumentManager extends State<DocumentManager> {
   void _openFileExplorer() async {
     File file;
     String _fileName;
-    var fileLength;
+    int fileLength;
 
     try {
       file = await FilePicker.getFile(type: _pickingType);
       _fileName = file.path?.split("/")?.last;
-      var rng = new Random();
+      Random rng = new Random();
       if (_fileName == null || _fileName == "") {
         _fileName = _userName +
             DateTime.now()
@@ -390,19 +384,15 @@ class _DocumentManager extends State<DocumentManager> {
   }
 
   addDocument(_fileName, fileUrl, fileLength) {
-    var timeNow = DateTime.now();
-    var data = {
-      'file_name': _fileName,
-      'file_url': fileUrl,
-      'file_size': fileLength,
-      'is_created_by_tenant': 0,
-      'user_id': _userId,
-      'created_at': timeNow,
-      'updated_at': timeNow,
-      'user_name': _userName
-    };
+    UploadDocument data = new UploadDocument();
+    data.setFileName(_fileName);
+    data.setFileUrl(fileUrl);
+    data.setFileSize(fileLength);
+    data.setCreatedByTenant(0);
+    data.setCreatedByUserId(_userId);
+    data.setCreatedByUserName(_userName);
     
     DocumentReference addNoteRef = UploadDocumentDao.getDocumentReference(_flatId, null);
-    addNoteRef.setData(data).then((v) {}, onError: (e) {});
+    addNoteRef.setData(data.toJson()).then((v) {}, onError: (e) {});
   }
 }

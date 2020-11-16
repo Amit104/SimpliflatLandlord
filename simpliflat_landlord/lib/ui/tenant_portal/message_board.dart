@@ -26,12 +26,12 @@ class MessageBoard extends StatefulWidget {
 
 class _MessageBoard extends State<MessageBoard> {
   final _flatId;
-  var currentUserId;
-  var _navigatorContext;
-  var _minimumPadding = 5.0;
-  var date = DateFormat("yyyy-MM-dd");
-  var _formKey1 = GlobalKey<FormState>();
-  var _formKey2 = GlobalKey<FormState>();
+  String currentUserId;
+  BuildContext _navigatorContext;
+  double _minimumPadding = 5.0;
+  DateFormat date = DateFormat("yyyy-MM-dd");
+  GlobalKey<FormState> _formKey1 = GlobalKey<FormState>();
+  GlobalKey<FormState> _formKey2 = GlobalKey<FormState>();
   TextEditingController note = TextEditingController();
   TextEditingController addNote = TextEditingController();
   bool showAssignToAllFlatsoption = false;
@@ -270,17 +270,16 @@ class _MessageBoard extends State<MessageBoard> {
 
   Widget _buildNoticeListItem(Message notice) {
     TextStyle textStyle = Theme.of(context).textTheme.subhead;
-    var datetime = notice.getCreatedAt().toDate();
-    final f = new DateFormat.jm();
-    //var datetimeString = datetime.day.toString() + " " + numToMonth[datetime.month.toInt()] + " " +
-    //    datetime.year.toString() + " - " + f.format(datetime);
-    var datetimeString = f.format(datetime);
+    DateTime datetime = notice.getCreatedAt().toDate();
+    final DateFormat f = new DateFormat.jm();
 
-    var userName = notice.getCreatedByUserName() == null
+    String datetimeString = f.format(datetime);
+
+    String userName = notice.getCreatedByUserName() == null
         ? ""
         : notice.getCreatedByUserName().trim();
 
-    var color = notice.getCreatedByUserId().trim().hashCode;
+    int color = notice.getCreatedByUserId().trim().hashCode;
 
     return Padding(
       padding: const EdgeInsets.only(right: 8.0, left: 8.0),
@@ -333,8 +332,8 @@ class _MessageBoard extends State<MessageBoard> {
                 color: Colors.red,
                 icon: Icons.delete,
                 onTap: () async {
-                  var state = Slidable.of(context);
-                  var dismiss = await showDialog<bool>(
+                  SlidableState state = Slidable.of(context);
+                  bool dismiss = await showDialog<bool>(
                     context: context,
                     builder: (context) {
                       return new AlertDialog(
@@ -400,7 +399,7 @@ class _MessageBoard extends State<MessageBoard> {
                   if (currentUserId == notice.getCreatedByUserId().trim())
                     note.text = notice.getMessage().trim();
                 });
-                var dialogTitle =
+                String dialogTitle =
                     currentUserId == notice.getCreatedByUserId().trim()
                         ? "Edit Message"
                         : "Notice";
@@ -550,9 +549,9 @@ class _MessageBoard extends State<MessageBoard> {
   }
 
   _addOrUpdateNote(scaffoldContext, addOrUpdate, {Message notice}) async {
-    var timeNow = DateTime.now();
-    var userId = await Utility.getUserId();
-    var userName = await Utility.getUserName();
+    DateTime timeNow = DateTime.now();
+    String userId = await Utility.getUserId();
+    String userName = await Utility.getUserName();
     if (addOrUpdate == 1) {
       /// add Message
       Message message = new Message();
@@ -604,7 +603,7 @@ class _MessageBoard extends State<MessageBoard> {
     } else {
       /// Update Message
       debugPrint("updated = " + note.text);
-      var data = {
+      Map<String, dynamic> data = {
         'message': note.text.toString().trim(),
         'updated_at': timeNow,
         'user_name': userName

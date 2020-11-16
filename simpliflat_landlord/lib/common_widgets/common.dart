@@ -117,4 +117,8 @@ class CommonWidgets {
     return TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600);
   }
 
+  static TextStyle getTextStyleBold({MaterialColor color, double size}) {
+    return TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600, color: color == null? Colors.black: color, fontSize: size == null? 15:size);
+  }
+
 }

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:simpliflat_landlord/dao/landlord_requests_dao.dart';
 import 'package:simpliflat_landlord/dao/owner_dao.dart';
 import 'package:simpliflat_landlord/dao/owner_flat_dao.dart';
@@ -70,6 +71,9 @@ class OwnerRequestsService {
       request.setToUserId(toOwner.getOwnerId());
       request.setToPhoneNumber(toOwner.getPhone());
       request.setToUsername(toOwner.getName());
+
+      request.setOwnerIdList(flat.getOwnerIdList());
+
     
 
     Map<String, dynamic> data = request.toJson();
@@ -78,158 +82,42 @@ class OwnerRequestsService {
 
   static Future<bool> acceptRequestFromOwner(LandlordRequest request) async {
 
-    WriteBatch batch = Firestore.instance.batch();
+    HttpsCallable func = CloudFunctions.instance.getHttpsCallable(
+                      functionName: "acceptRequestFromOwner",
+                  );
 
-
-    /** Accept request */
-    Map<String, dynamic> reqUpdateData = LandlordRequest.toUpdateJson(status: globals.RequestStatus.Accepted.index);
-
-    DocumentReference reqDoc = LandlordRequestsDao.getDocumentReference(request.getRequestId());
-    batch.updateData(reqDoc, reqUpdateData);
-
-    /** Add toUserId in ownerIdList of owner flat */
-
-    DocumentReference propDoc;
-    propDoc = OwnerFlatDao.getDocumentReference(request.getFlatId());
-    
-    
-    Map<String, dynamic> propUpdateData = OwnerFlat.toUpdateJson(ownerIdList: FieldValue.arrayUnion([request.getToUserId()]), ownerRoleList: FieldValue.arrayUnion([request.getToUserId() + ':' + request.getToUsername() + ':' + globals.OwnerRoles.Manager.index.toString()]));
-    batch.updateData(propDoc, propUpdateData);
-
-
-    /** Delete all sent requests to that flat */
-
-    QuerySnapshot s = await LandlordRequestsDao.getMySentRequestsToOwnerForFlat(request.getToUserId(), request.getFlatId());
-
-
-    for(int i = 0; i < s.documents.length; i++) {
-      if(s.documents[i].documentID != request.getRequestId()) {
-        DocumentReference d = LandlordRequestsDao.getDocumentReference(s.documents[i].documentID);
-        batch.delete(d);
-      }
-    }
-
-    /** Add ownerId in ownerId List of all requests received for that flat */
-
-    QuerySnapshot ts = await TenantRequestsDao.getRequestsForFlatD(request.getFlatId());
-
-    Map<String, dynamic> updateTenReqData = TenantRequest.toUpdateJson(ownerIdList: FieldValue.arrayUnion([request.getToUserId()]));
-
-    for(int i = 0; i < ts.documents.length; i++) {
-      DocumentReference d =  TenantRequestsDao.getDocumentReference(ts.documents[i].documentID);
-      batch.updateData(d, updateTenReqData);
-    }
-
-    /** Add toUserId in all incoming owner requests to flat */
-
-    QuerySnapshot rs = await LandlordRequestsDao.getAllReceivedCoownerRequestsForFlatD(request.getFlatId());
-
-    Map<String, dynamic> updateReqData = LandlordRequest.toUpdateJson(ownerIdList: FieldValue.arrayUnion([request.getToUserId()]));
-
-    for(int i = 0; i < rs.documents.length; i++) {
-      if(rs.documents[i].documentID != request.getRequestId()) {
-        DocumentReference d = LandlordRequestsDao.getDocumentReference(rs.documents[i].documentID);
-        batch.updateData(d, updateReqData);
-      }
-    }
-
-    /** add owner in apartment tenant list if document present */
-    QuerySnapshot otf = await OwnerTenantDao.getByOwnerFlatId(request.getFlatId());
-
-    if(otf.documents != null && otf.documents.isNotEmpty) {
-      DocumentSnapshot ld = await OwnerDao.getDocument(request.getToUserId());
-      String otfId = otf.documents[0].documentID;
-      DocumentReference otfdoc = OwnerTenantDao.getDocumentReference(otfId);
-      Map<String, dynamic> data = {'o_' + ld.documentID: ld.data['name'] + '::' + ld.data['notification_token']};
-      otfdoc.updateData(data);
-    }
-
-    bool ifSuccess = await batch.commit().then((ret){
-      return true;
-    }).catchError((e){
-     return false;
-    });
-
-    return ifSuccess;
-
+                  try {
+                 HttpsCallableResult res = await func.call(<String, dynamic> {'requestId': request.getRequestId()});
+                  if((res.data as Map)['code'] == 0) {
+                    return true;
+                  }
+                  else {
+                    return false;
+                  }
+                  }
+                  catch(e) {
+                    return false;
+                  }
   }
 
   static Future<bool> acceptRequestFromCoOwner(LandlordRequest request) async {
 
-    WriteBatch batch = Firestore.instance.batch();
+    HttpsCallable func = CloudFunctions.instance.getHttpsCallable(
+                      functionName: "acceptRequestFromCoOwner",
+                  );
 
-    /** Accept request */
-
-    Map<String, dynamic> reqUpdateData = LandlordRequest.toUpdateJson(status: globals.RequestStatus.Accepted.index);
-    DocumentReference reqDoc = LandlordRequestsDao.getDocumentReference(request.getRequestId());
-    batch.updateData(reqDoc, reqUpdateData);
-
-    /** Add requesterId in owner flat owner list */
-
-    DocumentReference propDoc;
-    propDoc = LandlordRequestsDao.getDocumentReference(request.getFlatId());
-    
-    
-    Map<String, dynamic> propUpdateData = OwnerFlat.toUpdateJson(ownerIdList: FieldValue.arrayUnion([request.getRequesterId()]), ownerRoleList: FieldValue.arrayUnion([request.getRequesterId() + ':' + request.getRequesterUserName() + ':' + globals.OwnerRoles.Manager.index.toString()]));
-    batch.updateData(propDoc, propUpdateData);
-
-    
-    /** Add requesterId in all incoming requests to flat */
-
-    QuerySnapshot s = await LandlordRequestsDao.getAllReceivedCoownerRequestsForFlatD(request.getFlatId());
-
-    Map<String, dynamic> updateReqData = LandlordRequest.toUpdateJson(ownerIdList: FieldValue.arrayUnion([request.getRequesterId()]));
-
-    for(int i = 0; i < s.documents.length; i++) {
-      if(s.documents[i].documentID != request.getRequestId()) {
-        DocumentReference d = LandlordRequestsDao.getDocumentReference(s.documents[i].documentID);
-        batch.updateData(d, updateReqData);
-      }
-    }
-
-
-    /** Add requesterId in all tenant requests for this flat */
-
-    QuerySnapshot ts = await TenantRequestsDao.getReceivedRequestsForFlatD(request.getFlatId());
-
-    Map<String, dynamic> updateTenReqData = TenantRequest.toUpdateJson(ownerIdList: FieldValue.arrayUnion([request.getRequesterId()]));
-
-    for(int i = 0; i < ts.documents.length; i++) {
-      DocumentReference d = TenantRequestsDao.getDocumentReference(ts.documents[i].documentID);
-      batch.updateData(d, updateTenReqData);
-    }
-
-    /** delete sent request to that coowner for this flat */
-
-    QuerySnapshot qs = await LandlordRequestsDao.getAllSentRequestsToCoownerForFlatD(request.getRequesterId(), request.getFlatId());
-
-
-    for(int i = 0; i < qs.documents.length; i++) {
-      if(qs.documents[i].documentID != request.getRequestId()) {
-        DocumentReference d = LandlordRequestsDao.getDocumentReference(qs.documents[i].documentID);
-        batch.delete(d);
-      }
-    }
-
-    /** add owner in apartment tenant list if document present */
-    QuerySnapshot otf = await OwnerTenantDao.getByOwnerFlatId(request.getFlatId());
-
-    if(otf.documents != null && otf.documents.isNotEmpty) {
-      DocumentSnapshot ld = await OwnerDao.getDocument(request.getRequesterId());
-      String otfId = otf.documents[0].documentID;
-      DocumentReference otfdoc = OwnerTenantDao.getDocumentReference(otfId);
-      Map data = {'o_' + ld.documentID: ld.data['name'] + '::' + ld.data['notification_token']};
-      otfdoc.updateData(data);
-    }
-
-    bool ifSuccess = await batch.commit().then((ret){
-      return true;
-    }).catchError((e){
-     return false;
-    });
-
-    return ifSuccess;
-
+                  try {
+                 HttpsCallableResult res = await func.call(<String, dynamic> {'requestId': request.getRequestId()});
+                  if((res.data as Map)['code'] == 0) {
+                    return true;
+                  }
+                  else {
+                    return false;
+                  }
+                  }
+                  catch(e) {
+                    return false;
+                  }
   }
 
   static Future<bool> rejectRequest(LandlordRequest request) async {
@@ -250,9 +138,9 @@ class OwnerRequestsService {
     Map<String, dynamic> propUpdateData = OwnerFlat.toUpdateJson(ownerIdList: FieldValue.arrayRemove([owner.getOwnerId()]), ownerRoleList: FieldValue.arrayRemove([owner.getOwnerId() + ':' + owner.getName() + ':' + globals.OwnerRoles.Manager.index.toString()]));
     batch.updateData(propDoc, propUpdateData);
 
-    /** Remove ownerId in all incoming requests to flat */
+    /** Remove ownerId in all incoming and outgoing requests to flat */
 
-    QuerySnapshot s = await LandlordRequestsDao.getAllReceivedCoownerRequestsForFlatD(flat.getFlatId());
+    QuerySnapshot s = await LandlordRequestsDao.getAllOwnerRequestsForFlatD(flat.getFlatId());
 
     Map<String, dynamic> updateReqData = LandlordRequest.toUpdateJson(ownerIdList: FieldValue.arrayRemove([owner.getOwnerId()]));
 
@@ -261,17 +149,7 @@ class OwnerRequestsService {
         batch.updateData(d, updateReqData);
     }
 
-    /** delete requests sent by that owner for that flat */
-
-    QuerySnapshot qs = await LandlordRequestsDao.getMySentReqToCoOwForFlatByIdD(owner.getOwnerId(), flat.getFlatId());
-
-
-    for(int i = 0; i < qs.documents.length; i++) {
-        DocumentReference d = LandlordRequestsDao.getDocumentReference(qs.documents[i].documentID);
-        batch.delete(d);
-    }
-
-    /** remove ownerId from incoming requests for flat from tenant */
+    /** remove ownerId from incoming and outgoing requests for flat from tenant */
 
     QuerySnapshot ts = await TenantRequestsDao.getRequestsForFlatD(flat.getFlatId());
 
@@ -282,23 +160,17 @@ class OwnerRequestsService {
         batch.updateData(d, updateTenReqData);
     }
 
-    /** delete requests sent to tenant by this owner */
-
-    QuerySnapshot tss = await TenantRequestsDao.getSentReqForFlatByIdD(owner.getOwnerId(), flat.getFlatId());
-
-    for(int i = 0; i < tss.documents.length; i++) {
-        DocumentReference d = TenantRequestsDao.getDocumentReference(tss.documents[i].documentID);
-        batch.delete(d);
-    }
-
     /** remove owner in apartment tenant list if document present */
     QuerySnapshot otf = await OwnerTenantDao.getByOwnerFlatId(flat.getFlatId());
 
     if(otf.documents != null && otf.documents.isNotEmpty) {
       String otfId = otf.documents[0].documentID;
       DocumentReference otfdoc = OwnerTenantDao.getDocumentReference(otfId);
+      DocumentReference ntfnDoc = Firestore.instance.collection('notification_tokens').document(otfId);
       Map data = {'o_' + owner.getOwnerId(): FieldValue.delete()};
-      otfdoc.updateData(data);
+      batch.updateData(otfdoc, data);
+      batch.updateData(ntfnDoc, data);
+
     }
 
     bool ifSuccess = await batch.commit().then((ret){

@@ -11,6 +11,7 @@ import 'package:simpliflat_landlord/model/tenant_flat.dart';
 import 'package:simpliflat_landlord/model/tenant_request.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 
 
@@ -31,83 +32,24 @@ class TenantRequestsService {
   }
 
   static Future<String> acceptTenantRequest(TenantRequest request) async {
-    /** accept request */
+    HttpsCallable func = CloudFunctions.instance.getHttpsCallable(
+                      functionName: "acceptTenantRequest",
+                  );
 
-    Map<String, dynamic> reqUpdateData = TenantRequest.toUpdateJson(status: globals.RequestStatus.Accepted.index);
-
-    WriteBatch batch = Firestore.instance.batch();
-
-    DocumentReference reqDoc = TenantRequestsDao.getDocumentReference(request.getRequestId());
-    batch.updateData(reqDoc, reqUpdateData);
-
-    /** create document in owner_tenant_flat */
-
-    DocumentReference propDoc = OwnerTenantDao.getDocumentReference(null);
-    
-    
-    Map<String, dynamic> reqData = {'ownerFlatId': request.getOwnerFlatId(), 'tenantFlatId': request.getTenantFlatId(), 'status': 0, 'tenantFlatName': request.getTenantFlatName(), 'buildingName': request.getBuildingName(), 'buildingAddress': request.getBuildingAddress(), 'zipcode': request.getBuildingZipcode(), 'ownerFlatName': request.getOwnerFlatName()};
-    
-      /** add all owners and tenants */
-    DocumentSnapshot ofd = await OwnerFlatDao.getDocument(request.getOwnerFlatId());
-    if(ofd.exists) {
-        OwnerFlat ownerFlatTemp = OwnerFlat.fromJson(ofd.data,ofd.documentID);
-        if(ownerFlatTemp.getOwnerIdList() != null) {
-          for (String ownerId in ownerFlatTemp.getOwnerIdList()) {
-              DocumentSnapshot landlordSnapshot = await OwnerDao.getDocument(ownerId);
-              if (landlordSnapshot.exists) {
-                reqData['o_' + landlordSnapshot.documentID] = landlordSnapshot.data['name'] + '::' + landlordSnapshot.data['notification_token'];
-              }
-          }
-        }
-    }
-
-    QuerySnapshot tenants = await TenantDao.getTenantsUsingTenantFlatId(request.getTenantFlatId());
-    if(tenants.documents != null && tenants.documents.length > 0) {
-      for(DocumentSnapshot tenant in tenants.documents) {
-        reqData['t_' + tenant.documentID] = tenant.data['name'] + '::' + tenant.data['notification_token'];
-      }
-    }
-    
-    batch.setData(propDoc, reqData);
-
-
-    /** reject all other pending received requests for that flat */
-
-    QuerySnapshot s = await TenantRequestsDao.getReceivedRequestsForFlatD(request.getOwnerFlatId());
-
-    Map<String, dynamic> reqRejectData = TenantRequest.toUpdateJson(status: globals.RequestStatus.Rejected.index);
-
-    for(int i = 0; i < s.documents.length; i++) {
-      if(s.documents[i].documentID != request.getRequestId()) {
-        DocumentReference d = TenantRequestsDao.getDocumentReference(s.documents[i].documentID);
-        batch.updateData(d, reqRejectData);
-      }
-    }
-
-    /** delete all pending sent requests */
-
-    QuerySnapshot del = await TenantRequestsDao.getSentRequestsForFlatD(request.getOwnerFlatId());
-
-    for(int i = 0; i < del.documents.length; i++) {
-      if(del.documents[i].documentID != request.getRequestId()) {
-        DocumentReference delDoc = TenantRequestsDao.getDocumentReference(del.documents[i].documentID);
-        batch.delete(delDoc);
-      }
-    }
-
-    bool ifSuccess = await batch.commit().then((ret){
-      return true;
-    }).catchError((e){
-      return false;
-    });
-
-    if(ifSuccess) {
-      return reqDoc.documentID;
-    }
-    else {
-      return null;
-    }
+                  try {
+                 HttpsCallableResult res = await func.call(<String, dynamic> {'requestId': request.getRequestId()});
+                  if((res.data as Map)['code'] == 0) {
+                    return request.getRequestId();
+                  }
+                  else {
+                    return null;
+                  }
+                  }
+                  catch(e) {
+                    return null;
+                  }
   }
+
 
   static Future<bool> createTenantRequest(OwnerFlat flat, User user, TenantFlat tenantFlat) async {
     TenantRequest req = new TenantRequest();

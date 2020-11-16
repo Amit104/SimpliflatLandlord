@@ -68,11 +68,10 @@ class LandlordRequestsDao {
   }
 
 
-  static Future<QuerySnapshot> getAllReceivedCoownerRequestsForFlatD(String flatId) async {
+  static Future<QuerySnapshot> getAllOwnerRequestsForFlatD(String flatId) async {
     return Firestore.instance.collection(globals.ownerOwnerJoin)
     .where('status', isEqualTo: globals.RequestStatus.Pending.index)
-    .where('flatId', isEqualTo: flatId)
-    .where('requestToOwner', isEqualTo: true).getDocuments();
+    .where('flatId', isEqualTo: flatId).getDocuments();
   }
 
   static Future<QuerySnapshot> getAllSentRequestsToCoownerForFlatD(String requesterId, String flatId) async {

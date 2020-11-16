@@ -40,12 +40,9 @@ class _LandlordPortal extends State<LandlordPortal> {
   String flatName = "Hey!";
   String userName = "";
   String userPhone = "";
-  var userId;
+  String userId;
   String _appBarTitle = "Simpliflat";
-  var titleList = ["Simpliflat", "Tasks", "Message Board", "Documents Manager", "Profile"];
-
-
-  FirebaseMessaging firebaseMessaging = new FirebaseMessaging();
+  List<String> titleList = ["Simpliflat", "Tasks", "Message Board", "Documents Manager", "Profile"];
 
   _LandlordPortal(this.flat);
 
@@ -53,53 +50,6 @@ class _LandlordPortal extends State<LandlordPortal> {
   @override
   void initState() {
     super.initState();
-
-    var notificationToken;
-    firebaseMessaging.configure(onLaunch: (Map<String, dynamic> message) {
-      debugPrint("lanuch called");
-      //_notificationNavigate(message);
-      return null;
-    }, onMessage: (Map<String, dynamic> message) {
-      debugPrint("message called ");
-      //_notificationNavigate(message);
-      return null;
-    }, onResume: (Map<String, dynamic> message) async {
-      //_notificationNavigate(message);
-    });
-
-    firebaseMessaging.requestNotificationPermissions(
-        const IosNotificationSettings(alert: true, badge: true, sound: true));
-
-    firebaseMessaging.onIosSettingsRegistered
-        .listen((IosNotificationSettings setting) {
-      print("IOS Setting resgistered");
-    });
-
-    // notification token check.
-    try {
-      Utility.getToken().then((token) {
-        if (token == null || token == "") {
-          firebaseMessaging.getToken().then((token) async {
-            try {
-              debugPrint("TOKEN = " + token);
-              notificationToken = token;
-              if (token == null) {
-              } else {
-                var userId = await Utility.getUserId();
-                bool ifSuccess = await OwnerDao.update(userId, Owner.toUpdateJson(notificationToken: notificationToken));
-                if(ifSuccess) {
-                  Utility.addToSharedPref(notificationToken: notificationToken);
-                }
-              }
-            } catch (e) {
-              debugPrint("exception handled 1");
-            }
-          });
-        }
-      });
-    } catch (e) {
-      debugPrint("exception handled 2");
-    }
   }
 
   @override

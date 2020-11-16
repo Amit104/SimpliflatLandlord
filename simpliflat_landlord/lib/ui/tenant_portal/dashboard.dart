@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:simpliflat_landlord/constants/colors.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
+import 'package:simpliflat_landlord/constants/strings.dart';
+import 'package:simpliflat_landlord/model/message.dart';
 import 'package:simpliflat_landlord/model/owner_tenant.dart';
+import 'package:simpliflat_landlord/model/task.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/ui/tasks/view_task.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
@@ -12,7 +16,6 @@ import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 class Dashboard extends StatelessWidget {
 
   final OwnerTenant flat;
-  //bool noticesExist = false;
   bool tasksExist = false;
   List existingUsers;
   int usersCount;
@@ -20,7 +23,7 @@ class Dashboard extends StatelessWidget {
   bool loadingState = false;
 
 
-  var numToMonth = {
+  Map<int, String> numToMonth = {
     1: 'Jan',
     2: 'Feb',
     3: 'Mar',
@@ -84,13 +87,22 @@ class Dashboard extends StatelessWidget {
 
   BoxDecoration getBlueGradientBackground() {
     return new BoxDecoration(
-            color: Colors.teal
+            color: AppColors.PRIMARY_COLOR
           );
   }
 
   Widget flatNameWidget(BuildContext context) {
 
-    return Card(
+    return Container(
+                                    color: AppColors.PRIMARY_COLOR,
+                                                                      child: ListTile(
+                                                                        contentPadding: EdgeInsets.only(top: 15, bottom: 15, left: 15, right: 15.0),
+                                      
+                                      title: Text(this.flat.getOwnerFlat().getFlatName(), style: CommonWidgets.getTextStyleBold(size: 20, color: Colors.white)),
+                                    ),
+                                  );
+
+    /*return Card(
       elevation: 5.0,
       margin: EdgeInsets.only(left: 5.0, top: 10.0, right: 5.0),
       child: Container(
@@ -108,14 +120,12 @@ class Dashboard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    );*/
     //  });
   }
 
 
-  // Get Tasks data for today
   Widget getTasks(BuildContext context) {
-    //DONE: need to change below
 
     DateTime now= new DateTime.now();
     Timestamp start = Timestamp.fromDate(DateTime(now.year, now.month, now.day));
@@ -135,12 +145,14 @@ class Dashboard extends StatelessWidget {
                 if (!taskSnapshot.hasData) return LoadingContainerVertical(3);
                 debugPrint("after fetching");
 
+                List<Task> tasks = taskSnapshot.data.documents.map((DocumentSnapshot doc) => Task.fromJson(doc.data, doc.documentID)).toList();
+
                 /// TASK LIST VIEW
-                var tooltipKey = new List();
+                List<GlobalKey> tooltipKey = new List();
                 for (int i = 0; i < taskSnapshot.data.documents.length; i++) {
                   tooltipKey.add(GlobalKey());
                 }
-                if(taskSnapshot.data.documents.isEmpty)
+                if(tasks.isEmpty)
                   return Container();
 
                 return Container(
@@ -150,19 +162,18 @@ class Dashboard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-              Container(padding: EdgeInsets.only(top: 20.0,bottom:20.0,left:10.0),   decoration: getBlueGradientBackground(), child: Text('Tasks For You', style: TextStyle(color: Colors.white),)),
+              Container(padding: EdgeInsets.only(top: 20.0,bottom:20.0,left:10.0),   decoration: getBlueGradientBackground(), child: Text('Tasks For You', style: CommonWidgets.getTextStyleBold(color: Colors.white, size: 12.0),)),
                   new ListView.builder(
-                    itemCount: taskSnapshot.data.documents.length,
+                    itemCount: tasks.length,
                     scrollDirection: Axis.vertical,
                     key: UniqueKey(),
                     physics: NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
                     itemBuilder: (BuildContext context, int position) {
-                      var datetime = (taskSnapshot.data.documents[position]
-                              ["nextDueDate"] as Timestamp)
-                          .toDate();
-                      final f = new DateFormat.jm();
-                      var datetimeString = datetime.day.toString() +
+                      Task task = tasks[position];
+                      DateTime datetime = task.getNextDueDate().toDate();
+                      final DateFormat f = new DateFormat.jm();
+                      String datetimeString = datetime.day.toString() +
                           " " +
                           numToMonth[datetime.month.toInt()] +
                           " " +
@@ -170,7 +181,7 @@ class Dashboard extends StatelessWidget {
                           " - " +
                           f.format(datetime);
 
-                      if (taskSnapshot.data.documents.length > 0) {
+                      if (tasks.length > 0) {
                         tasksExist = true;
                       } else {
                         tasksExist = false;
@@ -182,8 +193,7 @@ class Dashboard extends StatelessWidget {
                             width: MediaQuery.of(context).size.width * 0.85,
                             child: ListTile(
                               title: CommonWidgets.textBox(
-                                  taskSnapshot.data.documents[position]
-                                      ["title"],
+                                  task.getTitle(),
                                   15.0,
                                   color: Colors.black),
                               subtitle: Row(
@@ -202,8 +212,7 @@ class Dashboard extends StatelessWidget {
                               ),
                               onTap: () {
                                 navigateToViewTask(context,
-                                    taskId: taskSnapshot
-                                        .data.documents[position].documentID);
+                                    taskId: task.getTaskId());
                               },
                             ),
                           ));
@@ -245,9 +254,9 @@ class Dashboard extends StatelessWidget {
         if (!notesSnapshot.hasData)
              return LoadingContainerVertical(3);
 
-       
+        List<Message> notices = notesSnapshot.data.documents.map((DocumentSnapshot doc) => Message.fromJson(doc.data, doc.documentID)).toList();
 
-        if(notesSnapshot.data.documents.isEmpty)
+        if(notices.isEmpty)
           return Container();
 
         return Container(
@@ -257,34 +266,34 @@ class Dashboard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-              Container(padding: EdgeInsets.only(top: 20.0,bottom:20.0,left:10.0),    decoration: getBlueGradientBackground(), child: Text('Notices For You', style: TextStyle(color: Colors.white),)),
+              Container(padding: EdgeInsets.only(top: 20.0,bottom:20.0,left:10.0),    decoration: getBlueGradientBackground(), child: Text('Notices For You', style: CommonWidgets.getTextStyleBold(size: 12, color: Colors.white),)),
           ListView.separated(
             separatorBuilder: (context, builder) {return Divider(height: 1.0);},
-              itemCount: notesSnapshot.data.documents.length,
+              itemCount: notices.length,
               key: UniqueKey(),
               physics: NeverScrollableScrollPhysics(),
               shrinkWrap: true,
               itemBuilder: (BuildContext context, int position) {
                 return _buildNoticeListItem(
-                    notesSnapshot.data.documents[position], position);
+                    notices[position], position);
               }),
         ])));
       },
     );
   }
 
-  Widget _buildNoticeListItem(DocumentSnapshot notice, index) {
-    var datetime = (notice['updated_at'] as Timestamp).toDate();
-    final f = new DateFormat.jm();
-    var datetimeString = f.format(datetime);
+  Widget _buildNoticeListItem(Message notice, index) {
+    DateTime datetime = notice.getUpdatedAt().toDate();
+    final DateFormat f = new DateFormat.jm();
+    String datetimeString = f.format(datetime);
 
-    var userName = notice['user_name'] == null
+    String userName = notice.getCreatedByUserName()== null
         ? ""
-        : notice['user_name'].toString().trim();
+        : notice.getCreatedByUserName().trim();
 
-    var color = notice['user_id'].toString().trim().hashCode;
+    int color = notice.getCreatedByUserId().trim().hashCode;
 
-    String noticeTitle = notice['message'].toString().trim();
+    String noticeTitle = notice.getMessage().trim();
     if (noticeTitle.length > 100) {
       noticeTitle = noticeTitle.substring(0, 100) + "...";
     }
@@ -331,7 +340,7 @@ class Dashboard extends StatelessWidget {
   }
 
   Widget dateUI() {
-    var numToWeekday = {
+    Map<int, String> numToWeekday = {
       1: 'Monday',
       2: 'Tuesday',
       3: 'Wednesday',
@@ -341,7 +350,7 @@ class Dashboard extends StatelessWidget {
       7: 'Sunday'
     };
 
-    var now = DateTime.now().toLocal();
+    DateTime now = DateTime.now().toLocal();
     String day = numToWeekday[now.weekday];
     String date = numToMonth[now.month.toInt()] + " " + now.day.toString();
     return Text(
