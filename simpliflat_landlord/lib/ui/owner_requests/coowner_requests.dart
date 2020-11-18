@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/landlord_requests_dao.dart';
 import 'package:simpliflat_landlord/model/landlord_request.dart';
 import 'package:simpliflat_landlord/model/user.dart';
@@ -63,10 +64,9 @@ class CoOwnerRequests extends StatelessWidget {
                 confirmDismiss: (direction) { return rejectRequest(req, scaffoldC);},
                             child: Card(
                   child: ListTile(
-                    title: Text(req.getRequesterUserName() + ' ' + req.getRequesterPhone()),
+                    title: Text(req.getRequesterUserName() + ' (' + req.getRequesterPhone() + ')', style: CommonWidgets.getTextStyleBold(size: 17)),
                     subtitle: Text(getSubtitleText(req)),
                     trailing: IconButton(icon:Icon(Icons.check), onPressed: () {acceptRequest(req, scaffoldC);},),
-                    isThreeLine: true,
                   ),
                 ),
               );
@@ -78,7 +78,7 @@ class CoOwnerRequests extends StatelessWidget {
   }
 
   String getSubtitleText(LandlordRequest request) {
-    return 'Request for flat ' + request.getFlatNumber() == null?'':request.getFlatNumber();
+    return 'Request for flat ' + (request.getFlatNumber() == null?'':request.getFlatNumber());
   }
 
   Future<bool> rejectRequest(LandlordRequest request, BuildContext scaffoldC) async {

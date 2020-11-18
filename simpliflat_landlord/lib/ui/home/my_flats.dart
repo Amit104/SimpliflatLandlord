@@ -25,7 +25,9 @@ class MyFlats extends StatelessWidget {
   
   final Building building;
 
-  MyFlats(this.building);
+  Map<String, List<OwnerFlat>> ownedFlats;
+
+  MyFlats(this.building, this.ownedFlats);
 
   @override
   Widget build(BuildContext context) {
@@ -170,8 +172,8 @@ class MyFlats extends StatelessWidget {
 
   void navigateToLandlordPortal(OwnerFlat flat, BuildContext context) async {
     debugPrint("navigate to landlord portal");
-    QuerySnapshot q = await OwnerTenantDao.getByOwnerFlatId(flat.getFlatId());
-    if (q != null && q.documents.length > 0) {
+    if (flat.getOwnerTenantId() != null && flat.getOwnerTenantId() != "") {
+      QuerySnapshot q = await OwnerTenantDao.getByOwnerFlatId(flat.getFlatId());
       TenantFlat tenantFlat = new TenantFlat();
       tenantFlat.setFlatId(q.documents[0].data['tenantFlatId']);
       tenantFlat.setFlatName(q.documents[0].data['tenantFlatName']);
@@ -181,6 +183,7 @@ class MyFlats extends StatelessWidget {
       ownerTenantFlat.setStatus(0);
       ownerTenantFlat.setTenantFlat(tenantFlat);
       ownerTenantFlat.setOwnerTenantId(q.documents[0].documentID);
+      ownerTenantFlat.setOwnedFlats(this.ownedFlats);
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {
@@ -191,7 +194,7 @@ class MyFlats extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {
-          return AddTenant(flat);
+          return AddTenant(flat, this.ownedFlats);
         }),
       );
     }

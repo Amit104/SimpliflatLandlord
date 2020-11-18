@@ -23,11 +23,13 @@ class AddTenant extends StatefulWidget {
 
   final OwnerFlat flat;
 
-  AddTenant(this.flat);
+  Map<String, List<OwnerFlat>> ownedFlats;
+
+  AddTenant(this.flat, this.ownedFlats);
 
   @override
   State<StatefulWidget> createState() {
-    return AddTenantState(this.flat);
+    return AddTenantState(this.flat, this.ownedFlats);
   }
 }
 
@@ -40,7 +42,9 @@ class AddTenantState extends State<AddTenant> {
 
   final OwnerFlat flat;
 
-  AddTenantState(this.flat);
+  Map<String, List<OwnerFlat>> ownedFlats;
+
+  AddTenantState(this.flat, this.ownedFlats);
 
   @override
   Widget build(BuildContext context) {
@@ -251,10 +255,12 @@ class AddTenantState extends State<AddTenant> {
       tenantFlat.setFlatName(q.documents[0].data['tenantFlatName']);
       tenantFlat.setTenants(getTenants(q));
       OwnerTenant ownerTenantFlat = new OwnerTenant();
+      this.flat.setOwnerTenantId(q.documents[0].documentID);
       ownerTenantFlat.setOwnerFlat(this.flat);
       ownerTenantFlat.setStatus(0);
       ownerTenantFlat.setTenantFlat(tenantFlat);
-      ownerTenantFlat.setOwnerTenantId(q.documents[0].documentID);      
+      ownerTenantFlat.setOwnerTenantId(q.documents[0].documentID);  
+      ownerTenantFlat.setOwnedFlats(this.ownedFlats);    
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {

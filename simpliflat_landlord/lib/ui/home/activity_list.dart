@@ -44,8 +44,9 @@ class ActivityListState extends State<ActivityList> {
                           .toString(),
                       sort: false,
                       elements: data.data,
-                      groupSeparatorBuilder: (String value) => Padding(
+                      groupSeparatorBuilder: (String value) => Container(
                         padding: const EdgeInsets.all(8.0),
+                        margin: EdgeInsets.only(bottom: 20),
                         child: Center(
                           child: Container(
                             child: new Text(getDateValue(value),
@@ -149,7 +150,7 @@ class ActivityListState extends State<ActivityList> {
 
     return Container(
           margin: EdgeInsets.only(bottom: 10, left: 5, right: 5),
-          color: Colors.blue[100],
+          color: Colors.white70,
           child: Padding(
         padding: const EdgeInsets.only(right: 8.0, left: 8.0),
         child: SizedBox(
@@ -163,6 +164,7 @@ class ActivityListState extends State<ActivityList> {
                       style: TextStyle(
                         fontSize: 12.0,
                         fontFamily: 'Roboto',
+                        fontWeight: FontWeight.w600
                       )),
                   padding: EdgeInsets.only(bottom: 5.0),
                 ),

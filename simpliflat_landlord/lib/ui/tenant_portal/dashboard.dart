@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/constants/colors.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/constants/strings.dart';
@@ -12,6 +13,7 @@ import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/ui/tasks/view_task.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
+import 'package:simpliflat_landlord/view_model/dashboard_empty_check_model.dart';
 
 class Dashboard extends StatelessWidget {
 
@@ -67,19 +69,54 @@ class Dashboard extends StatelessWidget {
         backgroundColor: Colors.white,
         body: Builder(builder: (BuildContext scaffoldC) {
           return new SingleChildScrollView(
-            child: Column(
+            child: ChangeNotifierProvider(
+                create: (_) => DashboardEmptyCheckModel(),
+                key: GlobalKey(),
+                builder: (dashboardContext, child) {
+             return Column(
               children: <Widget>[
                 flatNameWidget(context),
-
-                getTasks(context),
-                
-                getNotices(),
+                SizedBox(height: 10),
+                getTasks(context, dashboardContext),
+                SizedBox(height: 10),
+                getNotices(dashboardContext),
+                Consumer<DashboardEmptyCheckModel>(builder: (BuildContext context,
+                          DashboardEmptyCheckModel dashboardEmptyCheckModel, Widget child) {
+                        return getEmptyImage(dashboardEmptyCheckModel);
+                      }),
               ],
-            ),
-          );
+            );
+                }));
         }),
       ),
     );
+  }
+
+  getEmptyImage(DashboardEmptyCheckModel dashboardEmptyCheckModel) {
+    if (!dashboardEmptyCheckModel.noticesExist && !dashboardEmptyCheckModel.tasksExist) {
+      return Center(
+        child: Column(
+          children: [
+            Image.asset(
+              'assets/images/dashboard-bg.PNG',
+              fit: BoxFit.fill,
+            ),
+            Container(
+              height: 10.0,
+            ),
+            Text(
+              "You are all caught up for today!",
+              style: TextStyle(
+                fontSize: 18.0,
+                fontFamily: 'Roboto',
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Container();
   }
 
   
@@ -125,7 +162,7 @@ class Dashboard extends StatelessWidget {
   }
 
 
-  Widget getTasks(BuildContext context) {
+  Widget getTasks(BuildContext context, BuildContext dbCxt) {
 
     DateTime now= new DateTime.now();
     Timestamp start = Timestamp.fromDate(DateTime(now.year, now.month, now.day));
@@ -152,6 +189,14 @@ class Dashboard extends StatelessWidget {
                 for (int i = 0; i < taskSnapshot.data.documents.length; i++) {
                   tooltipKey.add(GlobalKey());
                 }
+
+                WidgetsBinding.instance.addPostFrameCallback((_){
+                              if (taskSnapshot.data.documents.length > 0) {
+                                Provider.of<DashboardEmptyCheckModel>(dbCxt, listen: false).tasksChange(true);
+                              } else {
+                                Provider.of<DashboardEmptyCheckModel>(dbCxt, listen: false).tasksChange(false);
+                              }
+                            });
                 if(tasks.isEmpty)
                   return Container();
 
@@ -237,7 +282,7 @@ class Dashboard extends StatelessWidget {
 
   //DONE: need to change below
   // Get NoticeBoard data
-  Widget getNotices() {
+  Widget getNotices(BuildContext dbCxt) {
     DateTime now= new DateTime.now();
     Timestamp start = Timestamp.fromDate(DateTime(now.year, now.month, now.day));
     Timestamp end = Timestamp.fromDate(DateTime(now.year, now.month, now.day).add(new Duration(days: 1)));
@@ -256,6 +301,16 @@ class Dashboard extends StatelessWidget {
 
         List<Message> notices = notesSnapshot.data.documents.map((DocumentSnapshot doc) => Message.fromJson(doc.data, doc.documentID)).toList();
 
+        if(notices.isEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_){
+            Provider.of<DashboardEmptyCheckModel>(dbCxt, listen: false).noticesChange(false);
+          });
+        }
+        else {
+          WidgetsBinding.instance.addPostFrameCallback((_){
+          Provider.of<DashboardEmptyCheckModel>(dbCxt, listen: false).noticesChange(true);
+        });
+        }
         if(notices.isEmpty)
           return Container();
 

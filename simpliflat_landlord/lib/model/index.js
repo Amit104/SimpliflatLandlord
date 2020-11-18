@@ -294,7 +294,7 @@ exports.createMessageBoard =
 
 
             // notification to tenants
-            var ret = getTenantTokensAndUserName(atd, msgData.user_id);
+            var ret = getTenantTokensAndUserNameUsingDoc(atd, msgData.user_id);
 			console.info("after getting tenant tokens");
             if (ret != null) {
                 tokens = tokens.concat(ret.tokens);
@@ -361,7 +361,7 @@ exports.createDocumentManager =
             }
 
             // notification to tenants
-            var ret = await getTenantTokensAndUserName(atd, msgData.user_id);
+            var ret = await getTenantTokensAndUserNameUsingDoc(atd, msgData.user_id);
             if (ret != null) {
                 tokens = tokens.concat(ret.tokens);
                 userName = ret.userName;
@@ -398,172 +398,6 @@ exports.createDocumentManager =
             }
 
 
-        });
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// joinflat Notifications
-//////////////////////////////////////////////////////////////////////////////////////////
-
-exports.joinFlat =
-    functions
-        .firestore
-        .document('joinflat/{id}')
-        .onCreate((snapshot, context) => {
-            msgData = snapshot.data();
-            var tokens = []
-
-            if (msgData.status == 0) {
-                // join request to flat
-                if (msgData.request_from_flat == 0) {
-                    admin.firestore().collection('user').where('flat_id', '==', msgData.flat_id).get().then((userSnapshots) => {
-                        if (userSnapshots.empty) {
-                            console.error("No User [DOCUMENT] /joinflat/" + context.params.id);
-                        } else {
-                            for (var document of userSnapshots.docs) {
-                                tokens.push(document.data().notification_token);
-                            }
-                        }
-
-                        if (tokens.length == 0) {
-                            console.error("No Tokens [DOCUMENT] /joinflat/" + context.params.id);
-                        } else {
-                            var payload = {
-                                "notification": {
-                                    "title": "New Join Request",
-                                    "body": msgData.request_from_flat == 0 ? "A user wants to join the flat" : "you have a join request from a flat",
-                                    "sound": "default"
-                                },
-                                "data": {
-                                    "sendername": userName,
-                                    "click_action": "FLUTTER_NOTIFICATION_CLICK",
-                                    "screen": "joinflat",
-                                    "message": msgData.request_from_flat == 0 ? "A user wants to join the flat" : "you have a join request from a flat"
-                                }
-                            }
-                            return admin.messaging().sendToDevice(tokens, payload).then((response) => {
-                                console.log("joinflat notification pushed [TYPE] onCreate [DOCUMENT] /joinflat/" + context.params.id);
-                            }).catch((err) => {
-                                console.error(err);
-                            });
-                        }
-                    });
-                } else {
-                    // Join request to user
-                    admin.firestore().collection('user').doc(msgData.user_id).get().then((userSnapshot) => {
-                        if (userSnapshot.empty) {
-                            console.error("No User [DOCUMENT] /joinflat/" + context.params.id);
-                        } else {
-                            tokens.push(userSnapshot.data().notification_token);
-                        }
-
-                        if (tokens.length == 0) {
-                            console.error("No Tokens [DOCUMENT] /joinflat/" + context.params.id);
-                        } else {
-                            var payload = {
-                                "notification": {
-                                    "title": "New Join Request",
-                                    "body": msgData.request_from_flat == 0 ? "A user wants to join the flat" : "you have a join request from a flat",
-                                    "sound": "default"
-                                },
-                                "data": {
-                                    "sendername": userName,
-                                    "click_action": "FLUTTER_NOTIFICATION_CLICK",
-                                    "screen": "joinflat",
-                                    "message": msgData.request_from_flat == 0 ? "A user wants to join the flat" : "you have a join request from a flat"
-                                }
-                            }
-                            return admin.messaging().sendToDevice(tokens, payload).then((response) => {
-                                console.log("joinflat notification pushed [TYPE] onCreate [DOCUMENT] /joinflat/" + context.params.id);
-                            }).catch((err) => {
-                                console.error(err);
-                            });
-                        }
-                    });
-                }
-            }
-        });
-
-
-//////////////////////////////////////////////////////////////////////////////////////////
-// joinflat_landlord Notifications (landlord related)
-//////////////////////////////////////////////////////////////////////////////////////////
-
-exports.joinFlatLandlord =
-    functions
-        .firestore
-        .document('joinflat_landlord/{id}')
-        .onCreate((snapshot, context) => {
-            msgData = snapshot.data();
-            var tokens = []
-            if (msgData.status == 0) {
-                // join request to flat
-                if (msgData.request_from_flat == 0) {
-                    admin.firestore().collection('user').where('flat_id', '==', msgData.flat_id).get().then((userSnapshots) => {
-                        if (userSnapshots.empty) {
-                            console.error("No User [DOCUMENT] /joinflat_landlord/" + context.params.id);
-                        } else {
-                            for (var document of userSnapshots.docs) {
-                                tokens.push(document.data().notification_token);
-                            }
-                        }
-
-                        if (tokens.length == 0) {
-                            console.error("No Tokens [DOCUMENT] /joinflat_landlord/" + context.params.id);
-                        } else {
-                            var payload = {
-                                "notification": {
-                                    "title": "New Join Request",
-                                    "body": msgData.request_from_flat == 0 ? "A landlord wants to join the flat" : "you have a join request from a flat",
-                                    "sound": "default"
-                                },
-                                "data": {
-                                    "sendername": userName,
-                                    "click_action": "FLUTTER_NOTIFICATION_CLICK",
-                                    "screen": "joinflat_landlord",
-                                    "message": msgData.request_from_flat == 0 ? "A landlord wants to join the flat" : "you have a join request from a flat"
-                                }
-                            }
-                            return admin.messaging().sendToDevice(tokens, payload).then((response) => {
-                                console.log("joinflat_landlord notification pushed [TYPE] onCreate [DOCUMENT] /joinflat_landlord/" + context.params.id);
-                            }).catch((err) => {
-                                console.error(err);
-                            });
-                        }
-                    });
-                } else {
-                    // Join request to user
-                    admin.firestore().collection('landlord').doc(msgData.user_id).get().then((userSnapshot) => {
-                        if (userSnapshot.empty) {
-                            console.error("No User [DOCUMENT] /joinflat_landlord/" + context.params.id);
-                        } else {
-                            tokens.push(userSnapshot.data().notificationToken);
-                        }
-
-                        if (tokens.length == 0) {
-                            console.error("No Tokens [DOCUMENT] /joinflat_landlord/" + context.params.id);
-                        } else {
-                            var payload = {
-                                "notification": {
-                                    "title": "New Join Request",
-                                    "body": msgData.request_from_flat == 0 ? "A landlord wants to join the flat" : "you have a join request from a flat",
-                                    "sound": "default"
-                                },
-                                "data": {
-                                    "sendername": userName,
-                                    "click_action": "FLUTTER_NOTIFICATION_CLICK",
-                                    "screen": "joinflat_landlord",
-                                    "message": msgData.request_from_flat == 0 ? "A landlord wants to join the flat" : "you have a join request from a flat"
-                                }
-                            }
-                            return admin.messaging().sendToDevice(tokens, payload).then((response) => {
-                                console.log("joinflat_landlord notification pushed [TYPE] onCreate [DOCUMENT] /joinflat_landlord/" + context.params.id);
-                            }).catch((err) => {
-                                console.error(err);
-                            });
-                        }
-                    });
-                }
-            }
         });
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -640,7 +474,7 @@ exports.updateLandlordTask =
         .firestore
         .document('owner_tenant_flat/{owner_tenant_flat_id}/tasks_landlord/{id}')
         .onUpdate(async (snapshot, context) => {
-
+            //do we need to read document?
             msgData = snapshot.after.data();
             var userName = "";
             var tokens = [];
@@ -710,7 +544,7 @@ exports.createOwnerOwnerJoin =
             msgData = snapshot.data();
             var tokens = [];
             var userName = msgData.requesterUserName;
-            if (msgData.toUserId == null) {  //request from coowner to ownerFlat
+            if (msgData.toUserId == null || msgData.toUserId == "") {  //request from coowner to ownerFlat
 
                 var ret8 = await getOwnerTokens(msgData.ownerIdList);
                 if (ret8 != null) {
@@ -1078,7 +912,7 @@ async function getOwnerTokens(ownerIdList) {
             } else {
 
 
-                tokens.push(landlordSnapshot.data().notificationToken);
+                tokens.push(landlordSnapshot.data().notificationToken);	//error here, cannot read ntfn of undefined
 
 
             }
@@ -1187,7 +1021,7 @@ function getOwnerTokensAndUserNameUsingDoc(userList, userId) {
 
 }
 
-function getTenantTokensAndUserName(userList, userId) {
+function getTenantTokensAndUserNameUsingDoc(userList, userId) {
     var tokens = [];
     var userName = "";
     if (userList != null) {
@@ -1246,40 +1080,45 @@ function createActivity(title, message, sendername, documentId, ownerFlatId, ten
 }
 
 exports.acceptTenantRequest = functions.https.onCall(async (data, context) => {
-    var tenantRequestDoc = await admin.firestore.collection('joinflat_landlord_tenant').doc(data["requestId"]);
-    if(context.auth.id in tenantRequestDoc.data()["ownerIdList"]) {
+	console.info(data["requestId"]);
+    var tenantRequestDoc = await admin.firestore().collection('joinflat_landlord_tenant').doc(data["requestId"]).get();
+	console.info(JSON.stringify(tenantRequestDoc.data()));
+	console.info(JSON.stringify(data));
+	console.info(context.auth.uid);
+	console.info(tenantRequestDoc.data()["ownerIdList"].includes(context.auth.uid));
+    if(tenantRequestDoc.data()["ownerIdList"] != null && tenantRequestDoc.data()["ownerIdList"] != undefined && tenantRequestDoc.data()["ownerIdList"].includes(context.auth.uid)) {
         try {
-        var batch = admin.firestore.batch();
-        var tenantReqDocRef = admin.firestore.collection('joinflat_landlord_tenant').doc(data["requestId"]);
+        var batch = admin.firestore().batch();
+        var tenantReqDocRef = admin.firestore().collection('joinflat_landlord_tenant').doc(data["requestId"]);
         batch.update(tenantReqDocRef, {'status': 1});
         
-        var tenantRequestsQs = await admin.firestore.collection('joinflat_landlord_tenant')
+        var tenantRequestsQs = await admin.firestore().collection('joinflat_landlord_tenant')
         .where('owner_flat_id', '==', tenantRequestDoc.data()["ownerFlatId"])
         .where('status', '==', 0)
         .where('request_from_tenant', '==', true)
         .get();
         
-        tenantRequestsQs.forEach(function(doc) {
+        for(var doc of tenantRequestsQs.docs) {
             if(doc.id != data["requestId"]) {
-                var tenantReqToRej = admin.firestore.collection('joinflat_landlord_tenant').doc(doc.id);
+                var tenantReqToRej = admin.firestore().collection('joinflat_landlord_tenant').doc(doc.id);
                 batch.update(tenantReqToRej, {'status': 2});
             }
-        });
+        }
 
-        var tenantReqQs1 = await admin.firestore.collection(globals.joinFlatLandlordTenant)
+        var tenantReqQs1 = await admin.firestore().collection('joinflat_landlord_tenant')
         .where('owner_flat_id', '==', tenantRequestDoc.data()["ownerFlatId"])
         .where('status', '==', 0)
         .where('request_from_tenant', '==', false)
         .get();
 
-        tenantReqQs1.forEach(function(doc) {
+        for(var doc of tenantReqQs1.docs) {
             if(doc.id != data["requestId"]) {
-                var tenantReqToRej = admin.firestore.collection('joinflat_landlord_tenant').doc(doc.id);
+                var tenantReqToRej = admin.firestore().collection('joinflat_landlord_tenant').doc(doc.id);
                 batch.delete(tenantReqToRej);
             }
-        });
-        var notificationTokensDocRef = admin.firestore.collection('notification_tokens').doc();
-        var ownerTenantDocRef = admin.firestore.collection('owner_tenant_flat').doc(notificationTokensDocRef.id);
+        }
+        var notificationTokensDocRef = admin.firestore().collection('notification_tokens').doc();
+        var ownerTenantDocRef = admin.firestore().collection('owner_tenant_flat').doc(notificationTokensDocRef.id);
         var ownerTenantData = {};
         var notificationsData = {};
 
@@ -1301,180 +1140,250 @@ exports.acceptTenantRequest = functions.https.onCall(async (data, context) => {
         notificationsData['zipcode'] = tenantRequestDoc.data()['buildingDetails']['buildingZipcode'];
         notificationsData['ownerFlatName'] = tenantRequestDoc.data()['ownerFlatName'];
 
-        var ownerFlatDocRef = await admin.firestore.collection('ownerFlat').doc(tenantRequestDoc.data()["ownerFlatId"]).get();
-        ownerFlatDocRef.data().ownerIdList.forEach(function (ownerId) {
-            var landlordRef = await admin.firestore.collection('landlord').doc(ownerId).get();
+        var ownerFlatDoc = await admin.firestore().collection('ownerFlat').doc(tenantRequestDoc.data()["ownerFlatId"]).get();
+        for(var ownerId of ownerFlatDoc.data().ownerIdList) {
+            var landlordRef = await admin.firestore().collection('landlord').doc(ownerId).get();
             ownerTenantData['o_' + ownerId] = landlordRef.data()['name'] + '::' + landlordRef.data()['phone'];
             notificationsData['o_' + ownerId] = landlordRef.data()['name'] + '::' + landlordRef.data()['notificationToken'];
-        });
-        var TenantQs = await admin.firestore.collection('tenant').where('tenant_flat_id', '==', tenantRequestDoc.data()['tenantFlatId']).get();
-        TenantQs.forEach(function (tenant) {
-            ownerTenantData['t_' + tenant.id] = tenant.data()['name'] + '::' + tenant.data()['phone'];
-            notificationsData['t_' + tenant.id] = tenant.data()['name'] + '::' + tenant.data()['notification_token'];
-        });
+        }
+        var TenantQs = await admin.firestore().collection('user').where('flat_id', '==', tenantRequestDoc.data()['tenantFlatId']).get();
+        for(var doc of TenantQs.docs) {
+            ownerTenantData['t_' + doc.id] = doc.data()['name'] + '::' + doc.data()['phone'];
+            notificationsData['t_' + doc.id] = doc.data()['name'] + '::' + doc.data()['notification_token'];
+        }
         batch.set(ownerTenantDocRef, ownerTenantData);
         batch.set(notificationTokensDocRef, notificationsData);
+
+        var ownerFlatStatusRef = admin.firestore().collection('ownerFlat').doc(tenantRequestDoc.data()['ownerFlatId']);
+        batch.update(ownerFlatStatusRef, {'ownerTenantId': notificationTokensDocRef.id});
 
         await batch.commit();
 
         return {'code': 0};
     } catch (e) {
+        console.info(e);
         return {'code': -1};
     }
 
     
 } else {
+	console.info("user not authorized");
     return {'code': -1};
 }
 });
 
 exports.acceptRequestFromOwner = functions.https.onCall(async (data, context) => {
-    var ownerRequestDoc = await admin.firestore.collection('owner_owner_join').doc(data["requestId"]);
-    if(context.auth.id in ownerRequestDoc.data()["ownerIdList"]) {
+    var ownerRequestDoc = await admin.firestore().collection('owner_owner_join').doc(data["requestId"]).get();
+    if(ownerRequestDoc.data()["toUserId"] == context.auth.uid) {
         try {
-            var batch = admin.firestore.batch();
+            var batch = admin.firestore().batch();
 
-            var landlordDoc = await admin.firestore.collection('landlord').doc(context.auth.id).get();
+            var landlordDoc = await admin.firestore().collection('landlord').doc(context.auth.uid).get();
 
-            var ownerReqDocRef = admin.firestore.collection('owner_owner_join').doc(data["requestId"]);
+            var ownerReqDocRef = admin.firestore().collection('owner_owner_join').doc(data["requestId"]);
             batch.update(ownerReqDocRef, {'status': 1});
 
-            var ownerFlatRef = admin.firestore.collection('ownerFlat').doc(ownerRequestDoc.data()["flatId"]);
+            var ownerFlatRef = admin.firestore().collection('ownerFlat').doc(ownerRequestDoc.data()["flatId"]);
             batch.update(ownerFlatRef, {'ownerIdList': admin.firestore.FieldValue.arrayUnion(ownerRequestDoc.data()["toUserId"]), 'ownerRoleList': admin.firestore.FieldValue.arrayUnion(ownerRequestDoc.data()["toUserId"] + ':' + landlordDoc.data()["name"] + ':' + '1')});
 
-            var mySentReqQS = await admin.firestore.collection('owner_owner_join')
+            var mySentReqQS = await admin.firestore().collection('owner_owner_join')
             .where('status', '==', 0)
             .where('flatId', '==', ownerRequestDoc.data()["flatId"])
-            .where('requesterId', '==', context.auth.id)
+            .where('requesterId', '==', context.auth.uid)
             .where('requestToOwner', '==', true).get();
 
-            mySentReqQS.forEach(function(doc) {
+            for(var doc of mySentReqQS.docs) {
                 if(doc.id != data["requestId"]) {
-                    var ownerReqRefTemp = admin.firestore.collection('owner_owner_join').doc(doc.id);
+                    var ownerReqRefTemp = admin.firestore().collection('owner_owner_join').doc(doc.id);
                     batch.delete(ownerReqRefTemp);
                 }
-            });
+            }
             
-            var tenantRefQS = await admin.firestore
+            var tenantRefQS = await admin.firestore()
             .collection('joinflat_landlord_tenant')
             .where('ownerFlatId', '==', ownerRequestDoc.data()["flatId"])
             .where('status', '==', 0).get();
 
-            tenantRefQS.forEach(function(doc) {
-                var tenantDocRef = admin.firestore.collection('joinflat_landlord_tenant').doc(doc.id);
+            for(var doc of tenantRefQS.docs) {
+                var tenantDocRef = admin.firestore().collection('joinflat_landlord_tenant').doc(doc.id);
                 batch.update(tenantDocRef, {'ownerIdList': admin.firestore.FieldValue.arrayUnion(ownerRequestDoc.data()["toUserId"])});
-            });
+            }
 
-            var recOwnerReqQS = await admin.firestore.collection('owner_owner_join')
+            var recOwnerReqQS = await admin.firestore().collection('owner_owner_join')
             .where('status', '==', 0)
             .where('flatId', '==', ownerRequestDoc.data()["flatId"])
             .get();
 
-            recOwnerReqQS.forEach(function(doc) {
-                var recOwnerDocRef = admin.firestore.collection('owner_owner_join').doc(doc.id);
-                batch.update(recOwnerDocRef, {'ownerIdList': admin.firestore.FieldValue.arrayUnion(ownerRequestDoc.data()["toUserId"])});
-            });
+            for(var doc of recOwnerReqQS.docs) {
+				if(doc.id != data["requestId"]) {
+                	var recOwnerDocRef = admin.firestore().collection('owner_owner_join').doc(doc.id);
+                	batch.update(recOwnerDocRef, {'ownerIdList': admin.firestore.FieldValue.arrayUnion(ownerRequestDoc.data()["toUserId"])});
+				}
+            }
 
 
-            var ownerTenantQS = await admin.firestore.collection('owner_tenant_flat')
+            var ownerTenantQS = await admin.firestore().collection('owner_tenant_flat')
             .where('status', '==', 0)
             .where('ownerFlatId', '==', ownerRequestDoc.data()["flatId"]).get();
 
             if(ownerTenantQS != undefined && ownerTenantQS != null && !ownerTenantQS.empty) {
-                ownerTenantQS.forEach(function(doc) {
-                    var ownerTenantDocRef = admin.firestore.collection('owner_tenant_flat').doc(doc.id);
-                    var ntfnDocRef = admin.firestore.collection('notification_tokens').doc(doc.id);
-                    var key = "o_" + context.auth.id;
+                for(var doc of ownerTenantQS.docs) {
+                    var ownerTenantDocRef = admin.firestore().collection('owner_tenant_flat').doc(doc.id);
+                    var ntfnDocRef = admin.firestore().collection('notification_tokens').doc(doc.id);
+                    var key = "o_" + context.auth.uid;
 
                     batch.update(ownerTenantDocRef, {[key]: landlordDoc.data()["name"] + landlordDoc.data()["phone"]});
                     batch.update(ntfnDocRef, {[key]: landlordDoc.data()["name"] + landlordDoc.data()["notificationToken"]});
-                });
+                }
             }
 
             await batch.commit();
             return {'code': 0};
         }
         catch(e) {
+            console.info(e);
             return {'code': -1};
         }
     }
     else {
+		console.info("user not authorized");
         return {'code': -1};
     }
 });
 
 
 exports.acceptRequestFromCoOwner = functions.https.onCall(async (data, context) => {
-    var ownerRequestDoc = await admin.firestore.collection('owner_owner_join').doc(data["requestId"]);
-    if(context.auth.id in ownerRequestDoc.data()["ownerIdList"]) {
+    var ownerRequestDoc = await admin.firestore().collection('owner_owner_join').doc(data["requestId"]).get();
+    if(ownerRequestDoc.data()["ownerIdList"] != null && ownerRequestDoc.data()["ownerIdList"] != undefined && ownerRequestDoc.data()["ownerIdList"].includes(context.auth.uid)) {
         try {
-            var batch = admin.firestore.batch();
+            var batch = admin.firestore().batch();
 
-            var landlordDoc = await admin.firestore.collection('landlord').doc(ownerRequestDoc.data()["requesterId"]).get();
+            var landlordDoc = await admin.firestore().collection('landlord').doc(ownerRequestDoc.data()["requesterId"]).get();
 
-            var ownerReqDocRef = admin.firestore.collection('owner_owner_join').doc(data["requestId"]);
+            var ownerReqDocRef = admin.firestore().collection('owner_owner_join').doc(data["requestId"]);
             batch.update(ownerReqDocRef, {'status': 1});
 
-            var ownerFlatRef = admin.firestore.collection('ownerFlat').doc(ownerRequestDoc.data()["flatId"]);
+            var ownerFlatRef = admin.firestore().collection('ownerFlat').doc(ownerRequestDoc.data()["flatId"]);
             batch.update(ownerFlatRef, {'ownerIdList': admin.firestore.FieldValue.arrayUnion(ownerRequestDoc.data()["requesterId"]), 'ownerRoleList': admin.firestore.FieldValue.arrayUnion(ownerRequestDoc.data()["requesterId"] + ':' + landlordDoc.data()["name"] + ':' + '1')});
 
-            var mySentReqQS = await admin.firestore.collection('owner_owner_join')
+            var mySentReqQS = await admin.firestore().collection('owner_owner_join')
             .where('status', '==', 0)
             .where('flatId', '==', ownerRequestDoc.data()["flatId"])
             .where('toUserId', '==', landlordDoc.id)
             .where('requestToOwner', '==', false).get();
 
-            mySentReqQS.forEach(function(doc) {
+            for(var doc of mySentReqQS.docs) {
                 if(doc.id != data["requestId"]) {
-                    var ownerReqRefTemp = admin.firestore.collection('owner_owner_join').doc(doc.id);
+                    var ownerReqRefTemp = admin.firestore().collection('owner_owner_join').doc(doc.id);
                     batch.delete(ownerReqRefTemp);
                 }
-            });
+            }
             
-            var tenantRefQS = await admin.firestore
+            var tenantRefQS = await admin.firestore()
             .collection('joinflat_landlord_tenant')
             .where('ownerFlatId', '==', ownerRequestDoc.data()["flatId"])
             .where('status', '==', 0).get();
 
-            tenantRefQS.forEach(function(doc) {
-                var tenantDocRef = admin.firestore.collection('joinflat_landlord_tenant').doc(doc.id);
+            for(var doc of tenantRefQS.docs) {
+                var tenantDocRef = admin.firestore().collection('joinflat_landlord_tenant').doc(doc.id);
                 batch.update(tenantDocRef, {'ownerIdList': admin.firestore.FieldValue.arrayUnion(landlordDoc.id)});
-            });
+            }
 
-            var recOwnerReqQS = await admin.firestore.collection('owner_owner_join')
+            var recOwnerReqQS = await admin.firestore().collection('owner_owner_join')
             .where('status', '==', 0)
             .where('flatId', '==', ownerRequestDoc.data()["flatId"])
             .get();
 
-            recOwnerReqQS.forEach(function(doc) {
-                var recOwnerDocRef = admin.firestore.collection('owner_owner_join').doc(doc.id);
-                batch.update(recOwnerDocRef, {'ownerIdList': admin.firestore.FieldValue.arrayUnion(landlordDoc.id)});
-            });
+            for(var doc of recOwnerReqQS.docs) {
+				if(doc.id != data["requestId"]) {
+                	var recOwnerDocRef = admin.firestore().collection('owner_owner_join').doc(doc.id);
+                	batch.update(recOwnerDocRef, {'ownerIdList': admin.firestore.FieldValue.arrayUnion(landlordDoc.id)});
+				}
+            }
 
 
-            var ownerTenantQS = await admin.firestore.collection('owner_tenant_flat')
+            var ownerTenantQS = await admin.firestore().collection('owner_tenant_flat')
             .where('status', '==', 0)
             .where('ownerFlatId', '==', ownerRequestDoc.data()["flatId"]).get();
 
             if(ownerTenantQS != undefined && ownerTenantQS != null && !ownerTenantQS.empty) {
-                ownerTenantQS.forEach(function(doc) {
-                    var ownerTenantDocRef = admin.firestore.collection('owner_tenant_flat').doc(doc.id);
-                    var ntfnDocRef = admin.firestore.collection('notification_tokens').doc(doc.id);
+                for(var doc of ownerTenantQS.docs) {
+                    var ownerTenantDocRef = admin.firestore().collection('owner_tenant_flat').doc(doc.id);
+                    var ntfnDocRef = admin.firestore().collection('notification_tokens').doc(doc.id);
                     var key = "o_" + landlordDoc.id;
 
                     batch.update(ownerTenantDocRef, {[key]: landlordDoc.data()["name"] + landlordDoc.data()["phone"]});
                     batch.update(ntfnDocRef, {[key]: landlordDoc.data()["name"] + landlordDoc.data()["notificationToken"]});
-                });
+                }
             }
 
             await batch.commit();
             return {'code': 0};
         }
         catch(e) {
+            console.info(e);
             return {'code': -1};
         }
     }
     else {
+		console.info("user not authorized");
         return {'code': -1};
+    }
+});
+
+exports.makeOwnerAdminForFlat = functions.https.onCall(async (data, context) => {
+    try {
+        var ownerFlatDoc = await admin.firestore().collection('ownerFlat').doc(data["ownerFlatId"]).get();
+        if(!ownerFlatDoc.exists) {
+            return {'code': -1, 'message': 'Owner flat does not exist'};
+        }
+
+        var ownerRoleList = ownerFlatDoc.data()["ownerRoleList"].slice(0);
+
+        var userRole = null;
+        var newOwnerRole = null;
+		var userRole1 = null;
+		var newOwnerRole1 = null;
+        for(var role of ownerRoleList) {
+            var elems = role.split(':');
+            if(elems[0] == context.auth.uid) {
+                if(elems[2] != 0) {
+                    return {'code': -1, 'message': 'User needs admin privileges'};
+                }
+                else {
+                    userRole = role;
+                    userRole1 = elems[0] + ':' + elems[1] + ':' + '1';
+                }
+            }
+            else if(elems[0] == data["ownerId"]) {
+                newOwnerRole = role;
+                newOwnerRole1 = elems[0] + ':' + elems[1] + ':' + '0';
+            }
+        }
+
+        if(userRole == null || newOwnerRole == null) {
+            return {'code': -1, 'message': 'Could not find roles for users'};
+        }
+
+		var index = ownerRoleList.indexOf(userRole);
+		if (index !== -1) {
+  			ownerRoleList.splice(index, 1);
+		}
+		index = ownerRoleList.indexOf(newOwnerRole);
+		if (index !== -1) {
+  			ownerRoleList.splice(index, 1);
+		}
+
+		ownerRoleList.push(userRole1);
+		ownerRoleList.push(newOwnerRole1);
+
+        
+        var ownerFlatRef = admin.firestore().collection('ownerFlat').doc(data["ownerFlatId"]);
+        await ownerFlatRef.update({'ownerRoleList':  ownerRoleList});
+        return {'code': 0, 'message': 'Successful'};
+    }
+    catch(e) {
+        console.info(e);
+        return {'code': -1, 'message': 'Error'};
     }
 });

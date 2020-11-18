@@ -117,7 +117,7 @@ class MyBuildingListState extends State<MyBuildingList> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) {
-          return MyFlats(b);
+          return MyFlats(b, ownedFlats);
         }),
       );
     } else if (this.tenantFlat != null) {

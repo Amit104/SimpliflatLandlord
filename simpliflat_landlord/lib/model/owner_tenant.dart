@@ -9,6 +9,7 @@ class OwnerTenant extends BaseModel {
   OwnerFlat ownerFlat;
   TenantFlat tenantFlat;
   String ownerTenantId;
+  Map<String, List<OwnerFlat>> ownedFlats;
 
 	OwnerFlat getOwnerFlat() {
 		return this.ownerFlat;
@@ -42,6 +43,14 @@ class OwnerTenant extends BaseModel {
     this.ownerTenantId = ownerTenantId;
   }
 
+  void setOwnedFlats(Map<String, List<OwnerFlat>> ownedFlats) {
+    this.ownedFlats = ownedFlats;
+  }
+
+  Map<String, List<OwnerFlat>> getOwnedFlats() {
+    return this.ownedFlats;
+  }
+  
   static OwnerTenant fromJson(Map<String, dynamic> data, String documentId) {
     OwnerTenant ot = new OwnerTenant();
     return ot;

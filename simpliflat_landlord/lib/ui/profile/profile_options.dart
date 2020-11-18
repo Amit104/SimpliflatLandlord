@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
+import 'package:simpliflat_landlord/constants/colors.dart';
 import 'package:simpliflat_landlord/dao/owner_dao.dart';
+import 'package:simpliflat_landlord/dao/owner_flat_dao.dart';
 import 'package:simpliflat_landlord/dao/owner_tenant_dao.dart';
 import 'package:simpliflat_landlord/dao/tenant_dao.dart';
 import 'package:simpliflat_landlord/model/owner_tenant.dart';
 import 'package:simpliflat_landlord/model/tenant.dart';
 import 'package:simpliflat_landlord/model/user.dart';
+import 'package:simpliflat_landlord/services/profile_options_service.dart';
 import 'package:simpliflat_landlord/ui/flat_setup/add_tenant.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/ui/home/home.dart';
@@ -22,23 +26,11 @@ import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 import 'package:simpliflat_landlord/services/owner_requests_service.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:simpliflat_landlord/view_model/loading_model.dart';
 
 
-class ProfileOptions extends StatefulWidget {
+class ProfileOptions extends StatelessWidget {
 
-
-  final User user;
-
-  final OwnerTenant flat;
-
-  ProfileOptions(this.user, this.flat);
-
-  @override
-  State<StatefulWidget> createState() => new _ProfileOptions(this.user, this.flat);
-}
-
-class _ProfileOptions extends State<ProfileOptions> {
-  //var uID;
   Set editedData = Set();
   var _formKey1 = GlobalKey<FormState>();
   var _minimumPadding = 5.0;
@@ -49,7 +41,7 @@ class _ProfileOptions extends State<ProfileOptions> {
   final User user;
   final OwnerTenant flat;
 
-  _ProfileOptions(this.user, this.flat);
+  ProfileOptions(this.user, this.flat);
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +51,8 @@ class _ProfileOptions extends State<ProfileOptions> {
           _moveToLastScreen(context);
           return null;
         },
+        child: ChangeNotifierProvider(
+          create: (_) => LoadingModel(),
         child: Scaffold(
         appBar: AppBar(
           title: Text('Profile Options', style: CommonWidgets.getAppBarTitleStyle()),
@@ -67,91 +61,68 @@ class _ProfileOptions extends State<ProfileOptions> {
         ),
             body: Builder(builder: (BuildContext scaffoldC) {
               _scaffoldContext = scaffoldC;
-              return new Center(
-                  child: ListView(children: <Widget>[
-                    SizedBox(height: 10),
-                    Container(
-                      color: Colors.white,
-                                          child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [Padding(
-                        padding: EdgeInsets.only(left: 10.0, top: 10.0),
-                        child: Text(
-                          "Flat Members",
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            fontFamily: 'Roboto',
-                            color: Color(0xff2079FF),
-                            fontWeight: FontWeight.w600
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.only(top: 5.0),
-                        height: 90.0,
-                        child: _getExistingUsers(),
-                      )]),
-                    ),
-                    SizedBox(height:10),
-                    Container(
-                      color: Colors.white,
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [Padding(
-                        padding: EdgeInsets.only(left: 10.0, top: 10.0),
-                        child: Text(
-                          "Owners",
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            fontFamily: 'Roboto',
-                            color: Color(0xff2079FF),
-                            fontWeight: FontWeight.w600
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.only(top: 5.0),
-                        height: 90.0,
-                        child: _getOwners(scaffoldC),
-                      )]),
-                    ),
-                    Container(
-                      margin: EdgeInsets.only(left:10, top: 20, bottom: 5, right: 10),
-                                          child: ListTile(
-                        title: Text('Add Owner', style: TextStyle(
-                              fontSize: 17.0,
-                              fontFamily: 'Roboto',
-                              color: Color(0xff2079FF),
-                              fontWeight: FontWeight.w600
-                            ),),
-                            trailing: Icon(Icons.add),
-                       
-              onTap: () {
-                               Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) {
-                      return SearchOwner(this.flat.getOwnerFlat());
-                  }),
-                 );
+              return Consumer<LoadingModel>(
+                      builder: (BuildContext conCxt, LoadingModel loadingModel, Widget child) {
+                      
+                        if(loadingModel.load) return LoadingContainerVertical(3);
+                              return Center(
+                    child: ListView(children: <Widget>[
+                      getFlatDetailsWidget(scaffoldC),
+                      SizedBox(height: 10),
+                      getFlatMembersPanel(),
+                      
+                      SizedBox(height:10),
 
-              },
-                      ),
-                    ),
-                    Container(
-                      margin: EdgeInsets.only(left:10, top: 5, bottom: 10, right: 10),
-                                          child: ListTile(
-title: Text('Evacuate Flat', style: TextStyle(
-                              fontSize: 17.0,
-                              fontFamily: 'Roboto',
-                              color: Color(0xff2079FF),
-                              fontWeight: FontWeight.w600
-                            ),),
-                            trailing: Icon(Icons.home),
+                      getOwnersPanel(scaffoldC),
+                      
+                      SizedBox(height:10),
+
+                      getOwnerButtonsPanel(scaffoldC),
+                      
+                      SizedBox(height: 30)
+                    ]));
+                      });
+            }))));
+  }
+
+  Widget getOwnerButtonsPanel(BuildContext scaffoldC) {
+    return Container(
+      width: MediaQuery.of(scaffoldC).size.width,
+      height: 80,
+          child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [GestureDetector(
+              onTap: () {
+                                   Navigator.push(
+                      scaffoldC,
+                      MaterialPageRoute(builder: (context) {
+                          return SearchOwner(this.flat.getOwnerFlat());
+                      }),
+                     );
+
+                  },
+                  child: Container(
+            width: MediaQuery.of(scaffoldC).size.width * 0.45,
+            padding: EdgeInsets.symmetric(vertical: 20),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(20)), border: Border.all(color: AppColors.PRIMARY_COLOR)),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [Text('Add Owner', style: TextStyle(
+                                  fontSize: 17.0,
+                                  fontFamily: 'Roboto',
+                                  color: Color(0xff2079FF),
+                                  fontWeight: FontWeight.w600
+                                ),),
+                                Icon(Icons.add, color: AppColors.PRIMARY_COLOR,)],
+                           
+                 
+                          ),
+                        ),
+        ),
+                      GestureDetector(
                         onTap: () {
-                          showDialog<bool>(
-                            context: context,
+                                   showDialog<bool>(
+                            context: scaffoldC,
                             builder: (context) {
                               return new AlertDialog(
                                 title: new Text('Evacuate Flat'),
@@ -173,13 +144,101 @@ title: Text('Evacuate Flat', style: TextStyle(
                               );
                             },
                           );
-                        },
-                       
+                        
+
+                },
+                                              child: Container(
+                          width: MediaQuery.of(scaffoldC).size.width * 0.45,
+          padding: EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(20)), border: Border.all(color: AppColors.PRIMARY_COLOR)),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children:[Text('Evacuate Flat', style: TextStyle(
+                                  fontSize: 17.0,
+                                  fontFamily: 'Roboto',
+                                  color: Color(0xff2079FF),
+                                  fontWeight: FontWeight.w600
+                                ),),
+                                Icon(Icons.close, color: AppColors.PRIMARY_COLOR,)],
+                           
+                
+                          ),
+                        ),
+                      )],
+      ),
+    );
+  }
+
+  Widget getFlatDetailsWidget(BuildContext context) {
+    return Stack(
+      children: [
+          Container(
+        height: 150,
+        width: MediaQuery.of(context).size.width,
+        child: Image.asset('assets/images/CreateProperty.jpg',
+                fit: BoxFit.fill)
+      ),
+      Container(
+        margin: EdgeInsets.only(top: 60, left: 20),
+        child: Text(this.flat.getOwnerFlat().getBlockName() + ' - ' + this.flat.getOwnerFlat().getFlatName(), style: CommonWidgets.getTextStyleBold(size: 20, color: Colors.white),)),
+      Container(
+        margin: EdgeInsets.only(top: 90, left: 20),
+        child: Text(this.flat.getOwnerFlat().getBuildingName() + ', ' + this.flat.getOwnerFlat().getZipcode(), style: CommonWidgets.getTextStyleBold(size: 17, color: Colors.white),)),
+      ],
+    );
+  }
+
+  Widget getFlatMembersPanel() {
+    return Container(
+                      color: Colors.white,
+                                          child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                        padding: EdgeInsets.only(left: 10.0, top: 10.0),
+                        child: Text(
+                          "Flat Members",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                            fontSize: 18.0,
+                            fontFamily: 'Roboto',
+                            color: Color(0xff2079FF),
+                            fontWeight: FontWeight.w600
+                          ),
+                        ),
                       ),
-                    ),
-                    
-                  ]));
-            })));
+                      Container(
+                        padding: EdgeInsets.only(top: 5.0),
+                        height: 90.0,
+                        child: _getExistingUsers(),
+                      )]),
+                    );
+  }
+
+  Widget getOwnersPanel(BuildContext scaffoldC) {
+    return Container(
+                      color: Colors.white,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [Padding(
+                        padding: EdgeInsets.only(left: 10.0, top: 10.0),
+                        child: Text(
+                          "Owners",
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                            fontSize: 18.0,
+                            fontFamily: 'Roboto',
+                            color: Color(0xff2079FF),
+                            fontWeight: FontWeight.w600
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.only(top: 5.0),
+                        height: 90.0,
+                        child: _getOwners(scaffoldC),
+                      )]),
+                    );
   }
 
   _moveToLastScreen(BuildContext _navigatorContext) {
@@ -247,6 +306,48 @@ title: Text('Evacuate Flat', style: TextStyle(
         });
   }
 
+  Widget getEvacuateFlatPanel(BuildContext scaffoldC) {
+    return Container(
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(20)), border: Border.all(color: AppColors.PRIMARY_COLOR)),
+                      margin: EdgeInsets.only(left:10, top: 5, bottom: 10, right: 10),
+                                          child: ListTile(
+title: Text('Evacuate Flat', style: TextStyle(
+                              fontSize: 17.0,
+                              fontFamily: 'Roboto',
+                              color: Color(0xff2079FF),
+                              fontWeight: FontWeight.w600
+                            ),),
+                            trailing: Icon(Icons.home, color: AppColors.PRIMARY_COLOR,),
+                        onTap: () {
+                          showDialog<bool>(
+                            context: scaffoldC,
+                            builder: (context) {
+                              return new AlertDialog(
+                                title: new Text('Evacuate Flat'),
+                                content: new Text(
+                                    'Are you sure you want to evacuate this flat?'),
+                                actions: <Widget>[
+                                  new FlatButton(
+                                    child: new Text('Cancel'),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
+                                  ),
+                                  new FlatButton(
+                                      child: new Text('Yes'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop(true);
+                                        _evacuateFlat(scaffoldC);
+                                      }),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                       
+                      ),
+                    );
+  }
+
   void getOwnerActions(BuildContext scaffoldC, Owner ownerTemp) async {
  final action = CupertinoActionSheet(
       title: Text(
@@ -255,23 +356,67 @@ title: Text('Evacuate Flat', style: TextStyle(
       ),
       actions: <Widget>[
         CupertinoActionSheetAction(
-          child: Text("Delete"),
+          child: Text("Remove"),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.of(scaffoldC, rootNavigator: true).pop();
             _removeOwnerForFlat(scaffoldC, ownerTemp);
           },
         ),
+        ifUserIsAdmin(ownerTemp) && userAndSelectedDifferent(ownerTemp)? CupertinoActionSheetAction(
+          child: Text("Make Admin"),
+          onPressed: () {
+            Navigator.of(scaffoldC, rootNavigator: true).pop();
+            _makeOwnerAdminForFlat(scaffoldC, ownerTemp);
+          },
+        ):Container(),
         
       ],
       cancelButton: CupertinoActionSheetAction(
         child: Text("Cancel"),
         onPressed: () {
-          Navigator.pop(context);
+          Navigator.of(scaffoldC, rootNavigator: true).pop();
         },
       ),
     );
-    showCupertinoModalPopup(context: context, builder: (context) => action);
+    showCupertinoModalPopup(context: scaffoldC, builder: (context) => action);
                 
+  }
+
+  bool userAndSelectedDifferent(Owner owner) {
+    return owner.getOwnerId() != this.user.getUserId();
+  }
+
+  void _makeOwnerAdminForFlat(BuildContext scaffoldC, Owner ownerTemp) async {
+    Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
+    Utility.createErrorSnackBar(scaffoldC, error: 'Changing Admin');
+    bool ifSucess = await ProfileOptionsService.makeOwnerAdminForFlat(ownerTemp, this.flat);
+    Scaffold.of(scaffoldC).hideCurrentSnackBar();
+    if(ifSucess) {
+      Owner newAdmin = this.flat.getOwnerFlat().getOwners().firstWhere((Owner ownerTemp1) {
+        return ownerTemp1.getOwnerId() == ownerTemp.getOwnerId();
+      }, orElse: () {return null;});
+      newAdmin.setRole(globals.OwnerRoles.Admin.index.toString());
+      Owner oldAdmin = this.flat.getOwnerFlat().getOwners().firstWhere((Owner ownerTemp1) {
+        return ownerTemp1.getOwnerId() == this.user.getUserId();
+      }, orElse: () {return null;});
+      oldAdmin.setRole(globals.OwnerRoles.Manager.index.toString());
+      Utility.createErrorSnackBar(scaffoldC, error: 'Admin changed successfully');
+    }
+    else {
+      Utility.createErrorSnackBar(scaffoldC, error: 'Error while changing admin');
+    }
+    Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
+  }
+
+  bool ifUserIsAdmin(Owner ownerTemp) {
+    if(this.flat.getOwnerFlat().getOwners() != null) {
+      Owner allowed = this.flat.getOwnerFlat().getOwners().firstWhere((Owner ownerTemp1) {
+        return ownerTemp1.getOwnerId() == this.user.getUserId() && ownerTemp1.getRole() == globals.OwnerRoles.Admin.index.toString();
+      }, orElse: () {return null;});
+
+      return (allowed != null);
+    }
+    return false;
   }
 
   void _removeOwnerForFlat(BuildContext scaffoldC, Owner ownerTemp) async {
@@ -297,7 +442,7 @@ title: Text('Evacuate Flat', style: TextStyle(
 
   }
 
-  void _backHome() async {
+  void _backHome(BuildContext context) async {
     Navigator.of(context).popUntil((route) => route.isFirst);
       Navigator.pushReplacement(
         context,
@@ -412,19 +557,25 @@ title: Text('Evacuate Flat', style: TextStyle(
   }
 
   void _evacuateFlat(BuildContext scaffoldC) async {
-    bool ifSuccess = await OwnerTenantDao.update(this.flat.getOwnerTenantId(), OwnerTenant.toUpdateJson(status: 1));
-    if(ifSuccess) {
+    WriteBatch wb = Firestore.instance.batch();
+    DocumentReference dr1 = OwnerTenantDao.getDocumentReference(this.flat.getOwnerTenantId());
+    DocumentReference dr2 = Firestore.instance.collection('notification_tokens').document(this.flat.getOwnerTenantId());
+    DocumentReference dr3 = OwnerFlatDao.getDocumentReference(this.flat.getOwnerFlat().getFlatId());
+    wb.updateData(dr1, {'status': 1});
+    wb.updateData(dr2, {'status': 1});
+    wb.updateData(dr3, {'ownerTenantId': ""});
+    try {
+      await wb.commit();
       this.flat.setTenantFlat(null);
-      Navigator.of(context).pop();
-      Navigator.of(context).push(
+      Navigator.of(scaffoldC).pop();
+      Navigator.of(scaffoldC).push(
         new MaterialPageRoute(
           builder: (BuildContext ctx) {
-            return AddTenant(this.flat.getOwnerFlat());
+            return AddTenant(this.flat.getOwnerFlat(), this.flat.getOwnedFlats());
           }
         )
       );
-    }
-    else {
+    } catch(e) {
       Utility.createErrorSnackBar(scaffoldC, error: 'Error while evacuating flat');
     }
   }
@@ -449,9 +600,6 @@ title: Text('Evacuate Flat', style: TextStyle(
     }
     textField.clear();
     Navigator.of(_scaffoldContext, rootNavigator: true).pop();
-    setState(() {
-      debugPrint("Username changed");
-    });
   }
 
   ListView _getExistingUsers() {

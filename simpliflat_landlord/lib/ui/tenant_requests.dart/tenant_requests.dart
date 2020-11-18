@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/tenant_requests_dao.dart';
 import 'package:simpliflat_landlord/model/tenant_request.dart';
 import 'package:simpliflat_landlord/model/user.dart';
@@ -66,10 +67,9 @@ class TenantRequests extends StatelessWidget {
                 confirmDismiss: (direction) { return rejectRequest(tenantRequests[position], scaffoldC);},
                             child: Card(
                   child: ListTile(
-                    title: Text(tenantRequests[position].getCreatedByUserName() + '-' + tenantRequests[position].getCreatedByUserPhone()),
+                    title: Text(tenantRequests[position].getCreatedByUserName() + ' (' + tenantRequests[position].getCreatedByUserPhone() + ')', style: CommonWidgets.getTextStyleBold(size: 17),),
                     subtitle: Text('Request for ' +  tenantRequests[position].getOwnerFlatName()),
                     trailing: IconButton(icon:Icon(Icons.check), onPressed: () {acceptRequest(tenantRequests[position], scaffoldC);},),
-                    isThreeLine: true,
                   ),
                 ),
               );
@@ -99,6 +99,7 @@ class TenantRequests extends StatelessWidget {
   }
 
   void acceptRequest(TenantRequest request, BuildContext scaffoldC) async {
+    debugPrint(request.getRequestId());
     Utility.createErrorSnackBar(scaffoldC, error: 'Accepting request');
     Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
 

@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/model/owner_tenant.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
@@ -11,20 +13,22 @@ import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 class AssignToFlat extends StatefulWidget {
   final List<String> assignedToList;
   final List flatIdNameList;
+  final OwnerTenant flat;
 
-  AssignToFlat(this.assignedToList, this.flatIdNameList);
+  AssignToFlat(this.assignedToList, this.flatIdNameList, this.flat);
 
   @override
   State<StatefulWidget> createState() {
-    return AssignToFlatState(this.assignedToList, this.flatIdNameList);
+    return AssignToFlatState(this.assignedToList, this.flatIdNameList, this.flat);
   }
 }
 
 class AssignToFlatState extends State<AssignToFlat> {
   List<String> assignedFlatIds;
   final List flatIdNameList;
+  final OwnerTenant flat;
 
-  AssignToFlatState(this.assignedFlatIds, this.flatIdNameList);
+  AssignToFlatState(this.assignedFlatIds, this.flatIdNameList, this.flat);
 
   @override
   Widget build(BuildContext context) {
@@ -60,42 +64,33 @@ class AssignToFlatState extends State<AssignToFlat> {
     Navigator.of(context).pop(null);
   }
 
-  Future<QuerySnapshot> getFlatIdAndNamesList(String userId) async {
-    //TODO: get these values from local db or shared pref instead of firestore 
-    return Firestore.instance.collection(globals.ownerFlat).where('ownerIdList', arrayContains: userId).getDocuments();
-  }
-
   Widget getFlatNamesListWidget() {
-    User user = Provider.of<User>(context, listen: false);
-    return FutureBuilder(
-      future: getFlatIdAndNamesList(user.getUserId()),
-      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-        if (!snapshot.hasData) {
-          return LoadingContainerVertical(1);
-        }
+    Map<String, List<OwnerFlat>> ownedFlats = this.flat.getOwnedFlats();
+        List<OwnerFlat> buildingFlats = ownedFlats[this.flat.getOwnerFlat().getBuildingId()];
+        buildingFlats.removeWhere((OwnerFlat flat) => flat.getOwnerTenantId() != null && flat.getOwnerTenantId() != '');
         return ListView.builder(
           shrinkWrap: true,
-          itemCount: snapshot.data.documents.length,
+          itemCount: buildingFlats.length,
           itemBuilder: (context, position) {
             return CheckboxListTile(
-              title: Text(snapshot.data.documents[position]['flatName']),
+              title: Text(buildingFlats[position].getFlatName()),
               value: assignedFlatIds
-                  .contains(snapshot.data.documents[position].documentID),
+                  .contains(buildingFlats[position].getOwnerTenantId()),
               onChanged: (value) {
-                if (position == 0 && assignedFlatIds.contains('ALL')) {
+                /*if (position == 0 && assignedFlatIds.contains('ALL')) {
                   assignedFlatIds = new List();
                 } else if (position == 0 && !assignedFlatIds.contains('ALL')) {
                   assignedFlatIds = new List();
-                  for (int i = 0; i < snapshot.data.documents.length; i++) {
-                    assignedFlatIds.add(snapshot.data.documents[i].documentID);
+                  for (int i = 0; i < buildingFlats.length; i++) {
+                    assignedFlatIds.add(buildingFlats[i].getOwnerTenantId());
                   }
-                } else if (assignedFlatIds
-                    .contains(snapshot.data.documents[position].documentID)) {
+                } else*/ if (assignedFlatIds
+                    .contains(buildingFlats[position].getOwnerTenantId())) {
                   assignedFlatIds
-                      .remove(snapshot.data.documents[position].documentID);
-                  assignedFlatIds.remove("ALL");
+                      .remove(buildingFlats[position].getOwnerTenantId());
+                  //assignedFlatIds.remove("ALL");
                 } else {
-                  assignedFlatIds.add(snapshot.data.documents[position].documentID);
+                  assignedFlatIds.add(buildingFlats[position].getOwnerTenantId());
                 }
                 setState(() {
                   assignedFlatIds = assignedFlatIds;
@@ -104,8 +99,6 @@ class AssignToFlatState extends State<AssignToFlat> {
             );
           },
         );
-      },
-    );
   }
 
   void saveList() {

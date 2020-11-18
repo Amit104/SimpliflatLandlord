@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/dao/task_dao.dart';
 import 'package:simpliflat_landlord/model/models.dart';
@@ -434,7 +435,7 @@ class _CreateTask extends State<CreateTask> {
         assignedFlatIds == null ? new List() : assignedFlatIds;
     assignedFlatIdsTemp =
         await Navigator.push(context, new MaterialPageRoute(builder: (context) {
-      return AssignToFlat(List.from(assignedFlatIdsTemp), flatIdNameList);
+      return AssignToFlat(List.from(assignedFlatIdsTemp), flatIdNameList, this._flat);
     }));
 
     if (assignedFlatIdsTemp != null) {
@@ -528,22 +529,6 @@ class _CreateTask extends State<CreateTask> {
     );
   }
 
-  Future<dynamic> getFlatIdAndNamesList() async {
-    List<Map> flatIdNameListTemp = new List();
-    flatIdNameListTemp.add({'id': 'ALL', 'name': 'ALL'});
-    List flatIdList = await Utility.getFlatIdList();
-    for (int i = 0; i < flatIdList.length; i++) {
-      var id = flatIdList[i];
-      if (id.contains("Name=")) {
-        flatIdNameListTemp
-            .add({'id': id.split("Name=")[0], 'name': id.split("Name=")[1]});
-      }
-    }
-
-    flatIdNameList = List.from(flatIdNameListTemp);
-    return flatIdNameListTemp;
-  }
-
   List flatIdNameList = new List();
 
   List<String> assignedFlatIds;
@@ -551,12 +536,7 @@ class _CreateTask extends State<CreateTask> {
     if (assignedFlatIds == null) {
       return Container();
     }
-    return FutureBuilder(
-      future: getFlatIdAndNamesList(),
-      builder: (context, AsyncSnapshot<dynamic> snapshot) {
-        if (!snapshot.hasData) {
-          return LoadingContainerVertical(1);
-        }
+      List<OwnerFlat> buildingFlats = this._flat.getOwnedFlats()[this._flat.getOwnerFlat().getBuildingId()];
         List assignedFlatIdsTemp = List.from(assignedFlatIds);
         assignedFlatIdsTemp.remove("ALL");
         return ListView.builder(
@@ -564,20 +544,18 @@ class _CreateTask extends State<CreateTask> {
           itemCount: assignedFlatIdsTemp.length,
           itemBuilder: (context, position) {
             return ListTile(
-              title: Text(getFlatNameFromId(snapshot.data, position,
+              title: Text(getFlatNameFromId(buildingFlats, position,
                   assignedFlatIdsTemp)), //Text((snapshot.data as List)[position]['name']),
             );
           },
         );
-      },
-    );
   }
 
-  String getFlatNameFromId(List data, int position, List assignedFlatIdsTemp) {
-    Map flatTemp =
-        data.firstWhere((e) => e['id'] == assignedFlatIdsTemp[position]);
+  String getFlatNameFromId(List<OwnerFlat> data, int position, List assignedFlatIdsTemp) {
+    OwnerFlat flatTemp =
+        data.firstWhere((e) => e.getFlatId() == assignedFlatIdsTemp[position]);
     if (flatTemp != null) {
-      return flatTemp['name'];
+      return flatTemp.getFlatName();
     } else {
       return 'Flat ' + position.toString();
     }

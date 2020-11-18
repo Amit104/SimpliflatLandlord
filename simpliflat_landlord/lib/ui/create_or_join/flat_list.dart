@@ -101,6 +101,14 @@ class FlatList extends StatelessWidget {
     Provider.of<LoadingModel>(ctx, listen: false).startLoading();
 
     List<Block> blocks = b.getBlocks();
+    if(b.getBlocks() == null) {
+      Provider.of<LoadingModel>(ctx, listen: false).stopLoading();
+      navigateToCreateProperty(ctx, b);
+    }
+
+    if(blocks != null) {
+      blocks.forEach((Block b) {b.setOwnerFlats(null);});
+    }
 
     QuerySnapshot snapshot = await OwnerFlatDao.getAllVerifiedFlatsOfBuilding(documentId);
 

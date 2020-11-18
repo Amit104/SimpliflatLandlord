@@ -18,6 +18,8 @@ class OwnerFlat extends BaseModel {
   bool verified;
   List<Owner> owners;
   bool modified;
+  String ownerTenantId;
+
 
 	bool isModified() {
 		return this.modified;
@@ -156,6 +158,14 @@ class OwnerFlat extends BaseModel {
 		this.owners = owners;
 	}
 
+  String getOwnerTenantId() {
+		return this.ownerTenantId;
+	}
+
+	void setOwnerTenantId(String ownerTenantId) {
+		this.ownerTenantId = ownerTenantId;
+	}
+
   Map<String, dynamic> toJson() {
     return {
       'flatName': this.flatName,
@@ -166,11 +176,11 @@ class OwnerFlat extends BaseModel {
       'blockName': this.blockName,
       'buildingName': this.buildingName,
       'verified': this.verified,
-      'createdAt': this.createdAt,
-      'updatedAt': this.updatedAt,
+      'createdAt': Timestamp.now(),
+      'updatedAt': Timestamp.now(),
       'buildingAddress': this.buildingAddress,
-      'zipcode': this.zipcode
-
+      'zipcode': this.zipcode,
+      'ownerTenantId': this.ownerTenantId == null?"":this.ownerTenantId
     };
   }
   
@@ -210,6 +220,7 @@ class OwnerFlat extends BaseModel {
     }
     flat.setCreatedAt(json['createdAt']);
     flat.setUpdatedAt(json['updatedAt']);
+    flat.setOwnerTenantId(json['ownerTenantId'] == null?"":json['ownerTenantId']);
     return flat;
 
   }
