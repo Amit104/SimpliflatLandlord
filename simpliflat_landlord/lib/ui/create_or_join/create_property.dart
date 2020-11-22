@@ -3,12 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/dao/landlord_requests_dao.dart';
-import 'package:simpliflat_landlord/local_db/ownership_details_dbhandler.dart';
 import 'package:simpliflat_landlord/model/user.dart';
-import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/model/block.dart';
 import 'package:simpliflat_landlord/model/building.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/services/property_service.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 import 'package:simpliflat_landlord/ui/create_or_join/create_block.dart';
@@ -20,7 +19,7 @@ import 'package:simpliflat_landlord/ui/home/home.dart';
 ///create property
 class CreateProperty extends StatefulWidget {
 
-  ///building is needed when owner wants to create flat in existing building
+  ///building is needed when owner wants to create flat or block in existing building
   Building building;
 
   final bool isAdd;
@@ -107,7 +106,7 @@ class CreatePropertyState extends State<CreateProperty> {
                                               child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                              getMainExpansionPanelList(scaffoldC, null),
+                              getMainExpansionPanelList(scaffoldC),
                               SizedBox(height: 100.0),
                             ]),
                       ),
@@ -115,7 +114,7 @@ class CreatePropertyState extends State<CreateProperty> {
         }));
   }
 
-  Widget getMainExpansionPanelList(BuildContext scaffoldC, List<DocumentSnapshot> data) {
+  Widget getMainExpansionPanelList(BuildContext scaffoldC) {
    return Column(
                                   children:[ Container(
                                     color: Color(0xff2079FF),
@@ -133,46 +132,10 @@ class CreatePropertyState extends State<CreateProperty> {
                                         },
                                       ),
                                     ),
-                                  ), getBlocksListWidget(scaffoldC, data)]);
+                                  ), getBlocksListWidget(scaffoldC)]);
   }
 
-  bool ifRequestToBuilding(List<DocumentSnapshot> data) {
-    if(data == null || data.isEmpty) {
-      return false;
-    }
-    DocumentSnapshot d = data.firstWhere((request){
-      return request['flatId'] == null;
-    }, orElse: () {return null;});
-
-    return d != null;
-  }
-
-  bool ifRequestToFlat(List<DocumentSnapshot> data, String flatId) {
-    if(data == null || data.isEmpty || flatId == null) {
-      return false;
-    }
-    
-    DocumentSnapshot d = data.firstWhere((request){
-      return request['flatId'] == flatId;
-    },  orElse: () { return null;});
-    return d != null;
-  }
-
-  Widget getMainExpansionPanelListForJoin(BuildContext scaffoldC) {
-    User user = Provider.of<User>(scaffoldC, listen: false);
-
-    return FutureBuilder(
-      future: LandlordRequestsDao.getRequestsSentByMe(user.getUserId(), this.building.getBuildingId()),
-      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> documents) {
-        if(!documents.hasData) {
-          return LoadingContainerVertical(2);
-        }
-        return getMainExpansionPanelList(scaffoldC, documents.data.documents);
-      },
-    );
-  }
-
-  Widget getBlocksListWidget(BuildContext scaffoldC, List<DocumentSnapshot> documents) {
+  Widget getBlocksListWidget(BuildContext scaffoldC) {
     List<ExpansionPanel> blocksWidget = new List();
     List<Block> blocks = this.building.getBlocks();
 
@@ -198,7 +161,7 @@ class CreatePropertyState extends State<CreateProperty> {
             ),
           );
         },
-        body: GestureDetector(onTap: (){navigateToAddFlats(blocks[i]);}, child:getFlatNamesWidget(blocks[i], documents, scaffoldC)),
+        body: GestureDetector(onTap: (){navigateToAddFlats(blocks[i]);}, child:getFlatNamesWidget(blocks[i], scaffoldC)),
         isExpanded: blocksExpanded[blocks[i].getBlockName()],
       ));
     }
@@ -213,7 +176,7 @@ class CreatePropertyState extends State<CreateProperty> {
     );
   }
 
-  Widget getFlatNamesWidget(Block block, List<DocumentSnapshot> documents, BuildContext ctx) {
+  Widget getFlatNamesWidget(Block block, BuildContext ctx) {
     List<OwnerFlat> flats = block.getOwnerFlats();
     if (flats == null || flats.isEmpty) {
       return Container();
@@ -315,64 +278,14 @@ class CreatePropertyState extends State<CreateProperty> {
       loadingState = true;
     });
 
-    
-    List<Map<String, dynamic>> localData = new List();
-    var db = Firestore.instance;
+    bool ifSuccess = await PropertyService.saveProperty(this.building);
 
-    var batch = db.batch();
-    DocumentReference dr;
-    Block modifiedBlock = this.building.getBlocks().firstWhere((Block block) { return (block.isModified() == null?false:block.isModified());}, orElse: (){ return null; });
-    if(this.building.getBuildingId() != null && modifiedBlock != null) {
-      /** block added */
-      dr = Firestore.instance.collection(globals.building).document(this.building.getBuildingId());
-      batch.updateData(dr, Building.toUpdateJson(blockList: FieldValue.arrayUnion(this.building.getBlocks().where((Block b) {return b.isModified();}).toList())));
-    }
-    else if(this.building.getBuildingId() == null){
-      dr = Firestore.instance.collection(globals.building).document();
-      Map<String, dynamic> buildingData = this.building.toJson();
-      batch.setData(dr, buildingData);
-      this.building.setBuildingId(dr.documentID);
-      localData.add({'buildingId': dr.documentID, 'buildingName': this.building.getBuildingName(), 'blockName': null, 'flatId': null, 'flatName': null});
-    }
-
-    
-
-
-        
-
-    List<Block> blocks = this.building.getBlocks();
-    if(blocks != null) {
-    for (int i = 0; i < this.building.getBlocks().length; i++) {
-      
-      
-      List<OwnerFlat> flats = blocks[i].getOwnerFlats();
-      CollectionReference flatColRef =
-          Firestore.instance.collection(globals.ownerFlat);
-      if(flats != null) {
-      for (int j = 0; j < flats.length; j++) {
-        DocumentReference flatDocRef;
-        if(flats[j].getFlatId() != null) {
-          /** flat already present */
-        }
-        else {
-          flatDocRef = flatColRef.document();
-          localData.add({'buildingId': this.building.getBuildingId(), 'buildingName': this.building.getBuildingName(), 'blockName': blocks[i].getBlockName(), 'flatId': flatDocRef.documentID, 'flatName': flats[j].getFlatName()});
-        
-        flats[j].setZipcode(this.building.getZipcode());
-        flats[j].setBuildingName(this.building.getBuildingName());
-        flats[j].setBuildingId(this.building.getBuildingId());
-        Map<String, dynamic> flatData = flats[j].toJson();
-        batch.setData(flatDocRef, flatData, merge: true);
-        }
-      }
-      }
-    }
-    }
-
-    batch.commit().then((retVal) {
+    if(ifSuccess) { 
       debugPrint("saved successfully");
       Utility.addToSharedPref(propertyRegistered: true);
-      OwnershipDetailsDBHelper.instance.insertAll(localData);
+      setState(() {
+        loadingState = false;
+      });
       Navigator.of(context).popUntil((route) => route.isFirst);
       Navigator.pushReplacement(
         context,
@@ -380,13 +293,13 @@ class CreatePropertyState extends State<CreateProperty> {
           return Home();
         }),
       );
-    }).catchError((e) {
+    } else {
       debugPrint("error while saving");
       setState(() {
         loadingState = false;
       });
       Utility.createErrorSnackBar(this.scaffoldContext, error: 'Error while saving');
-    });
+    }
   }
 
   

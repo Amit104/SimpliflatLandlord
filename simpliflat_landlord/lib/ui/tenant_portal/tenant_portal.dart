@@ -113,7 +113,7 @@ class _LandlordPortal extends State<LandlordPortal> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) {
-        return MessageBoard(this.flat.getOwnerTenantId());
+        return MessageBoard(this.flat);
       }),
     );
   }

@@ -183,6 +183,7 @@ class MyFlats extends StatelessWidget {
       ownerTenantFlat.setStatus(0);
       ownerTenantFlat.setTenantFlat(tenantFlat);
       ownerTenantFlat.setOwnerTenantId(q.documents[0].documentID);
+      debugPrint(this.ownedFlats.length.toString());
       ownerTenantFlat.setOwnedFlats(this.ownedFlats);
       Navigator.push(
         context,

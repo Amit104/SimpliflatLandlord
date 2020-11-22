@@ -315,8 +315,7 @@ class TaskListState extends State<TaskList> {
                 if (!taskSnapshot.hasData) return LoadingContainerVertical(7);
                 if (isCompleted == false)
                   handleNotifications(taskSnapshot.data.documents);
-                updateTasksLastSeen();
-
+                  
                 List<Task> tasks = taskSnapshot.data.documents.map((DocumentSnapshot doc) => Task.fromJson(doc.data, doc.documentID)).toList();
                 var sortField = getSortField();
                 if (sortAscending) {
@@ -577,11 +576,6 @@ class TaskListState extends State<TaskList> {
                   },
                 );
               });
-  }
-
-  void updateTasksLastSeen() async {
-    Utility.updateReadTasksLastSeen(
-        this._flat.getOwnerTenantId(), Timestamp.now().millisecondsSinceEpoch);
   }
 
   String _getDateTimeString(DateTime nextDueDate) {
@@ -953,13 +947,14 @@ class TaskListState extends State<TaskList> {
       }
       availableUsers++;
       debugPrint("i == " + i.toString());
-      var color = userList[i].toString().trim().hashCode;
+      int color = userList[i].toString().trim().hashCode;
+      debugPrint('color - ' + color.toString() + ' ' + initial + ' ' + userList[i]);
       overlappingUsers.add(new Positioned(
         right: (i * 20.0) + overflowAddition,
         child: new CircleAvatar(
           maxRadius: 14.0,
           backgroundColor: Colors.primaries[color % Colors.primaries.length]
-              [300],
+              ,
           child: Text(initial),
         ),
       ));

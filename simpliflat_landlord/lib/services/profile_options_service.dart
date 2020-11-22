@@ -22,4 +22,25 @@ class ProfileOptionsService {
                     return false;
                   }
   }
+
+  static Future<bool> evacuateFlat(String ownerTenantId) async {
+    HttpsCallable func = CloudFunctions.instance.getHttpsCallable(
+                      functionName: "evacuateFlat",
+                  );
+
+                  try {
+                 HttpsCallableResult res = await func.call(<String, dynamic> {'ownerTenantId': ownerTenantId});
+                  if((res.data as Map)['code'] == 0) {
+                    return true;
+                  }
+                  else {
+                    print((res.data as Map)['message']);
+                    return false;
+                  }
+                  }
+                  catch(e) {
+                    return false;
+                  }
+
+  }
 }

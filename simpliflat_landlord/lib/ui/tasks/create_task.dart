@@ -39,6 +39,8 @@ class _CreateTask extends State<CreateTask> {
   final OwnerTenant _flat;
   String typeOfTask;
 
+  Timestamp createdAt;
+
   Set<String> selectedUsers = new Set();
 
   //static const existingUsers = ["User1", "User2"];
@@ -1209,6 +1211,8 @@ class _CreateTask extends State<CreateTask> {
                               _remind =
                                   task.isShouldRemindDaily();
 
+                              this.createdAt = task.getCreatedAt();
+
                               initialized = true;
 
                               //return buildForm(snapshot.data);
@@ -1303,7 +1307,7 @@ class _CreateTask extends State<CreateTask> {
                       _nextNewDueDate = Timestamp.fromDate(_nextDueDate);
                     }
 
-                    Task task = getTaskObject(title: taskTitle, due: duedatetime, frequencies: _frequencies, notes: notestext, payee: payeetext, paymentAmount: paymentAmount, nextDueDate: _nextNewDueDate, createdBy: this.createdBy, update: true);
+                    Task task = getTaskObject(title: taskTitle, due: duedatetime, frequencies: _frequencies, notes: notestext, payee: payeetext, paymentAmount: paymentAmount, nextDueDate: _nextNewDueDate, createdBy: this.createdBy, update: true, createdAt: this.createdAt);
 
                     
                     Firestore.instance
@@ -1347,7 +1351,7 @@ class _CreateTask extends State<CreateTask> {
                 }
   }
 
-  Task getTaskObject({String title, Timestamp due, String frequencies, String notes, double paymentAmount, String payee, Timestamp nextDueDate, String createdBy, bool update: false}) {
+  Task getTaskObject({String title, Timestamp due, String frequencies, String notes, double paymentAmount, String payee, Timestamp nextDueDate, String createdBy, bool update: false, Timestamp createdAt}) {
     Task task = new Task();
     task.setTitle(title);
     task.setDue(due);
@@ -1369,6 +1373,7 @@ class _CreateTask extends State<CreateTask> {
     task.setLandlordId(this.user.getUserId());
     task.setUpdatedAt(Timestamp.now());
     if(!update) task.setCreatedAt(Timestamp.now());
+    else task.setCreatedAt(this.createdAt);
     return task;
   }
 }

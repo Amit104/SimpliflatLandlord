@@ -156,6 +156,7 @@ class MyBuildingListState extends State<MyBuildingList> {
         buildings.add(flatTemp);
       }
     }
+    debugPrint(ownedFlats.length.toString());
     Provider.of<MyBuildingListModel>(scaffoldC, listen: false).setOwnedFlatIds(ownedFlats);
     return buildings;
   }

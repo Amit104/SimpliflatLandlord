@@ -126,61 +126,23 @@ class OwnerRequestsService {
   }
 
   static Future<bool> removeOwnerFromFlat(Owner owner, OwnerFlat flat) async {
+    HttpsCallable func = CloudFunctions.instance.getHttpsCallable(
+                      functionName: "removeOwnerFromFlat",
+                  );
 
-    WriteBatch batch = Firestore.instance.batch();
-
-    /** remove ownerId from owner flat */
-
-    DocumentReference propDoc;
-    propDoc = OwnerFlatDao.getDocumentReference(flat.getFlatId());
+                  try {
+                 HttpsCallableResult res = await func.call(<String, dynamic> {'ownerId': owner.getOwnerId(), 'ownerFlatId': flat.getFlatId()});
+                  if((res.data as Map)['code'] == 0) {
+                    return true;
+                  }
+                  else {
+                    return false;
+                  }
+                  }
+                  catch(e) {
+                    return false;
+                  }
     
-    
-    Map<String, dynamic> propUpdateData = OwnerFlat.toUpdateJson(ownerIdList: FieldValue.arrayRemove([owner.getOwnerId()]), ownerRoleList: FieldValue.arrayRemove([owner.getOwnerId() + ':' + owner.getName() + ':' + globals.OwnerRoles.Manager.index.toString()]));
-    batch.updateData(propDoc, propUpdateData);
-
-    /** Remove ownerId in all incoming and outgoing requests to flat */
-
-    QuerySnapshot s = await LandlordRequestsDao.getAllOwnerRequestsForFlatD(flat.getFlatId());
-
-    Map<String, dynamic> updateReqData = LandlordRequest.toUpdateJson(ownerIdList: FieldValue.arrayRemove([owner.getOwnerId()]));
-
-    for(int i = 0; i < s.documents.length; i++) {
-        DocumentReference d = LandlordRequestsDao.getDocumentReference(s.documents[i].documentID);
-        batch.updateData(d, updateReqData);
-    }
-
-    /** remove ownerId from incoming and outgoing requests for flat from tenant */
-
-    QuerySnapshot ts = await TenantRequestsDao.getRequestsForFlatD(flat.getFlatId());
-
-    Map<String, dynamic> updateTenReqData = TenantRequest.toUpdateJson(ownerIdList: FieldValue.arrayRemove([owner.getOwnerId()]));
-
-    for(int i = 0; i < ts.documents.length; i++) {
-        DocumentReference d = TenantRequestsDao.getDocumentReference(ts.documents[i].documentID);
-        batch.updateData(d, updateTenReqData);
-    }
-
-    /** remove owner in apartment tenant list if document present */
-    QuerySnapshot otf = await OwnerTenantDao.getByOwnerFlatId(flat.getFlatId());
-
-    if(otf.documents != null && otf.documents.isNotEmpty) {
-      String otfId = otf.documents[0].documentID;
-      DocumentReference otfdoc = OwnerTenantDao.getDocumentReference(otfId);
-      DocumentReference ntfnDoc = Firestore.instance.collection('notification_tokens').document(otfId);
-      Map data = {'o_' + owner.getOwnerId(): FieldValue.delete()};
-      batch.updateData(otfdoc, data);
-      batch.updateData(ntfnDoc, data);
-
-    }
-
-    bool ifSuccess = await batch.commit().then((ret){
-      return true;
-    }).catchError((e){
-     return false;
-    });
-
-    return ifSuccess;
-
   }
 
 

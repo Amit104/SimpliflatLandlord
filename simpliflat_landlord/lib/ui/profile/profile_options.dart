@@ -264,7 +264,10 @@ class ProfileOptions extends StatelessWidget {
                     GestureDetector(
                       onLongPress: () {
                         debugPrint("on long press");
-                        getOwnerActions(scaffoldC, this.flat.getOwnerFlat().getOwners()[position]);
+                        if(ifUserIsAdmin() && userAndSelectedDifferent(this.flat.getOwnerFlat().getOwners()[position])) {
+                          getOwnerActions(scaffoldC, this.flat.getOwnerFlat().getOwners()[position]);
+
+                        }
                       },
                                           child: CircleAvatar(
                         backgroundColor: Utility.userIdColor(
@@ -355,14 +358,14 @@ title: Text('Evacuate Flat', style: TextStyle(
         style: TextStyle(fontSize: 25),
       ),
       actions: <Widget>[
-        CupertinoActionSheetAction(
+        ifUserIsAdmin() && userAndSelectedDifferent(ownerTemp)? CupertinoActionSheetAction(
           child: Text("Remove"),
           onPressed: () {
             Navigator.of(scaffoldC, rootNavigator: true).pop();
             _removeOwnerForFlat(scaffoldC, ownerTemp);
           },
-        ),
-        ifUserIsAdmin(ownerTemp) && userAndSelectedDifferent(ownerTemp)? CupertinoActionSheetAction(
+        ):Container(),
+        ifUserIsAdmin() && userAndSelectedDifferent(ownerTemp)? CupertinoActionSheetAction(
           child: Text("Make Admin"),
           onPressed: () {
             Navigator.of(scaffoldC, rootNavigator: true).pop();
@@ -408,7 +411,7 @@ title: Text('Evacuate Flat', style: TextStyle(
     Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
   }
 
-  bool ifUserIsAdmin(Owner ownerTemp) {
+  bool ifUserIsAdmin() {
     if(this.flat.getOwnerFlat().getOwners() != null) {
       Owner allowed = this.flat.getOwnerFlat().getOwners().firstWhere((Owner ownerTemp1) {
         return ownerTemp1.getOwnerId() == this.user.getUserId() && ownerTemp1.getRole() == globals.OwnerRoles.Admin.index.toString();
@@ -421,6 +424,8 @@ title: Text('Evacuate Flat', style: TextStyle(
 
   void _removeOwnerForFlat(BuildContext scaffoldC, Owner ownerTemp) async {
     /** check if user is allowed to remove owner */
+    Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
+    Utility.createErrorSnackBar(scaffoldC, error: 'Removing owner...');
     if(this.flat.getOwnerFlat().getOwners() != null) {
       Owner allowed = this.flat.getOwnerFlat().getOwners().firstWhere((Owner ownerTemp1) {
         return ownerTemp1.getOwnerId() == this.user.getUserId() && ownerTemp1.getRole() == globals.OwnerRoles.Admin.index.toString();
@@ -432,140 +437,29 @@ title: Text('Evacuate Flat', style: TextStyle(
     }
     
     bool ifSuccess = await OwnerRequestsService.removeOwnerFromFlat(ownerTemp, flat.getOwnerFlat());
-
+    Scaffold.of(scaffoldC).hideCurrentSnackBar();
     if(ifSuccess) {
+      this.flat.getOwnerFlat().getOwners().removeWhere((Owner owner) {
+        return owner.getOwnerId() == ownerTemp.getOwnerId();
+      });
       Utility.createErrorSnackBar(scaffoldC, error: 'Owner removed successfully');
     }
     else {
       Utility.createErrorSnackBar(scaffoldC, error: 'Error while removoing owner');
     }
 
-  }
+    Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
 
-  void _backHome(BuildContext context) async {
-    Navigator.of(context).popUntil((route) => route.isFirst);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) {
-          return Home();
-        }),
-      );
-  }
-
-  Form _getEditPrompt(textStyle, fieldName, editHandler, validatorCallback,
-      keyboardType, initialFieldValue) {
-    textField.text = initialFieldValue;
-    return new Form(
-        key: _formKey1,
-        child: AlertDialog(
-            shape: new RoundedRectangleBorder(
-              borderRadius: new BorderRadius.circular(10.0),
-              side: BorderSide(
-                width: 1.0,
-                color: Colors.indigo[900],
-              ),
-            ),
-            title: new Text("Edit " + fieldName,
-                style: TextStyle(
-                    color: Colors.black,
-                    fontFamily: 'Montserrat',
-                    fontSize: 16.0)),
-            content: Container(
-              width: double.maxFinite,
-              height: MediaQuery.of(_scaffoldContext).size.height / 3,
-              child: Column(
-                children: <Widget>[
-                  Padding(
-                      padding: EdgeInsets.only(
-                          top: _minimumPadding, bottom: _minimumPadding),
-                      child: TextFormField(
-                        autofocus: true,
-                        keyboardType: keyboardType,
-                        style: textStyle,
-                        controller: textField,
-                        validator: (String value) {
-                          if (value.isEmpty) return "Please enter a value";
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                            labelText: fieldName,
-                            labelStyle: TextStyle(
-                                color: Colors.black,
-                                fontSize: 16.0,
-                                fontFamily: 'Montserrat',
-                                fontWeight: FontWeight.w700),
-                            hintText: "Enter " + fieldName,
-                            hintStyle: TextStyle(color: Colors.grey),
-                            errorStyle: TextStyle(
-                                color: Colors.red,
-                                fontSize: 12.0,
-                                fontFamily: 'Montserrat',
-                                fontWeight: FontWeight.w700),
-                            border: InputBorder.none),
-                      )),
-                  Padding(
-                      padding: EdgeInsets.only(
-                          top: _minimumPadding, bottom: _minimumPadding),
-                      child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            OutlineButton(
-                                shape: new RoundedRectangleBorder(
-                                  borderRadius: new BorderRadius.circular(10.0),
-                                  side: BorderSide(
-                                    width: 1.0,
-                                    color: Colors.indigo[900],
-                                  ),
-                                ),
-                                padding: const EdgeInsets.all(8.0),
-                                textColor: Colors.black,
-                                child: Text('Save',
-                                    style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 14.0,
-                                        fontFamily: 'Montserrat',
-                                        fontWeight: FontWeight.w700)),
-                                onPressed: () {
-                                  if (_formKey1.currentState.validate()) {
-                                    editHandler(textField);
-                                  }
-                                }),
-                            OutlineButton(
-                                shape: new RoundedRectangleBorder(
-                                  borderRadius: new BorderRadius.circular(10.0),
-                                  side: BorderSide(
-                                    width: 1.0,
-                                    color: Colors.indigo[900],
-                                  ),
-                                ),
-                                padding: const EdgeInsets.all(8.0),
-                                textColor: Colors.black,
-                                child: Text('Cancel',
-                                    style: TextStyle(
-                                        color: Colors.red,
-                                        fontSize: 14.0,
-                                        fontFamily: 'Montserrat',
-                                        fontWeight: FontWeight.w700)),
-                                onPressed: () {
-                                  Navigator.of(_scaffoldContext, rootNavigator: true)
-                                      .pop();
-                                })
-                          ]))
-                ],
-              ),
-            )));
   }
 
   void _evacuateFlat(BuildContext scaffoldC) async {
-    WriteBatch wb = Firestore.instance.batch();
-    DocumentReference dr1 = OwnerTenantDao.getDocumentReference(this.flat.getOwnerTenantId());
-    DocumentReference dr2 = Firestore.instance.collection('notification_tokens').document(this.flat.getOwnerTenantId());
-    DocumentReference dr3 = OwnerFlatDao.getDocumentReference(this.flat.getOwnerFlat().getFlatId());
-    wb.updateData(dr1, {'status': 1});
-    wb.updateData(dr2, {'status': 1});
-    wb.updateData(dr3, {'ownerTenantId': ""});
-    try {
-      await wb.commit();
+    Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
+    Utility.createErrorSnackBar(scaffoldC, error: 'Evacuating flat...');
+    bool ifSuccess = await ProfileOptionsService.evacuateFlat(this.flat.getOwnerTenantId());
+    Scaffold.of(scaffoldC).hideCurrentSnackBar();
+    Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
+
+    if(ifSuccess) {
       this.flat.setTenantFlat(null);
       Navigator.of(scaffoldC).pop();
       Navigator.of(scaffoldC).push(
@@ -575,35 +469,13 @@ title: Text('Evacuate Flat', style: TextStyle(
           }
         )
       );
-    } catch(e) {
+    } else {
       Utility.createErrorSnackBar(scaffoldC, error: 'Error while evacuating flat');
     }
-  }
-
-  String _userNameValidator(String name) {
-    if (name.isEmpty) {
-      return "Cannot be empty";
-    } else if (name == this.user.getName()) {
-      return "Cannot be the same name";
-    }
-    return null;
-  }
-
-  _changeUserName(textField) async {
-    String name = textField.text;
-    var data = Owner.toUpdateJson(name: name);
-    bool ifSuccess = await OwnerDao.update(this.user.getUserId(), data);
-    if(ifSuccess) {
-      this.user.setName(name);
-      editedData.add("name");
-      Utility.addToSharedPref(userName: name);
-    }
-    textField.clear();
-    Navigator.of(_scaffoldContext, rootNavigator: true).pop();
+    
   }
 
   ListView _getExistingUsers() {
-    TextStyle titleStyle = Theme.of(_scaffoldContext).textTheme.subhead;
     List<Tenant> tenants = this.flat.getTenantFlat().getTenants();
     return ListView.builder(
         itemCount: tenants.length,
@@ -653,29 +525,4 @@ title: Text('Evacuate Flat', style: TextStyle(
           );
         });
   }
-
-  /*_changePhoneNumber(textField) async {
-    String phoneNumber = "+91" + textField.text.trim();
-    Map results = await Navigator.push(
-      context,
-      new MaterialPageRoute(builder: (context) {
-        return SignUpOTP(phoneNumber, false);
-      }),
-    );
-
-    if (results.containsKey('success')) {
-      var data = Owner.toUpdateJson(phoneNumber: phoneNumber);
-      OwnerDao.update(uID, data);
-      widget.userPhone = phoneNumber;
-      editedData.add("phone");
-    } else {
-      Utility.createErrorSnackBar(_scaffoldContext,
-          error: "Phone verification failed");
-    }
-    textField.clear();
-    Navigator.of(context, rootNavigator: true).pop();
-    setState(() {
-      debugPrint("Phone changed");
-    });
-  }*/
 }

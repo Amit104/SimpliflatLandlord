@@ -20,4 +20,8 @@ class BuildingDao {
     DocumentReference ds = Firestore.instance.collection(globals.building).document();
     wb.setData(ds, building.toJson());
   }
+
+  static DocumentReference getDocumentReference(String buildingId) {
+    return Firestore.instance.collection(globals.building).document(buildingId);
+  }
 }

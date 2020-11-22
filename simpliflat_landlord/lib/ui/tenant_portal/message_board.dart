@@ -9,23 +9,25 @@ import 'package:simpliflat_landlord/common_widgets/common.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 import 'package:simpliflat_landlord/dao/message_dao.dart';
 import 'package:simpliflat_landlord/model/message.dart';
+import 'package:simpliflat_landlord/model/owner_flat.dart';
+import 'package:simpliflat_landlord/model/owner_tenant.dart';
 import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:simpliflat_landlord/common_widgets/loading_container.dart';
 
 class MessageBoard extends StatefulWidget {
-  final _flatId;
+  final OwnerTenant _flat;
 
-  MessageBoard(this._flatId);
+  MessageBoard(this._flat);
 
   @override
   State<StatefulWidget> createState() {
-    return _MessageBoard(_flatId);
+    return _MessageBoard(_flat);
   }
 }
 
 class _MessageBoard extends State<MessageBoard> {
-  final _flatId;
+  String _flatId;
   String currentUserId;
   BuildContext _navigatorContext;
   double _minimumPadding = 5.0;
@@ -37,7 +39,10 @@ class _MessageBoard extends State<MessageBoard> {
   bool showAssignToAllFlatsoption = false;
   bool sendToAllFlats = false;
 
-  _MessageBoard(this._flatId);
+  OwnerTenant _flat;
+  _MessageBoard(this._flat) {
+    this._flatId = this._flat.getOwnerTenantId();
+  }
 
   @override
   void initState() {
@@ -69,7 +74,6 @@ class _MessageBoard extends State<MessageBoard> {
                     
                     if (!notesSnapshot.hasData || currentUserId == null)
                       return LoadingContainerVertical(3);
-                    addReadNotices();
                     List<Message> messages = notesSnapshot.data.documents.map((DocumentSnapshot doc) => 
                       Message.fromJson(doc.data, doc.documentID)).toList();
 
@@ -117,8 +121,7 @@ class _MessageBoard extends State<MessageBoard> {
                   ),
                   child: Column(
                     children: [
-                      showAssignToAllFlatsoption
-                          ? Opacity(
+                          showAssignToAllFlatsoption?Opacity(
                               opacity: 0.5,
                               child: Container(
                                 color: Colors.black,
@@ -130,7 +133,9 @@ class _MessageBoard extends State<MessageBoard> {
                                       tristate: false,
                                       activeColor: Colors.green,
                                       onChanged: (value) {
-                                        sendToAllFlats = !sendToAllFlats;
+                                        setState(() {
+                                          sendToAllFlats = !sendToAllFlats;                     
+                                                                                });
                                       },
                                       value: sendToAllFlats,
                                     ),
@@ -139,8 +144,7 @@ class _MessageBoard extends State<MessageBoard> {
                                       style: TextStyle(color: Colors.white)),
                                 ),
                               ),
-                            )
-                          : Container(),
+                            ):Container(),
                       Row(
                         children: <Widget>[
                           Container(
@@ -151,10 +155,14 @@ class _MessageBoard extends State<MessageBoard> {
                               key: _formKey1,
                               child: TextFormField(
                                 onTap: () {
-                                  showAssignToAllFlatsoption = true;
+                                  setState(() {
+                                    showAssignToAllFlatsoption = true;                         
+                                                                    });
                                 },
                                 onEditingComplete: () {
-                                  showAssignToAllFlatsoption = false;
+                                  setState(() {
+                                    showAssignToAllFlatsoption = false;                          
+                                                                    });
                                 },
                                 keyboardType: TextInputType.text,
                                 style: TextStyle(
@@ -228,11 +236,6 @@ class _MessageBoard extends State<MessageBoard> {
         },
       ),
     );
-  }
-
-  void addReadNotices() async {
-    Utility.updateReadNoticesLastSeen(
-        _flatId, Timestamp.now().millisecondsSinceEpoch);
   }
 
   String getDateValue(value) {
@@ -566,19 +569,13 @@ class _MessageBoard extends State<MessageBoard> {
         addNote.text = '';
       });
       if (sendToAllFlats) {
-        List<String> allflatsList = new List();
-        List<String> flatList = await Utility.getFlatIdList();
-        for (String id in flatList) {
-          if (id.contains("Name=")) {
-            allflatsList.add(id.split("Name=")[0]);
-          } else {
-            allflatsList.add(id);
-          }
-        }
+        String buildingId = this._flat.getOwnerFlat().getBuildingId();
+        List<OwnerFlat> allflatsList =  this._flat.getOwnedFlats()[buildingId];
+        allflatsList.removeWhere((OwnerFlat flat) => flat.getOwnerTenantId() == null || flat.getOwnerTenantId() == '');
         WriteBatch batch = Firestore.instance.batch();
         allflatsList.forEach((doc) {
           debugPrint("add to flat - " + doc.toString());
-          DocumentReference docRef = MessageDao.getDocumentReference(doc, null);
+          DocumentReference docRef = MessageDao.getDocumentReference(doc.getOwnerTenantId(), null);
           batch.setData(docRef, message.toJson());
         });
         await batch.commit().then((v) {

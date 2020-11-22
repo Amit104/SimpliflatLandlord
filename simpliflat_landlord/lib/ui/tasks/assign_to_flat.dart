@@ -67,7 +67,7 @@ class AssignToFlatState extends State<AssignToFlat> {
   Widget getFlatNamesListWidget() {
     Map<String, List<OwnerFlat>> ownedFlats = this.flat.getOwnedFlats();
         List<OwnerFlat> buildingFlats = ownedFlats[this.flat.getOwnerFlat().getBuildingId()];
-        buildingFlats.removeWhere((OwnerFlat flat) => flat.getOwnerTenantId() != null && flat.getOwnerTenantId() != '');
+        buildingFlats.removeWhere((OwnerFlat flat) => flat.getOwnerTenantId() == null || flat.getOwnerTenantId() == '');
         return ListView.builder(
           shrinkWrap: true,
           itemCount: buildingFlats.length,
