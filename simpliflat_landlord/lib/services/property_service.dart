@@ -17,20 +17,23 @@ class PropertyService {
     var batch = db.batch();
     /** update building if blocks added. Create building if building does not have id. Building document need not be updated if no blocks added */
     /** check if any block has been added */
-    Block modifiedBlock = building.getBlocks().firstWhere((Block block) =>
-      (block.isModified() == null ? false : block.isModified()), orElse: () => null);
+    Block modifiedBlock = building.getBlocks().firstWhere(
+        (Block block) =>
+            (block.isModified() == null ? false : block.isModified()),
+        orElse: () => null);
 
     if (building.getBuildingId() != null && modifiedBlock != null) {
       /** if building exists and blocks added, then add blocks in block list */
-      batch.updateData(BuildingDao.getDocumentReference(building.getBuildingId()), Building.toUpdateJson(blockList:
-                  FieldValue.arrayUnion(getAddedBlockNamesList(building.getBlocks()))));
-
+      batch.updateData(
+          BuildingDao.getDocumentReference(building.getBuildingId()),
+          Building.toUpdateJson(
+              blockList: FieldValue.arrayUnion(
+                  getAddedBlockNamesList(building.getBlocks()))));
     } else if (building.getBuildingId() == null) {
       /** if building is new then create building */
       DocumentReference dr = BuildingDao.getDocumentReference(null);
       batch.setData(dr, building.toJson());
       building.setBuildingId(dr.documentID);
-      
     }
 
     /** for ownerFlat */
@@ -45,7 +48,8 @@ class PropertyService {
             if (flats[j].getFlatId() == null) {
               /** new flat created. Add ownerFlat document to collection */
               addBuildingDetailsToFlat(flats[j], building);
-              batch.setData(OwnerFlatDao.getDocumentReference(null), flats[j].toJson());
+              batch.setData(
+                  OwnerFlatDao.getDocumentReference(null), flats[j].toJson());
             }
           }
         }
@@ -60,14 +64,18 @@ class PropertyService {
   }
 
   static List<String> getAddedBlockNamesList(List<Block> blocks) {
-    return blocks.where((Block b) {
-            return b.isModified();
-          }).map((Block blk) => blk.getBlockName()).toList();
+    return blocks
+        .where((Block b) {
+          return b.isModified();
+        })
+        .map((Block blk) => blk.getBlockName())
+        .toList();
   }
 
   static void addBuildingDetailsToFlat(OwnerFlat flat, Building building) {
     flat.setZipcode(building.getZipcode());
     flat.setBuildingName(building.getBuildingName());
     flat.setBuildingId(building.getBuildingId());
+    flat.setBuildingAddress(building.getBuildingAddress());
   }
 }

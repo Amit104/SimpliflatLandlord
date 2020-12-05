@@ -15,11 +15,8 @@ import 'package:simpliflat_landlord/model/owner.dart';
 import 'package:simpliflat_landlord/model/owner_flat.dart';
 
 class OwnerRequestsService {
-
-
   static Future<bool> sendRequestToOwner(
       Building building, Block block, OwnerFlat flat, User user) async {
-   
     LandlordRequest request = new LandlordRequest();
     request.setBuildingAddress(building.getBuildingAddress());
     request.setBuildingDisplayId(building.getBuildingDisplayId());
@@ -32,22 +29,21 @@ class OwnerRequestsService {
     request.setRequestToOwner(true);
     request.setRequesterUserName(user.getName());
     request.setCreatedAt(Timestamp.now());
+    request.setUpdatedAt(Timestamp.now());
 
-    
     request.setBlockName(block.getBlockName());
     request.setFlatId(flat.getFlatId());
     request.setFlatDisplayId(flat.getFlatDisplayId());
     request.setFlatNumber(flat.getFlatName());
 
     request.setOwnerIdList(flat.getOwnerIdList());
-    
 
     Map<String, dynamic> data = request.toJson();
     return LandlordRequestsDao.add(data);
   }
 
-  static Future<bool> sendRequestToCoOwner(OwnerFlat flat, User user, Owner toOwner) async {
-
+  static Future<bool> sendRequestToCoOwner(
+      OwnerFlat flat, User user, Owner toOwner) async {
     LandlordRequest request = new LandlordRequest();
     request.setBuildingAddress(flat.getBuildingAddress());
     request.setBuildingDisplayId(flat.getBuildingDisplayId());
@@ -60,90 +56,82 @@ class OwnerRequestsService {
     request.setRequestToOwner(false);
     request.setRequesterUserName(user.getName());
     request.setCreatedAt(Timestamp.now());
+    request.setUpdatedAt(Timestamp.now());
 
-    
-      request.setBlockName(flat.getBlockName());
-      request.setFlatId(flat.getFlatId());
-      request.setFlatDisplayId(flat.getFlatDisplayId());
-      request.setFlatNumber(flat.getFlatName());
-    
+    request.setBlockName(flat.getBlockName());
+    request.setFlatId(flat.getFlatId());
+    request.setFlatDisplayId(flat.getFlatDisplayId());
+    request.setFlatNumber(flat.getFlatName());
 
-      request.setToUserId(toOwner.getOwnerId());
-      request.setToPhoneNumber(toOwner.getPhone());
-      request.setToUsername(toOwner.getName());
+    request.setToUserId(toOwner.getOwnerId());
+    request.setToPhoneNumber(toOwner.getPhone());
+    request.setToUsername(toOwner.getName());
 
-      request.setOwnerIdList(flat.getOwnerIdList());
-
-    
+    request.setOwnerIdList(flat.getOwnerIdList());
 
     Map<String, dynamic> data = request.toJson();
     return await LandlordRequestsDao.add(data);
   }
 
   static Future<bool> acceptRequestFromOwner(LandlordRequest request) async {
-
     HttpsCallable func = CloudFunctions.instance.getHttpsCallable(
-                      functionName: "acceptRequestFromOwner",
-                  );
+      functionName: "acceptRequestFromOwner",
+    );
 
-                  try {
-                 HttpsCallableResult res = await func.call(<String, dynamic> {'requestId': request.getRequestId()});
-                  if((res.data as Map)['code'] == 0) {
-                    return true;
-                  }
-                  else {
-                    return false;
-                  }
-                  }
-                  catch(e) {
-                    return false;
-                  }
+    try {
+      HttpsCallableResult res = await func
+          .call(<String, dynamic>{'requestId': request.getRequestId()});
+      if ((res.data as Map)['code'] == 0) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
   }
 
   static Future<bool> acceptRequestFromCoOwner(LandlordRequest request) async {
-
     HttpsCallable func = CloudFunctions.instance.getHttpsCallable(
-                      functionName: "acceptRequestFromCoOwner",
-                  );
+      functionName: "acceptRequestFromCoOwner",
+    );
 
-                  try {
-                 HttpsCallableResult res = await func.call(<String, dynamic> {'requestId': request.getRequestId()});
-                  if((res.data as Map)['code'] == 0) {
-                    return true;
-                  }
-                  else {
-                    return false;
-                  }
-                  }
-                  catch(e) {
-                    return false;
-                  }
+    try {
+      HttpsCallableResult res = await func
+          .call(<String, dynamic>{'requestId': request.getRequestId()});
+      if ((res.data as Map)['code'] == 0) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
   }
 
   static Future<bool> rejectRequest(LandlordRequest request) async {
-    Map<String, dynamic> updateData = LandlordRequest.toUpdateJson(status: globals.RequestStatus.Rejected.index);
+    Map<String, dynamic> updateData = LandlordRequest.toUpdateJson(
+        status: globals.RequestStatus.Rejected.index);
     return await LandlordRequestsDao.update(request.getRequestId(), updateData);
   }
 
   static Future<bool> removeOwnerFromFlat(Owner owner, OwnerFlat flat) async {
     HttpsCallable func = CloudFunctions.instance.getHttpsCallable(
-                      functionName: "removeOwnerFromFlat",
-                  );
+      functionName: "removeOwnerFromFlat",
+    );
 
-                  try {
-                 HttpsCallableResult res = await func.call(<String, dynamic> {'ownerId': owner.getOwnerId(), 'ownerFlatId': flat.getFlatId()});
-                  if((res.data as Map)['code'] == 0) {
-                    return true;
-                  }
-                  else {
-                    return false;
-                  }
-                  }
-                  catch(e) {
-                    return false;
-                  }
-    
+    try {
+      HttpsCallableResult res = await func.call(<String, dynamic>{
+        'ownerId': owner.getOwnerId(),
+        'ownerFlatId': flat.getFlatId()
+      });
+      if ((res.data as Map)['code'] == 0) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
   }
-
-
 }

@@ -180,20 +180,20 @@ class _SignUpNameUser extends State<SignUpName> {
                                       child: ButtonTheme(
                                           height: 50.0,
                                           child: RaisedButton(
-                                              shape: new RoundedRectangleBorder(
-                                                borderRadius:
-                                                    new BorderRadius.circular(
-                                                        25.0),
-                                                side: BorderSide(
-                                                  width: 0.0,
-                                                ),
+                                            shape: new RoundedRectangleBorder(
+                                              borderRadius:
+                                                  new BorderRadius.circular(
+                                                      25.0),
+                                              side: BorderSide(
+                                                width: 0.0,
                                               ),
-                                              color: Color(0xff2079FF),
-                                              textColor: Theme.of(context)
-                                                  .primaryColorDark,
-                                              child: setUpButtonChild(),
-                                              onPressed: () => _submitForm(),
-                                                )),
+                                            ),
+                                            color: Color(0xff2079FF),
+                                            textColor: Theme.of(context)
+                                                .primaryColorDark,
+                                            child: setUpButtonChild(),
+                                            onPressed: () => _submitForm(),
+                                          )),
                                     ),
                                     Expanded(
                                       flex: 1,
@@ -270,7 +270,6 @@ class _SignUpNameUser extends State<SignUpName> {
   }
 
   void _addUserHandler(scaffoldContext) async {
-
     final FirebaseAuth _auth = FirebaseAuth.instance;
 
     FirebaseUser user = await _auth.currentUser();
@@ -284,11 +283,12 @@ class _SignUpNameUser extends State<SignUpName> {
 
     userObj.setNotificationToken(token);
     bool ifSuccess = await OwnerDao.add(user.uid, userObj.toJson());
-    if(!ifSuccess) {
+    if (!ifSuccess) {
       _serverError(scaffoldContext);
       return;
     }
-    await Utility.addToSharedPref(userId: user.uid, userName: name.text);
+    await Utility.addToSharedPref(
+        userId: user.uid, userName: name.text, notificationToken: token);
     AuthenticationService.navigate(context, true, userObj);
   }
 

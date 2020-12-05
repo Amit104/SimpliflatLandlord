@@ -5,22 +5,20 @@ import 'package:simpliflat_landlord/model/user.dart';
 import 'package:simpliflat_landlord/utility/utility.dart';
 import 'package:simpliflat_landlord/constants/globals.dart' as globals;
 
-
 class StartupService {
-  
   static Future<User> getUser() async {
     String userId = await Utility.getUserId();
 
     if (userId == null) {
       return null;
-    }
-    else {
+    } else {
       print('userId is  - ' + userId);
       User user = await StartupService._getUserObject(userId);
-      bool propertyRegistered = await Utility.getPropertyRegistered();
+      bool propertyRegistered; // = await Utility.getPropertyRegistered();
 
-      if(propertyRegistered == null ) {
-        propertyRegistered = await StartupService._getAndSetIfPropertyRegistred(userId);
+      if (propertyRegistered == null) {
+        propertyRegistered =
+            await StartupService._getAndSetIfPropertyRegistred(userId);
       }
       user.setPropertyRegistered(propertyRegistered);
       return user;
@@ -28,7 +26,6 @@ class StartupService {
   }
 
   static Future<User> _getUserObject(String userId) async {
-    
     DocumentSnapshot userDoc = await OwnerDao.getDocument(userId);
 
     return User.fromJson(userDoc.data, userDoc.documentID);
@@ -36,7 +33,8 @@ class StartupService {
 
   static Future<bool> _getAndSetIfPropertyRegistred(String userId) async {
     QuerySnapshot docs = await OwnerFlatDao.getAnOwnerFlatForUser(userId);
-    bool propertyRegistered = docs.documents != null && docs.documents.length > 0;
+    bool propertyRegistered =
+        docs.documents != null && docs.documents.length > 0;
     Utility.addToSharedPref(propertyRegistered: propertyRegistered);
     return propertyRegistered;
   }

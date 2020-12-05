@@ -12,88 +12,87 @@ class Activity extends BaseModel {
   String tenantFlatId;
   String ownerTenantFlatId;
   String documentId;
-  int timestamp;
+  Timestamp timestamp;
 
-	String getActivityId() {
-		return this.activityId;
-	}
+  String getActivityId() {
+    return this.activityId;
+  }
 
-	void setActivityId(String activityId) {
-		this.activityId = activityId;
-	}
+  void setActivityId(String activityId) {
+    this.activityId = activityId;
+  }
 
-	String getBuildingName() {
-		return this.buildingName;
-	}
+  String getBuildingName() {
+    return this.buildingName;
+  }
 
-	void setBuildingName(String buildingName) {
-		this.buildingName = buildingName;
-	}
+  void setBuildingName(String buildingName) {
+    this.buildingName = buildingName;
+  }
 
-	String getOwnerFlatName() {
-		return this.ownerFlatName;
-	}
+  String getOwnerFlatName() {
+    return this.ownerFlatName;
+  }
 
-	void setOwnerFlatName(String ownerFlatName) {
-		this.ownerFlatName = ownerFlatName;
-	}
+  void setOwnerFlatName(String ownerFlatName) {
+    this.ownerFlatName = ownerFlatName;
+  }
 
-	String getOwnerFlatId() {
-		return this.ownerFlatId;
-	}
+  String getOwnerFlatId() {
+    return this.ownerFlatId;
+  }
 
-	void setOwnerFlatId(String ownerFlatId) {
-		this.ownerFlatId = ownerFlatId;
-	}
+  void setOwnerFlatId(String ownerFlatId) {
+    this.ownerFlatId = ownerFlatId;
+  }
 
-	String getTenantFlatId() {
-		return this.tenantFlatId;
-	}
+  String getTenantFlatId() {
+    return this.tenantFlatId;
+  }
 
-	void setTenantFlatId(String tenantFlatId) {
-		this.tenantFlatId = tenantFlatId;
-	}
+  void setTenantFlatId(String tenantFlatId) {
+    this.tenantFlatId = tenantFlatId;
+  }
 
-	String getOwnerTenantFlatId() {
-		return this.ownerTenantFlatId;
-	}
+  String getOwnerTenantFlatId() {
+    return this.ownerTenantFlatId;
+  }
 
-	void setOwnerTenantFlatId(String ownerTenantFlatId) {
-		this.ownerTenantFlatId = ownerTenantFlatId;
-	}
+  void setOwnerTenantFlatId(String ownerTenantFlatId) {
+    this.ownerTenantFlatId = ownerTenantFlatId;
+  }
 
-	String getDocumentId() {
-		return this.documentId;
-	}
+  String getDocumentId() {
+    return this.documentId;
+  }
 
-	void setDocumentId(String documentId) {
-		this.documentId = documentId;
-	}
+  void setDocumentId(String documentId) {
+    this.documentId = documentId;
+  }
 
-	int getTimestamp() {
-		return this.timestamp;
-	}
+  Timestamp getTimestamp() {
+    return this.timestamp;
+  }
 
-	void setTimestamp(int timestamp) {
-		this.timestamp = timestamp;
-	}
+  void setTimestamp(Timestamp timestamp) {
+    this.timestamp = timestamp;
+  }
 
+  String getSenderName() {
+    return this.senderName;
+  }
 
-	String getSenderName() {
-		return this.senderName;
-	}
+  void setSenderName(String senderName) {
+    this.senderName = senderName;
+  }
 
-	void setSenderName(String senderName) {
-		this.senderName = senderName;
-	}
+  String getTitle() {
+    return this.title;
+  }
 
-	String getTitle() {
-		return this.title;
-	}
-
-	void setTitle(String title) {
-		this.title = title;
-	}
+  void setTitle(String title) {
+    this.title = title;
+  }
 
   String getMessage() {
     return this.message;
@@ -105,17 +104,17 @@ class Activity extends BaseModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'activityId' : this.activityId,
-            'senderName': this.senderName,
-            'title': this.title,
-            'message': this.message,
-            'buildingName': this.buildingName,
-            'ownerFlatName': this.ownerFlatName,
-            'ownerFlatId': this.ownerFlatId,
-            'tenantFlatId': this.tenantFlatId,
-            'ownerTenantFlatId': this.ownerTenantFlatId,
-            'timestamp': this.timestamp,
-            'documentId': this.documentId,
+      'activityId': this.activityId,
+      'senderName': this.senderName,
+      'title': this.title,
+      'message': this.message,
+      'buildingName': this.buildingName,
+      'ownerFlatName': this.ownerFlatName,
+      'ownerFlatId': this.ownerFlatId,
+      'tenantFlatId': this.tenantFlatId,
+      'ownerTenantFlatId': this.ownerTenantFlatId,
+      'timestamp': this.timestamp,
+      'documentId': this.documentId,
     };
   }
 
@@ -124,9 +123,9 @@ class Activity extends BaseModel {
     activity.setMessage(data['message']);
     activity.setTitle(data['title']);
     activity.setSenderName(data['sendername']);
-    activity.setCreatedAt(Timestamp.fromDate(new DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int)));
+    activity.setCreatedAt(data['timestamp'] as Timestamp);
     activity.setActivityId(documentId);
-    activity.setTimestamp(data['timestamp']);
+    activity.setTimestamp(data['timestamp'] as Timestamp);
     return activity;
-  } 
+  }
 }

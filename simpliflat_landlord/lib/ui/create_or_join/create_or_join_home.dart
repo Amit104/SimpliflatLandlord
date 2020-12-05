@@ -31,21 +31,13 @@ class CreateOrJoinHome extends StatelessWidget {
   }
 
   Widget getBody(BuildContext scaffoldC, BuildContext context) {
-    return Column(
+    return ListView(
       children: [
-        SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              getInfoWidget(context),
-              getCreateOrJoinOptionsWidget(context),
-              ChangeNotifierProvider(
-                create: (_) => LoadingModel(),
-                builder: (context, child) =>
-                    getIncomingRequestsWidget(context),
-              ),
-            ],
-          ),
+        getInfoWidget(context),
+        getCreateOrJoinOptionsWidget(context),
+        ChangeNotifierProvider(
+          create: (_) => LoadingModel(),
+          builder: (context, child) => getIncomingRequestsWidget(context),
         ),
         Expanded(
             child: Padding(
@@ -112,7 +104,6 @@ class CreateOrJoinHome extends StatelessWidget {
       return MyApp();
     }));
   }
-
 
   Widget getCreateOrJoinOptionsWidget(BuildContext context) {
     var deviceSize = MediaQuery.of(context).size;
@@ -233,8 +224,6 @@ class CreateOrJoinHome extends StatelessWidget {
     );
   }
 
-
-
   void navigateToCreateProperty(bool join, BuildContext context) async {
     await Navigator.push(
       context,
@@ -298,7 +287,8 @@ class CreateOrJoinHome extends StatelessWidget {
   Widget getIncomingRequestsDataWidget(BuildContext scaffoldC) {
     User user = Provider.of<User>(scaffoldC, listen: false);
     return StreamBuilder(
-        stream: LandlordRequestsDao.getRequestsSentToMeByOwner(user.getUserId()),
+        stream:
+            LandlordRequestsDao.getRequestsSentToMeByOwner(user.getUserId()),
         builder:
             (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshots) {
           if (!snapshots.hasData) {
@@ -310,7 +300,7 @@ class CreateOrJoinHome extends StatelessWidget {
               scrollDirection: Axis.vertical,
               itemCount: snapshots.data.documents.length + 1,
               itemBuilder: (BuildContext context, int position) {
-                if(snapshots.data.documents.length == 0) return Container();
+                if (snapshots.data.documents.length == 0) return Container();
 
                 if (position == 0 && snapshots.data.documents.length > 0) {
                   return Padding(
@@ -336,7 +326,7 @@ class CreateOrJoinHome extends StatelessWidget {
                   builder: (BuildContext context, LoadingModel loadingModel,
                       Widget child) {
                     return loadingModel.load
-                        ? LoadingContainerVertical(5)
+                        ? LoadingContainerVertical(2)
                         : Card(
                             margin: EdgeInsets.symmetric(
                                 vertical: 3.0, horizontal: 12.0),
@@ -386,7 +376,6 @@ class CreateOrJoinHome extends StatelessWidget {
                                               Strings.PRIMARY_FONT_WEIGHT,
                                         ),
                                       )
-                                      
                                     ]),
                                   ),
                                   Container(
@@ -410,9 +399,13 @@ class CreateOrJoinHome extends StatelessWidget {
 
   String getTitleText(LandlordRequest request) {
     if (request.getFlatId() == null) {
-      return 'Request for building ' + (request.getBuildingName() == null?'':request.getBuildingName());
+      return 'Request for building ' +
+          (request.getBuildingName() == null ? '' : request.getBuildingName());
     } else {
-      return 'Request for flat ' + (request.getFlatNumber() == null?'':request.getFlatNumber());
+      return 'Request for flat ' +
+          (request.getFlatNumber() == null ? '' : request.getFlatNumber()) +
+          ', ' +
+          (request.getBuildingName() == null ? '' : request.getBuildingName());
     }
   }
 
@@ -421,7 +414,7 @@ class CreateOrJoinHome extends StatelessWidget {
     Provider.of<LoadingModel>(scaffoldC, listen: false).startLoading();
     Utility.createErrorSnackBar(scaffoldC, error: 'Rejecting request');
     bool ifSuccess = await OwnerRequestsService.rejectRequest(request);
-    if(ifSuccess) {
+    if (ifSuccess) {
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC,
           error: 'Request rejected successfully');
@@ -429,7 +422,8 @@ class CreateOrJoinHome extends StatelessWidget {
       Scaffold.of(scaffoldC).hideCurrentSnackBar();
       Utility.createErrorSnackBar(scaffoldC,
           error: 'Error while rejecting request');
-    };
+    }
+    ;
 
     Provider.of<LoadingModel>(scaffoldC, listen: false).stopLoading();
     return ifSuccess;
